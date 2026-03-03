@@ -2,198 +2,132 @@
 
 **Analysis Date:** 2026-03-03
 
-## Claude Code Platform Integration
+## APIs & External Services
 
 **Claude Code Plugin System:**
-- Plugin host: Claude Code desktop/web application
-- Plugin management: Install via `/plugin install <plugin-name>`
-- Plugin format: JSON manifest + TypeScript/JavaScript
-- Execution context: Isolated Claude Code environment
+- Service: Anthropic Claude Code (native plugin runtime)
+- What it provides: Plugin packaging, auto-discovery, skill/agent/command/hook execution environment
+- Integration: Plugin manifest at `plugins/lz-nx.rlm/.claude-plugin/plugin.json`; skills auto-invoked by context; agents spawned via Claude Code's subagent system
+- No API key needed for plugin system itself
 
-**Claude Models:**
-- Claude Opus 4.6 - Primary model (most capable)
-- Claude Sonnet 4.5 - Recommended for RLM agents and cost-effective subagents
-- Claude Haiku 4.5 - Lightweight mechanical tasks, batch operations, cost optimization
+**Anthropic Claude API (direct, optional):**
+- Service: Anthropic Claude API
+- What it is used for: `llm_query()` REPL global -- sub-LLM calls for mechanical search tasks (Option A implementation; may be deferred to v1.1)
+- SDK/Client: Direct HTTP call or Anthropic SDK; invoked from `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs` via `child_process.execSync` to a thin wrapper script
+- Auth: `ANTHROPIC_API_KEY` environment variable
+- Model: Haiku 4.5 (default for sub-calls); configurable
 
-**Agent Teams:**
-- Multi-agent orchestration - Peer-to-peer messaging between independent Claude instances
-- Subagents API - Single-session task delegation (lower token cost)
-- Agent teams API - Independent sessions with own context windows
-- Git worktree integration - Isolated filesystem state per agent
+**Nx Claude Plugins Marketplace:**
+- Service: GitHub repository `nrwl/nx-ai-agents-config`
+- What it is used for: Plugin distribution and discovery; the `nx@nx-claude-plugins` marketplace is configured in `.claude/settings.json`
+- Integration: `claude plugin install` resolves plugins from this marketplace source
+- Config: `.claude/settings.json` defines `extraKnownMarketplaces.nx-claude-plugins.source` pointing to `github:nrwl/nx-ai-agents-config`
 
-## Workspace Intelligence Integration
+## Data Storage
 
-**Nx Monorepo CLI:**
-- `nx show projects --json` - Fetch all project metadata
-- `nx show project <name>` - Fetch project-specific configuration and targets
-- `nx graph --print` - Output dependency graph in JSON/text format
-- `nx affected --files <files>` - Determine affected projects by changed files
-- Usage: Workspace indexing, dependency tracing, impact analysis
+**Databases:**
+- None (no database dependency)
 
-**TypeScript Compiler:**
-- `tsc --listFilesOnly` - List all files in compilation
-- `tsconfig.base.json` parsing - Extract path aliases (`@app/*`, `@lib/*`, etc.)
-- Type checking integration - Optional for type-aware code analysis
+**Workspace Index (JSON file):**
+- Type: Local JSON file written by `plugins/lz-nx.rlm/scripts/workspace-indexer.mjs`
+- Location: `workspace-index.json` in the analyzed workspace (path TBD during Phase 1 implementation)
+- Size: ~50-100KB for large workspaces (537 projects)
+- Schema: Projects map, dependency adjacency list, reverse dependencies, tsconfig path aliases, stats
+- Lifecycle: Written once per workspace session; incremental rebuild on git-detected `project.json` changes
 
-**Git Integration:**
-- `git grep` - Fast file search across tracked files (used for code location)
-- `git diff` - Changed files detection (incremental index rebuild trigger)
-- `git ls-files` - List tracked files for workspace composition
+**In-Memory Handle Store:**
+- Type: In-process `Map<string, unknown[]>`
+- Location: `plugins/lz-nx.rlm/scripts/handle-store.mjs`
+- Lifecycle: Session-scoped; discarded when REPL context is reset
+- Purpose: Large result sets (500+ matches) stored as handles; LLM sees lightweight stubs (`$res1: Array(247) [...]`)
 
-## RLM Ecosystem
+**File Storage:**
+- No cloud file storage
+- All file access is local filesystem via `node:fs` in the REPL `read()` and `files()` globals, scoped to the analyzed workspace root
 
-**Official RLM Client:**
-- Package: `alexzhang13/rlm` (Python/Node.js)
-- Usage: RLM inference engine, REPL lifecycle management
-- Backends: LocalREPL, DockerREPL, ModalREPL
+**Caching:**
+- In-memory cache in `plugins/lz-nx.rlm/scripts/nx-runner.mjs`: 5-minute TTL for Nx CLI output (expensive commands like `nx graph --print` take 3-5 seconds on large workspaces)
+- Nx's own task cache: `.nx/cache/` directory (standard Nx computation caching for build/test/lint targets)
 
-**REPL Environments:**
-- LocalREPL - Node.js VM or Python subprocess on local machine
-- DockerREPL - Container-based REPL (Docker daemon required)
-- ModalREPL - Serverless REPL via Modal.com cloud backend
+## Authentication & Identity
 
-**Community RLM Implementations:**
-- avbiswas/fast-rlm - Deno + Pyodide variant
-- ysz/recursive-llm - Python unbounded context
-- hampton-io/RLM - Node.js/TypeScript with MCP server
-- code-rabi/rllm - TypeScript with V8 isolate sandbox
-- yogthos/Matryoshka - MCP server with Nucleus symbolic language
+**Auth Provider:**
+- None (no user authentication)
+- The only auth-adjacent concern is the `ANTHROPIC_API_KEY` environment variable for direct Claude API calls via `llm_query()` (optional v1.1 feature)
 
-## MCP (Model Context Protocol) Servers
+## Monitoring & Observability
 
-**Integration Points:**
-- Playwriter MCP - Browser automation for blocked web content
-- url-to-markdown - Document conversion and URL fetching
-- MarkItDown MCP - PDF/DOCX/XLSX conversion
-- Custom MCP servers - For workspace-specific tools
+**Error Tracking:**
+- None (no external error tracking service)
+- Errors are surfaced directly in the Claude Code conversation
 
-**Usage in Plugin:**
-- `mcp__playwriter__execute` - Full browser rendering
-- `mcp__markitdown__convert_to_markdown` - Document extraction
+**Logs:**
+- No log files; all output goes to stdout/stderr captured by the Claude Code plugin system
+- RLM execution loop appends sandbox output as user messages in the subagent's conversation context
+- Scripts print ASCII-safe status messages (no Unicode/emoji due to Windows cp1252 constraint)
 
-## External Services & APIs
+## CI/CD & Deployment
 
-**Git Services:**
-- GitHub API - Project metadata, PR comments via `gh` CLI
-- git.io or GitHub raw content - Source file fetching (alternative to local read)
+**Hosting:**
+- No deployment target (plugin is distributed as a directory of `.mjs` scripts and `.md` files)
+- Installation: `claude plugin install lz-nx.rlm@<marketplace>` or development mode via `claude --plugin-dir ./plugins/lz-nx.rlm`
 
-**AI/LLM Services:**
-- Anthropic Claude API - Backup integration if needed (typically via Claude Code direct)
-- Model routing hints - Suggest Opus/Sonnet/Haiku based on task complexity
+**CI Pipeline:**
+- Not configured (no CI workflow files detected in repository)
+- Nx provides `nx affected` for selective task execution when CI is added
 
-**Optional Cloud Backends:**
-- Modal.com - For serverless REPL execution (ModalREPL)
-- Docker Hub - For container image hosting (DockerREPL)
+## Nx CLI Integration (Primary External Tool)
 
-## Target Workspace Integration Points
+**Tool:** Nx CLI (`nx` binary in the workspace being analyzed)
+- Invoked via `child_process.execSync` from `plugins/lz-nx.rlm/scripts/nx-runner.mjs`
+- Invocation: `npx nx <command>` (uses the workspace's local Nx installation)
+- Target Nx versions: 19.8+ through 22.5.x
+- Allowlisted read-only commands:
+  - `show projects --json` - Project listing with metadata filters
+  - `show project <name> --json` - Per-project resolved configuration
+  - `graph --print` - Full dependency graph as JSON
+  - `report` - Workspace report
+- Blocked commands: `build`, `test`, `lint`, `serve`, `generate`, `migrate`, `run`, and all mutation operations
+- Timeout: 30 seconds per command
+- Caching: Results cached in-memory with 5-minute TTL
 
-**Angular/TypeScript Workspace:**
-- Angular build system - `ng build`, `ng test`, `ng serve`
-- Jest or Vitest test runner - Test execution and coverage
-- Testing Library - Component testing patterns
-- ComponentStore (@ngrx) - State management pattern
+**Tool:** git (`git grep`)
+- Invoked from the REPL `search()` global via `child_process.execSync`
+- Used for file content search scoped to Nx project source roots
+- Assumed present in environment (Claude Code itself requires Git)
 
-**Monorepo Structure:**
-- 537 Nx projects organized by scope/type
-- Feature/data-access/domain/shared library structure
-- ~1,700 Angular components following naming patterns
-- Path aliases in tsconfig.base.json (e.g., `@connect/*`, `@shared/*`)
+## Webhooks & Callbacks
 
-**Conventions & Patterns:**
-- SIFERS pattern - Component structure convention
-- ComponentStore usage - State management across workspace
-- Testing patterns - Jasmine/Jest with Testing Library
-- Linting rules - ESLint, Angular-specific rules
+**Incoming:**
+- None
 
-## Data & Indexing
+**Outgoing:**
+- None (HTTP hooks are a Claude Code plugin capability but not used in this plugin)
 
-**Workspace Index Storage:**
-- Location: `.claude/workspace-index.json`
-- Format: Structured JSON (~50-100KB)
-- Refresh trigger: SessionStart hook or file modification
-- Incremental rebuild: File mtime comparison
+## Plugin System Hooks (Claude Code Native)
 
-**Index Contents:**
-- Project registry: names, source roots, types, tags
-- Dependency edges: adjacency list for impact analysis
-- Path aliases: tsconfig path mapping
-- Component registry: selector → file path mapping (~80KB)
-- Service registry: providedIn → file path mapping (~20KB)
-- Store registry: class name → file path mapping (~15KB)
-- Route map: route path → lazy-loaded module (~10KB)
+The plugin uses Claude Code's native hook system for automated behaviors (all deferred to v1.x, not implemented in v1.0):
 
-**Cache Management:**
-- File-mtime TTL: Invalidate on Nx config or workspace changes
-- Handle-based result storage: ~97% token savings via symbolic references
-- PostToolUse hook caching: Cache search and Nx command results
+| Hook | Event | Purpose | Status |
+|------|-------|---------|--------|
+| SessionStart | Session initialization | Auto-rebuild workspace index when stale | Deferred (v1.x) |
+| PreCompact | Context compaction | Preserve workspace context before auto-compaction | Deferred (v1.x) |
+| PreToolUse | Tool intercept | Route index-answerable queries through REPL | Deferred (v1.x) |
+| PostToolUse | After tool execution | Cache repeated search results | Deferred (v1.x) |
 
-## Authentication & Credentials
+Hook scripts would live at `plugins/lz-nx.rlm/hooks/scripts/` with configuration in `plugins/lz-nx.rlm/hooks/hooks.json`.
+Hook input arrives as JSON on stdin; output is JSON on stdout with optional `additionalContext` or `decision: "block"`.
 
-**Plugin Secrets:**
-- Environment variables: Stored in Claude Code environment
-- Access method: `process.env.API_KEY`, `process.env.CLAUDE_API_KEY`
-- Scope: Plugin-specific secrets not shared across plugins
+## Environment Configuration
 
-**Git Credentials:**
-- Git Bash integration - Uses system git config and SSH keys
-- `gh` CLI auth - GitHub token from local system config
-- No secrets stored in repository (`.env` ignored)
+**Required env vars:**
+- None strictly required for v1.0 (all features work without env vars except `llm_query()`)
+- `ANTHROPIC_API_KEY` - Required only for the `llm_query()` direct-API-call implementation (Option A, planned for v1.1)
 
-## Hooks & Automation
-
-**SessionStart Hook:**
-- Event: Every Claude Code session begins
-- Action: Run workspace-indexer.mjs to build/refresh index
-- Output: `.claude/workspace-index.json` updated
-- Duration: ~5-10 seconds (incremental) to ~30 seconds (full rebuild)
-
-**PreToolUse Hook:**
-- Event: Before any tool execution (Bash, Read, etc.)
-- Action: Route complex searches to lower-token strategies
-- Purpose: Intercept Explore tasks, suggest git grep or index lookup
-
-**PostToolUse Hook:**
-- Event: After tool execution (Bash, Read, etc.)
-- Action: Cache results with file-mtime TTL
-- Purpose: Avoid re-executing identical searches in same session
-
-**PreCompact Hook:**
-- Event: Before context window compaction
-- Action: Save key findings to persistent REPL or file
-- Purpose: Preserve critical knowledge before context reset
-
-## Workflow Integration
-
-**Nx-aware Workspace Navigation:**
-- Dependency tracing: Use `nx graph --print` output, not manual import analysis
-- Affected detection: Use `nx affected --files` for change impact
-- Project lookup: Query workspace index instead of git grep across all projects
-
-**Component Discovery Workflow:**
-- Look up selector in component registry (index)
-- Retrieve file path and project name (0 tokens)
-- Read component file directly (4-8K tokens)
-- No multi-file search needed
-
-**Impact Analysis Workflow:**
-- Get changed files via git diff
-- Run `nx affected --files <changed>`
-- Trace through dependency graph in index
-- Analyze affected services/stores via registries
-
-## Code Generation & Testing
-
-**Pattern-Compliant Generation:**
-- Reference existing patterns from workspace index
-- Load exemplar files directly (specific paths)
-- Generate code following ComponentStore conventions
-- Use Testing Library patterns from workspace examples
-
-**Test Generation:**
-- Scan test examples in workspace
-- Extract testing patterns (mocking, assertions)
-- Generate tests following workspace conventions
-- Leverage /rlm:test-gen skill for pattern-aware generation
+**Secrets location:**
+- No secrets stored in repository
+- `.env` files are gitignored
+- API keys are read from process environment at runtime only
 
 ---
 

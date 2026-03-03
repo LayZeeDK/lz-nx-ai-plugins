@@ -2,349 +2,261 @@
 
 **Analysis Date:** 2026-03-03
 
-## Project Stage & Maturity
+---
 
-**Current State:**
-- Pre-plugin implementation (research & brainstorming phase only)
-- No production code (`/plugins` directory does not exist)
-- No actual working plugins yet
-- Files: `AGENTS.md`, `CLAUDE.md` - guidance documents only
-- Research corpus: 64 markdown files across 5 research areas
+## Project Stage
 
-**Impact:**
-- All plugin architecture in `AGENTS.md` is aspirational, not validated
-- Plugin directory structure described in `AGENTS.md` does not yet exist
-- No actual testing of allowed-tools patterns, hook behaviors, or cross-platform compatibility
-- Risk: Architectural decisions in `AGENTS.md` may not account for real-world constraints once plugins are built
+**Current State:** Pre-implementation research and design repository.
 
-**Recommendation:**
-Create initial plugin scaffold using `plugin-dev` early to validate assumptions before writing production code.
+No production code exists. The `plugins/` directory does not exist. All plugin architecture described in `AGENTS.md` is aspirational. The repository consists of:
+- 75 research markdown files across 5 subdirectories
+- Configuration scaffolding (`package.json`, `nx.json`, `tsconfig.base.json`)
+- Planning documents under `.planning/research/`
+
+**Impact:** All concerns below are forward-looking risks based on architecture decisions made in research documents. None reflect bugs in shipping code. They must be addressed as implementation phases begin.
 
 ---
 
-## Research Corpus Organization
+## Tech Debt
 
-**Issue: Research Directory Lacks Indexing and Deduplication**
-- Files: `research/` directory (5 subdirectories, 64 `.md` files)
-- Problem: No unified index or cross-reference guide across:
-  - `claude-agent-teams/` (22 files - 17 blog posts + synthesis)
-  - `claude-plugin/` (2 brainstorm docs)
-  - `rlm/` (24 files - blogs, papers, YouTube interviews, docs)
-  - `prompt-engineering/` (12 files)
-  - `nx/` (1 file)
-- No deduplication: Same concepts (e.g., context rot, RLM principles) appear across multiple blog posts with potentially contradictory explanations
-- Missing: Central synthesis document linking all 5 research areas
+**No Node.js Version Pin:**
+- Issue: No `.nvmrc`, `.node-version`, or `.tool-versions` file in the repo root. `package.json` has no `engines` field.
+- Files: `package.json`
+- Impact: The planned plugin requires Node.js >= 22.17.0 for stable `fs.glob` and Node.js 24 for `vm.constants.DONT_CONTEXTIFY`. Without a pin, contributors may install the wrong version and encounter subtle REPL sandbox failures or missing built-in APIs with no obvious error message.
+- Fix approach: Add `.nvmrc` with `24` (or `lts/krypton`) and add `"engines": { "node": ">=22.17.0" }` to `package.json`.
 
-**Impact:**
-- Future Claude instances building the plugin must cross-search multiple directories
-- No clear "source of truth" for conflicting information across blog post digests
-- Onboarding new developers requires reading 64 files to orient themselves
-- Risk: Implementation decisions based on incomplete or outdated synthesis
+**No Installed Test Infrastructure:**
+- Issue: `package.json` includes `@nx/vitest`, `vitest`, and `@vitest/ui` as devDependencies, but there are zero test files (`*.test.ts`, `*.spec.ts`, `*.test.mjs`) in the repository.
+- Files: `package.json`
+- Impact: The planned scripts (`workspace-indexer.mjs`, `repl-sandbox.mjs`, `handle-store.mjs`) have no test coverage. The research documents explicitly require automated tests for sandbox escape vectors, REPL iteration guards, and Nx CLI encoding edge cases. Without tests present from the start, they will be deferred indefinitely.
+- Fix approach: Create test scaffolding alongside each Foundation Scripts phase. Tests should live at `plugins/<plugin-name>/scripts/__tests__/`.
 
-**Recommendation:**
-- Create `research/INDEX.md` cataloging all 64 files by theme/concept
-- Mark relationship between docs (e.g., "SYNTHESIS.md in rlm/ summarizes rlm/" and "SYNTHESIS.md in prompt-engineering/ summarizes prompt-engineering/")
-- Create cross-research synthesis document linking RLM + Prompt Engineering + Claude Plugin patterns
+**`package.json` Has Empty `scripts` Field:**
+- Issue: The `scripts` section in `package.json` is empty (`{}`). There are no `test`, `build`, `lint`, or `typecheck` scripts defined at the workspace root.
+- Files: `package.json`
+- Impact: CI pipelines or contributors cannot run checks without knowing the Nx command syntax directly. The Nx plugin configuration in `nx.json` infers targets from file presence (Vite, ESLint), but the root `package.json` has no runnable aliases.
+- Fix approach: Add at minimum `"typecheck": "nx run-many -t typecheck"`, `"lint": "nx run-many -t lint"`, and `"test": "nx run-many -t test"` once plugin projects exist.
 
----
+**ESLint Version Mismatch Risk:**
+- Issue: `package.json` pins `eslint` at `~8.57.0` (ESLint v8, legacy config format) while `nx.json` configures the `@nx/eslint/plugin` which as of Nx 22 defaults to flat config (ESLint v9+). The `@nx/eslint` package is set to `^22.5.1`.
+- Files: `package.json`, `nx.json`
+- Impact: ESLint flat config files (`eslint.config.mjs`) generated by `@nx/eslint` generators will fail with ESLint 8. Any plugin scaffold created via `nx generate` will produce config files incompatible with the installed ESLint version. The `namedInputs.production` in `nx.json` excludes `eslint.config.mjs` from caching, suggesting awareness of this file format but not the version conflict.
+- Fix approach: Upgrade ESLint to `^9.0.0` and update any legacy `.eslintrc.json` files to flat config when creating plugin projects.
 
-## Todo Comments & Incomplete Research
+**`tsconfig.json` Has Empty `references`:**
+- Issue: `tsconfig.json` extends `tsconfig.base.json` and has empty `files: []` and `references: []` arrays. This is a valid Nx convention but no plugin projects have been added to references yet.
+- Files: `tsconfig.json`, `tsconfig.base.json`
+- Impact: TypeScript project references will be absent until plugin projects are generated. This is expected at the current stage but will cause type-checking to silently skip new plugin projects if references are not updated when plugins are added.
+- Fix approach: When creating plugin projects, use `nx generate` so Nx automatically manages `tsconfig.json` references.
 
-**Identified TODOs in Research Documents:**
-- Files: `research/prompt-engineering/SKILL-CREATION-CHECKLIST.md` (lines 330-332)
+**Research Corpus Has Incomplete TODO Items:**
+- Issue: Three TODO items remain unresolved in `research/prompt-engineering/SKILL-CREATION-CHECKLIST.md` (lines 330-332):
   - "TODO: Explain why operations are section-scoped"
-  - "TODO: List cross-section dependencies"
+  - "TODO: List cross-section dependencies (if any)"
   - "TODO: Document cost impact"
-- Files: `research/rlm/docs-rlm--using-the-rlm-client.md` (line 113)
-  - "Note: This is a TODO. Only `max_depth=1` is currently supported."
-
-**Impact:**
-- Skill creation guidance incomplete - future Claude instances won't know cost implications
-- RLM depth limitation not yet researched - may affect plugin design decisions
-
-**Recommendation:**
-- Resolve skill creation TODO items before writing first skill
-- Research RLM depth=1 limitation impact on Angular monorepo targets (e.g., 1,700 components, 537 Nx projects)
-
----
-
-## Plugin Architecture Unvalidated
-
-**Issue: AGENTS.md Contains Speculative Design**
-- Location: `AGENTS.md` (lines 27-48, plugin directory structure)
-- Claimed directory structure:
-  ```
-  plugins/<plugin-name>/
-  ├── .claude-plugin/
-  │   └── plugin.json
-  ├── agents/
-  ├── commands/
-  ├── hooks/
-  │   ├── hooks.json
-  │   └── scripts/
-  └── skills/
-  ```
-- Status: Not yet tested against real plugin system
-- No example implementations
-- Hook input format workaround (line 110-111) suggests format unpredictability
-
-**Impact:**
-- First plugin build may require restructuring when reality diverges from spec
-- Hook input handling (`tool_result || tool_response?.stdout`) shows ambiguity
-- Risk: Tight coupling to this structure in early plugins breaks if spec changes
-
-**Recommendation:**
-- Create minimal plugin scaffold first
-- Validate hook input formats experimentally (don't assume both branches exist)
-- Document discovered discrepancies between `AGENTS.md` spec and actual behavior
-
----
-
-## Deprecated Patterns Still Documented
-
-**Issue: Legacy `allowed-tools` Syntax**
-- Location: `AGENTS.md` (lines 54-64)
-- Shows deprecated colon-wildcard syntax: `Bash(command :*)`
-- Marked as "deprecated" but still shows side-by-side with modern syntax
-- Risk: Code examples in future skills may copy legacy syntax
-
-**Impact:**
-- Developers building first skills may mistakenly use deprecated syntax
-- No enforcement; pattern will silently fail or behave unexpectedly
-- Reduces clarity on "correct" syntax
-
-**Recommendation:**
-- Remove all deprecated syntax examples from AGENTS.md
-- Keep only modern `Bash(command *)` pattern
-- Add validation test when creating first command
-
----
-
-## Cross-Platform Compatibility Unverified
-
-**Issue: Platform-Specific Assumptions Not Tested**
-- Documented in `AGENTS.md` (lines 9-17):
-  - "Node.js LTS is installed"
-  - "Git Bash is available on Windows"
-  - "The `claude` CLI runs from PowerShell on Windows"
-  - "Use Node.js scripts for cross-platform operations"
-
-- No actual test of:
-  - Git Bash vs. native PowerShell shell differences
-  - Node.js availability on arm64 macOS (Apple Silicon)
-  - Path handling (forward vs. backward slashes) in scripts
-  - UTF-8 console output on Windows (cp1252 fallback warning at lines 149-156)
-
-**Impact:**
-- First plugin may fail silently on untested platforms
-- Scripts using emoji (forbidden per line 147) or non-ASCII may break on Windows CI
-- Path assumptions may break when plugins run from different working directories
-
-**Recommendation:**
-- Create test matrix for first plugin across macOS (Intel + arm64), Linux, Windows
-- Use `npm run test:ci` cross-platform testing before marking plugin complete
-- Validate Node.js script output on Windows via CI, not just local testing
-
----
-
-## No Test Infrastructure
-
-**Issue: No Testing Patterns Established**
-- Files: No `*.test.ts`, `*.spec.ts`, or `jest.config.js` in repository
-- Location: `AGENTS.md` (lines 180-187) mentions verification steps but no automated tests
-- Post-tool-use hooks (line 88-104) suggest complex decision logic that should be tested
-
-**Impact:**
-- Plugins built without test infrastructure will accumulate bugs
-- Hook behavior unpredictable across different tool outcomes
-- No regression detection when dependencies (plugin-dev, Node.js LTS) change
-
-**Recommendation:**
-- Create `vitest` or `jest` configuration for plugin projects
-- Add test template to plugin-dev scaffolding
-- Write hook behavior specs as unit tests (decision logic isolation)
-
----
-
-## RLM Implementation Status Unclear
-
-**Issue: Multiple Conflicting RLM Backend Approaches**
-- Files:
-  - `research/rlm/docs-rand-rlm-claude-code--spec.md` (493 KB - very large)
-  - `research/rlm/paper-arxiv--recursive-language-models.md` (113 KB)
-  - Multiple blog posts and YouTube transcripts
-- Inconsistent terminology:
-  - "RLM" (research concept)
-  - "RLM client" (library)
-  - "REPL backend" (execution engine)
-  - "Claude Code + RLM" (proposed integration)
-
-**Impact:**
-- Unclear which RLM implementation to target (Rand's spec? Academic paper? Existing repos?)
-- Plugin design may depend on unavailable or unmaintained RLM backend
-- Large spec document (493 KB) suggests evolving design, not stable target
-
-**Recommendation:**
-- Research status document: Which RLM backends are production-ready?
-- Determine: Does plugin require RLM backend (external process) or only RLM concepts (handle-based pattern)?
-- Document dependency: Does plugin depend on `npm rllm` or equivalent? Version? Stability?
-
----
-
-## Nx Workspace Target Underspecified
-
-**Issue: Angular Monorepo Targeting Assumptions**
-- Files: `research/claude-plugin/README.md` (lines 5-6)
-- Target: "ng-app-monolith" -- Nx 19.8, Angular 18, ~1.5-2M LOC, ~1,700 components, 537 Nx projects
-- Status: Does "ng-app-monolith" actually exist? Is it owned by the project, or external reference?
-- No example output from proposed commands (e.g., `/rlm:nx-deps`, `/rlm:nx-find`)
-
-**Impact:**
-- Plugin design tailored to hypothetical workspace, not real constraints
-- If workspace doesn't exist, testing plugin requires setting up massive test fixture
-- If workspace is external, licensing or access issues may arise
-
-**Recommendation:**
-- Clarify: Is "ng-app-monolith" available for testing, or is it a persona/design goal?
-- Create smaller test fixture (10 projects, 50 components) for development
-- Document real workspace constraints (Nx version, Angular, monorepo layout)
+  Also `research/rlm/docs-rlm--using-the-rlm-client.md` (line 113): "Note: This is a TODO. Only `max_depth=1` is currently supported."
+- Files: `research/prompt-engineering/SKILL-CREATION-CHECKLIST.md`, `research/rlm/docs-rlm--using-the-rlm-client.md`
+- Impact: The skill creation checklist is a template for writing future skills. Incomplete sections will be copy-pasted into skills with placeholder text still present. The RLM depth limitation gap may affect design choices around recursive sub-call depth.
+- Fix approach: Resolve the skill checklist TODOs before writing the first skill. Research RLM `max_depth > 1` support status before implementing the execution loop.
 
 ---
 
 ## Security Considerations
 
-**Issue: Nx CLI Execution Scope Not Defined**
-- Files: `research/claude-plugin/README.md` (line 84)
-  - "`nx-runner.mjs` - Safe Nx CLI command wrapper (allowlisted read-only)"
-- Status: What commands are allowlisted? What prevents `nx run` from executing arbitrary build scripts?
-- Missing: Threat model for plugin executing Nx commands
+**Node.js `vm` Module Provides Scope Isolation, Not Security Isolation:**
+- Risk: The planned REPL sandbox (`repl-sandbox.mjs`) uses `vm.createContext()`. This is explicitly documented by Node.js as NOT a security mechanism. Prototype chain traversal escapes are trivial: `this.constructor.constructor("return process")().exit()`. CVE-2026-22709 (vm2) and CVE-2025-68613 (n8n) demonstrate active exploitation.
+- Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/repl-sandbox.mjs` when created.
+- Current mitigation: Architecture documents accept this risk for LLM-generated code. Planned mitigations include `codeGeneration: { strings: false, wasm: false }`, restricted global scope (no `process`, `require`, `child_process`), frozen objects, and `Object.create(null)` context.
+- Recommendations:
+  1. Never inject live prototype chain objects into the sandbox context. Use `Object.freeze()` recursively on all injected data.
+  2. Set `codeGeneration: { strings: false, wasm: false }` on every `vm.createContext()` call.
+  3. Create a test suite of known escape payloads that must fail. Run on every change to the sandbox file.
+  4. If the plugin is ever extended to run user-supplied code (not LLM-generated), upgrade to `isolated-vm` immediately.
 
-**Impact:**
-- Risk: Malicious or accidentally-dangerous Nx commands could be invoked
-- No guard rails defined for what plugins can execute
-- If plugin becomes public, users cannot audit safety of Nx command execution
+**`ANTHROPIC_API_KEY` Exposure in Child Processes:**
+- Risk: The planned `llm_query()` implementation (Option A in `.planning/research/ARCHITECTURE.md`) calls a Node.js script via `child_process.execSync` that invokes the Anthropic SDK. The `ANTHROPIC_API_KEY` must be available in the process environment. Child process environment inheritance could expose the key via process listings or error output.
+- Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/` scripts.
+- Current mitigation: None planned explicitly.
+- Recommendations:
+  1. Pass the API key via stdin to the child script, not environment variables or CLI arguments.
+  2. Ensure child process stderr is captured and sanitized before logging -- error stack traces can include environment variable values.
+  3. Consider deferring `llm_query()` to v1.1 (Option C in ARCHITECTURE.md) to avoid API key management complexity in v1.
 
-**Recommendation:**
-- Document allowlist: Exactly which `nx` subcommands are executable (e.g., `nx show projects`, `nx graph`, but NOT `nx run`)
-- Add allowlist validation in `nx-runner.mjs` with explicit deny-by-default
-- Test: Verify dangerous commands (`nx run`, `nx generate`) are blocked
-
----
-
-## Missing Critical Features (Scope vs. Reality)
-
-**Issue: Proposed Scope May Not Match Implementation Constraints**
-- Files: `research/claude-plugin/BRAINSTORM.md` (46 KB), `BRAINSTORM_AGENT_TEAMS.md` (38 KB)
-- Proposed skills (9 items) with complex routing:
-  - `/rlm:explore` - Sonnet root + Haiku sub-calls
-  - `/rlm:trace` - Cross-boundary data flow
-  - `/rlm:patterns` - Pattern audit across 1,700 components (batch Haiku)
-- Proposed agents (3 items): haiku-searcher, haiku-classifier, repl-executor
-- Proposed hooks (5 items): Session index, strategy hints, knowledge preservation, search optimization, result caching
-
-**Impact:**
-- Estimated implementation effort unknown; scope may exceed initial version
-- No prioritization: Which skills ship in v1? What's v2+?
-- Complex multi-agent coordination (repl-executor) unvalidated
-
-**Recommendation:**
-- Create scope document: Prioritize skills/agents by user impact + implementation complexity
-- Split into milestones:
-  - v1: Nx-aware deterministic commands only (`/rlm:nx-find`, `/rlm:nx-deps`)
-  - v2: Smart search + Haiku routing
-  - v3: RLM integration (if feasible)
-- Validate agent communication patterns early (before multi-agent complexity)
+**Nx CLI Command Allowlist Not Yet Implemented:**
+- Risk: The planned `nx-runner.mjs` uses an allowlist of read-only Nx commands. If the allowlist validation is missing, incomplete, or bypassed via argument injection, the REPL's `nx()` global could execute destructive commands (`nx run`, `nx generate`, `nx migrate`).
+- Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/nx-runner.mjs`.
+- Current mitigation: Architecture specifies allowlist: `show`, `graph`, `list`, `report`, `affected --print`. Block: `run`, `build`, `generate`, `migrate`.
+- Recommendations:
+  1. Implement strict allowlist as an explicit `Set` of permitted subcommands, not a denylist.
+  2. Parse the command string to extract the subcommand before executing. Reject if subcommand is not in the allowlist.
+  3. Add a unit test that verifies `nx run build my-app` and `nx generate @nx/react:app my-app` are blocked.
 
 ---
 
-## Documentation Debt
+## Performance Bottlenecks
 
-**Issue: README Files Lack Navigation Guidance**
-- Files:
-  - `research/claude-agent-teams/README.md` (6.7 KB)
-  - `research/rlm/README.md` (8.8 KB)
-  - `research/claude-plugin/README.md` (4 KB)
-  - `research/prompt-engineering/README.md` (6.7 KB)
-  - Root `AGENTS.md` - no introduction, jumps to architecture
-- Missing: How do these research areas relate? Which matters most for plugin development?
+**`nx show project <name>` Called Per-Project at Scale:**
+- Problem: Building a complete workspace index with per-project target availability requires calling `nx show project <name> --json` for each project. On a 537-project workspace, sequential calls take 537-1,611 seconds (9-27 minutes).
+- Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/workspace-indexer.mjs`.
+- Cause: `nx show projects --json` returns only project names. `nx graph --print` provides dependency edges but not target configuration. Getting targets requires per-project queries.
+- Improvement path:
+  1. Read `project.json` files directly from disk instead of calling `nx show project` per project.
+  2. Use the cached project graph at `.nx/workspace-data/project-graph.json` which includes node configuration.
+  3. Build target information lazily: only resolve targets when the user queries a specific project.
+  4. Fallback benchmark target: full index build must complete in under 30 seconds for 537 projects.
 
-**Impact:**
-- First-time readers can't orient themselves
-- No "start here" guide for future Claude instances
-- Cross-repository connections unclear
+**Nx Daemon OOM on Full Project Graph:**
+- Problem: `nx graph --print` forces full project graph computation. On 537-project workspaces, this can consume 38+ GB of memory and crash with OOM. Zombie daemon process then blocks all subsequent Nx commands until `nx reset`.
+- Files: No implementation yet. Will affect workspace indexing scripts and SessionStart hook.
+- Cause: Nx daemon maintains an in-memory project graph. JSON serialization of the full graph for 537 projects can exceed Node.js default `maxBuffer` (200 KB for `execSync`), silently truncating output.
+- Improvement path:
+  1. Never call `nx graph --print` in a SessionStart hook. Use the cached `.nx/workspace-data/project-graph.json` when available.
+  2. Set explicit `maxBuffer: 10 * 1024 * 1024` (10 MB) on all `execSync` calls to Nx.
+  3. Implement tiered indexing: Tier 1 (fast, <5s) from `nx show projects --json`, Tier 2 (<30s) from cached graph file, Tier 3 (slow) from full CLI calls.
+  4. Use `NX_DAEMON=false` for indexing operations to avoid daemon state issues.
 
-**Recommendation:**
-- Create top-level `research/README.md` with guided tour (5-10 min read)
-- Map dependencies:
-  1. RLM Research Synthesis → understand core concepts
-  2. Prompt Engineering Synthesis → understand token optimization
-  3. Claude Plugin Brainstorm → understand proposed architecture
-- Add "Quick Start" section: "First time? Read these 3 docs in this order"
+**Handle Store Memory Accumulation:**
+- Problem: The planned handle store (in-memory `Map`) accumulates large result sets across REPL iterations with no eviction. A 20-iteration session producing 537-entry result sets per iteration holds ~100MB of Map entries with no cleanup.
+- Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/handle-store.mjs`.
+- Cause: Generation-based cleanup or LRU eviction not planned for v1.
+- Improvement path:
+  1. Track iteration number per handle entry.
+  2. Evict handles from iterations older than 5 iterations ago.
+  3. Alternatively, cap the handle store at 50 entries total using LRU eviction.
 
----
-
-## Large File Concern
-
-**Issue: Single Document Contains Entire RLM Specification**
-- Files: `research/rlm/docs-rand-rlm-claude-code--spec.md` (493 KB, ~8,000+ lines estimated)
-- Problem: This is a single monolithic document, not chunked by topic
-- Impact:
-  - Difficult to extract specific sections for prompt context
-  - Any edit to this file creates large git diffs
-  - Token cost of including full spec in context is very high
-
-**Impact:**
-- Future plugins trying to use RLM may copy-paste huge spec chunks into prompts
-- Document maintenance (corrections, updates) affects entire file atomically
-
-**Recommendation:**
-- Split `docs-rand-rlm-claude-code--spec.md` into topic files:
-  - `spec-architecture.md` (core concepts)
-  - `spec-api.md` (backend interface)
-  - `spec-backends.md` (supported REPL types)
-  - Index them in a new `spec-index.md`
-- Use symbolic references in prompts instead of copying full text
+**Hook Execution Timeout on SessionStart:**
+- Problem: Claude Code hooks have a 60-second timeout. If SessionStart runs workspace indexing (which can take 30+ seconds on first run), the hook silently fails. The plugin starts with no workspace index, and all REPL operations that depend on it fail silently.
+- Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/hooks.json` SessionStart configuration.
+- Cause: First-run Nx daemon startup on large workspaces is slow. Combined with file scanning for component/store/service registries, total time can exceed the hook timeout.
+- Improvement path:
+  1. Make SessionStart check only whether a cached index exists and is fresh (compare mtimes).
+  2. Trigger full indexing asynchronously (background task) if the cache is stale.
+  3. Never block on full indexing in a hook -- load Tier 1 (project names, ~5s) synchronously and complete Tier 2-3 in background.
 
 ---
 
-## Session Management & State Concerns
+## Fragile Areas
 
-**Issue: Hook-Based State Preservation Strategy Unproven**
-- Files: `research/claude-plugin/README.md` (line 68)
-  - "Knowledge preservation" hook at PreCompact
-  - "Result caching" hook at PostToolUse with file-mtime TTL
-- Problem: No examples of preserved state or caching behavior
-- Unknown: Does Claude plugin hook system guarantee PreCompact fires? What if session ends abruptly?
+**`CLAUDE_PLUGIN_ROOT` Path Separator on Windows:**
+- Files: Will affect `plugins/<plugin-name>/hooks/hooks.json` when created.
+- Why fragile: On Windows, `${CLAUDE_PLUGIN_ROOT}` is set with backslash separators. When interpolated into bash hook commands, backslashes are stripped or interpreted as escape sequences. This is a known open issue (GitHub issues #18527, #22449) with no official fix as of March 2026.
+- Safe modification: Never use `${CLAUDE_PLUGIN_ROOT}` in bash hook command strings. Use Node.js scripts that resolve their own path via `import.meta.url` or `__dirname`. Node.js accepts both path separator styles on Windows.
+- Test coverage: Zero. No Windows CI configured. No hook files exist yet to test.
 
-**Impact:**
-- Plugin may lose intermediate results between sessions
-- Cache invalidation (file-mtime TTL) may miss changes in rapidly-updated monorepos
-- No fallback if hooks don't fire as expected
+**PostToolUse Hook Silent Failures on Windows:**
+- Files: Will affect any hook scripts created in `plugins/<plugin-name>/hooks/scripts/`.
+- Why fragile: PostToolUse and PreToolUse hooks have been reported to silently fail to execute on Windows (GitHub issue #6305). The fix (using Git Bash instead of cmd.exe) has been deployed but regressions occur due to multiple open Windows path issues.
+- Safe modification: Test all hooks on Windows explicitly. Add a "hook health check" to the SessionStart hook that verifies all configured hooks are responsive. Log hook invocations to a file for post-hoc diagnosis.
+- Test coverage: Zero. No CI matrix with Windows.
 
-**Recommendation:**
-- Research: Test hook lifecycle in real Claude Code sessions (does PreCompact always fire? What order?)
-- Design cache invalidation carefully for Nx workspaces (file changes trigger `nx graph` rebuilds)
-- Add explicit session save command as fallback if hooks are unreliable
+**REPL State Corruption from `const`/`let` Re-Declarations:**
+- Files: Will affect `plugins/<plugin-name>/hooks/scripts/repl-sandbox.mjs` when created.
+- Why fragile: The Node.js VM context persists state across REPL iterations. If the LLM declares `const x = 5` in iteration 1 and `const x = 10` in iteration 2, the second declaration throws `SyntaxError: Identifier 'x' has already been declared`. This aborts the iteration silently if not handled.
+- Safe modification: Transform `const`/`let`/`var` declarations to `globalThis.xxx = ...` assignments before execution. Use the regex pattern: `code.replace(/\b(const|let|var)\s+(\w+)\s*=/g, 'globalThis.$2 =')`. Snapshot REPL globals before each iteration and restore any overwritten built-ins after execution.
+- Test coverage: Zero. No test files exist.
+
+**`execSync` with Default `maxBuffer` Truncates Large Nx Output:**
+- Files: Will affect `plugins/<plugin-name>/hooks/scripts/workspace-indexer.mjs` when created.
+- Why fragile: `child_process.execSync` has a default `maxBuffer` of 200 KB. `nx graph --print` on a 537-project workspace produces output well over 1 MB. Truncated output produces invalid JSON that `JSON.parse()` throws on without a clear error indicating truncation.
+- Safe modification: Always pass `{ maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' }` to every `execSync` call. Add a post-parse validation step that checks the JSON structure is complete.
+- Test coverage: Zero.
+
+**Regex-Based `const`/`let` Transformation Fails on Destructuring:**
+- Files: Will affect `repl-sandbox.mjs` transformation logic.
+- Why fragile: The simple regex `const x =` fails on destructuring patterns like `const { a, b } = obj` or `const [x, y] = arr`. The transformation would produce `globalThis.{ a, b } = obj` which is a syntax error.
+- Safe modification: Handle destructuring explicitly in the transformation. Either use an AST-level approach (via `acorn`, which is already installed as a transitive dependency) or add special-case regex handling for destructuring patterns.
+- Test coverage: Zero.
 
 ---
 
-## Performance Unknowns
+## Scaling Limits
 
-**Issue: Token/Time Benchmarks Not Yet Measured**
-- Files: `research/claude-plugin/README.md` (line 82)
-  - "`token-benchmark.mjs` - Token counting for RLM vs. baseline comparison (opt-in)"
-- Status: Benchmarking is optional/future, not yet done
-- Claimed savings: "97% token savings" (line 81, handle-based storage) — unvalidated claim
+**Workspace Index Size at 537+ Projects:**
+- Current capacity: Not yet built.
+- Limit: Workspace index JSON estimated at 50-100 KB for 537 projects. Loading this as a REPL variable via `globalThis.workspace = require(...)` is feasible. However, if full project configurations (targets, dependencies, tags) are included, the index may grow to 500 KB+, which approaches the practical limit for in-memory REPL variables that the LLM must reference.
+- Scaling path: Use handle-based result storage for project lists. Expose `workspace.projectCount` and `workspace.domains` as scalar values, not the full project map. Return project details on demand via `projects.get('name')` rather than dumping all 537 entries.
 
-**Impact:**
-- Plugin value proposition unproven
-- If benchmarks show <50% savings, entire RLM approach may not be worth complexity
-- First users won't see metrics to justify plugin adoption
+**REPL Output Truncation at 2 KB:**
+- Current capacity: Not yet implemented.
+- Limit: The planned 2 KB output truncation per REPL turn prevents context blowup but also prevents the model from seeing complete search results. On a 537-project workspace, even a simple `search("pattern")` may return hundreds of matches that exceed 2 KB.
+- Scaling path: Route all large results through the handle store. The `search()` global should return a stub handle (`"$res1: Array(247) [...]"`) rather than raw results when output exceeds ~50 items.
 
-**Recommendation:**
-- Run token benchmark on small test cases before v1 release
-- Document assumptions: What "baseline" is 97% saved against?
-- Create user-visible `/rlm:status` output showing estimated token savings for current session
+---
+
+## Dependencies at Risk
+
+**`vm2` / `@n8n/vm2` Must Not Be Used:**
+- Risk: `vm2` has 8 critical CVEs from 2023, was revived in October 2025, and received a new CVSS 9.8 CVE in January 2026 (CVE-2026-22709). The library is architecturally unfixable -- Node.js intercepts calls from the sandbox, preventing proper proxy wrapping.
+- Impact: If `vm2` is inadvertently introduced as a transitive dependency or considered as an alternative sandbox, it creates a critical security vulnerability.
+- Migration plan: The architecture correctly specifies `node:vm` built-in as the sandbox. Maintain this choice. If stronger isolation is needed, use `isolated-vm` (not `vm2`).
+
+**ESLint v8 vs. v9 Configuration Format:**
+- Risk: `package.json` installs `eslint ~8.57.0` (legacy `.eslintrc` format) but `@nx/eslint ~22.5.1` generates flat config files (`eslint.config.mjs`) by default in Nx 22.
+- Impact: Any plugin project scaffolded via `nx generate @nx/js:lib my-lib` will generate an `eslint.config.mjs` that ESLint 8 cannot read. Lint tasks will fail for all generated projects.
+- Migration plan: Upgrade `eslint` to `^9.0.0` before creating the first plugin project. Alternatively, pass `--no-eslint` to generators and configure ESLint manually using legacy format.
+
+**`@nx/vitest` and `vitest` Version Alignment:**
+- Risk: `package.json` includes both `@nx/vitest: ^22.5.1` and `vitest: ^4.0.0`. The `^` range on vitest means it can install any 4.x version. Nx plugins typically pin their supported vitest version range internally; a major vitest update can break `@nx/vitest` integration.
+- Impact: Running `npm install` after a vitest 5.0 release (or similar) could break test configuration silently.
+- Migration plan: Use `package-lock.json` (already present, lockfileVersion 3) consistently. Do not run `npm install` without reviewing the lockfile diff. Consider pinning vitest to `~4.0.0` instead of `^4.0.0`.
+
+---
+
+## Missing Critical Features
+
+**No Plugin Scaffold Exists:**
+- Problem: The `plugins/` directory does not exist. All plugin architecture described in `AGENTS.md` (directory structure, hook formats, skill conventions) is untested against the actual Claude Code plugin system.
+- Blocks: Cannot validate allowed-tools patterns, hook input/output formats, cross-platform script behavior, or `${CLAUDE_PLUGIN_ROOT}` handling until the first plugin scaffold is created.
+- Fix: Create minimal plugin scaffold via `plugin-dev` (documented in `AGENTS.md`) before implementing any feature phases.
+
+**No `llm_query()` Prototype:**
+- Problem: The core RLM mechanism -- `llm_query()` spawning sub-LLM calls from within the REPL sandbox -- has no validated implementation path in the Claude Code plugin architecture. The architecture documents three options (direct API call, pending-query protocol, deferred to v1.1) but the mechanism is unproven.
+- Blocks: Without a working `llm_query()` proof-of-concept, the plugin may degrade from "true RLM" to "REPL with workspace navigation" at integration time.
+- Fix: Prototype the Task-based delegation pattern (or direct API call pattern) in Phase 1 before building the full execution loop. If unfeasible, commit to Option C (no sub-calls in v1) early to avoid mid-development architecture pivots.
+
+**No CI Pipeline:**
+- Problem: No GitHub Actions, CI configuration, or automated test execution exists.
+- Blocks: No regression detection. Cross-platform behavior (Windows vs. Linux vs. macOS) cannot be validated automatically. Hook behavior differences between platforms will only be discovered manually.
+- Fix: Add a minimal CI workflow (`.github/workflows/ci.yml`) running lint + typecheck + test across Node.js 22 and 24, on ubuntu-latest and windows-latest.
+
+**No Workspace for Testing Against:**
+- Problem: The research documents reference a target workspace ("ng-app-monolith": Nx 19.8, Angular 18, 537 projects, 1,700 components). The plugin is designed for this scale, but no test workspace exists in the repository.
+- Blocks: Performance benchmarks (indexing time, token usage) cannot be measured. Edge cases in Nx CLI output at scale cannot be tested.
+- Fix: Create a small test fixture workspace (10-20 projects) for unit and integration testing. Document that full-scale testing requires an external workspace and how to configure it.
+
+---
+
+## Test Coverage Gaps
+
+**REPL Sandbox Escape Vectors:**
+- What is not tested: Prototype chain escape payloads (`this.constructor.constructor('return process')()`), WASM injection, `eval()` via string code generation, cross-realm `instanceof` attacks.
+- Files: `repl-sandbox.mjs` does not exist yet.
+- Risk: A malicious or misbehaving LLM could escape the sandbox and execute arbitrary code on the host machine.
+- Priority: High. Must be added when `repl-sandbox.mjs` is created.
+
+**Execution Loop Guard Conditions:**
+- What is not tested: `maxIterations` enforcement, `maxTimeout` wall clock cutoff, `maxConsecutiveErrors` abort, native code timeout evasion (e.g., `BigInt("1".repeat(1e8))`), stale loop detection (LLM producing same code 3 iterations in a row).
+- Files: REPL execution loop scripts do not exist yet.
+- Risk: Without tested guards, the execution loop can hang Claude Code sessions indefinitely, exhaust API token budgets, or silently produce no output.
+- Priority: High. Every guard must ship with a corresponding test.
+
+**Nx CLI Encoding on Windows:**
+- What is not tested: Non-ASCII characters in project names or file paths through `execSync` with `encoding: 'utf8'`. Workspace indexer output when `nx show projects --json` returns paths with spaces or Unicode characters.
+- Files: `workspace-indexer.mjs` does not exist yet.
+- Risk: Mojibake or `JSON.parse` failures on international codebases or Windows installations with non-UTF-8 default code pages.
+- Priority: Medium. Add Windows-specific encoding tests in Phase 1.
+
+**Hook Input Format Variations:**
+- What is not tested: PostToolUse hook input when `tool_result` vs. `tool_response.stdout` format is used. Hook output `additionalContext` vs. `decision: "block"` behavior differences across hook types.
+- Files: No hook scripts exist yet.
+- Risk: Hooks silently fail to inject context or block actions due to unhandled input format variants. The `AGENTS.md` already documents this ambiguity (line 110-111).
+- Priority: Medium. Document actual formats empirically from first plugin scaffold.
+
+**Cross-Platform Path Separator Handling:**
+- What is not tested: `${CLAUDE_PLUGIN_ROOT}` interpolation on Windows. `import.meta.url` -> filesystem path conversion on Windows for `.mjs` scripts. `node:fs/promises` glob behavior on Windows ReFS Dev Drive with symlinks.
+- Files: No scripts exist yet.
+- Risk: All hook scripts fail on Windows due to backslash path corruption.
+- Priority: High. Validate on Windows CI from Phase 1.
 
 ---
 

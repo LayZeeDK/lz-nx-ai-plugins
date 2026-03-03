@@ -2,278 +2,335 @@
 
 **Analysis Date:** 2026-03-03
 
-## Project Overview
+## Status Note
 
-This is a Claude Code plugin repository focused on Nx and Recursive Language Models (RLMs). The codebase is organized around plugin development following Claude plugin architecture. Established conventions are documented in `AGENTS.md`.
+This repository is in the planning phase. Plugin source code does not yet exist under
+`plugins/lz-nx.rlm/`. All conventions below are derived from: (1) authoritative project
+docs (`AGENTS.md`, `CLAUDE.md`), (2) workspace tooling config (`.prettierrc`,
+`tsconfig.base.json`), and (3) the planned architecture documented in
+`.planning/research/STACK.md` and `.planning/PROJECT.md`. These conventions are
+prescriptive -- follow them when writing new code.
+
+## Language and File Format
+
+**Plugin scripts:** Plain JavaScript ESM (`.mjs` extension only).
+
+- No TypeScript compilation step. Scripts run directly with `node scripts/foo.mjs`.
+- No CommonJS (`require()`). Use `import`/`export` throughout.
+- No `.ts` files in plugin scripts. TypeScript types expressed via JSDoc annotations.
+- Target: Node.js 24 LTS (`node:` prefix on all built-in imports).
+
+```javascript
+// Correct - ESM with node: prefix
+import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+import { resolve, join } from 'node:path';
+
+// Wrong - CommonJS
+const fs = require('fs');
+```
+
+**Plugin definitions:** Markdown (`.md`) for skills, agents, commands, and hooks.
+
+**Configuration:** JSON (`.json`) for `plugin.json`, `hooks.json`, and config files.
 
 ## Naming Patterns
 
 **Files:**
-- Plugin directories: `plugins/<plugin-name>/` (kebab-case)
-- Metadata files: `.claude-plugin/plugin.json` (plugin configuration)
-- Documentation: `README.md` (user-facing), `SKILL.md` (skill definitions)
-- Scripts: lowercase with hyphens for multi-word names
-- Test files: `*.test.ts`, `*.spec.ts` suffix pattern (when tests are added)
+- Plugin scripts: `kebab-case.mjs` (e.g., `workspace-indexer.mjs`, `repl-sandbox.mjs`)
+- Plugin definitions (agents/commands/skills): `kebab-case.md` (e.g., `repl-executor.md`)
+- Hook config: `hooks.json` (fixed name per plugin conventions)
+- Plugin manifest: `plugin.json` (fixed name under `.claude-plugin/`)
+- Skill definitions: `SKILL.md` (uppercase, fixed name per plugin conventions)
 
 **Directories:**
-- Plugin root: `plugins/<plugin-name>/`
-- Agent definitions: `agents/`
-- Command definitions: `commands/`
-- Hook system: `hooks/` with `hooks.json` config and `scripts/` subdirectory
-- Skills: `skills/<skill-name>/` (kebab-case)
-- Skill references: `references/` (within skill directory)
-- Skill examples: `examples/` (within skill directory)
-- Research: `research/<topic>/` (organization by research area)
-- Planning: `.planning/codebase/` (generated documents)
+- Plugin root: `plugins/<plugin-name>/` using dot-separated namespacing (e.g., `plugins/lz-nx.rlm/`)
+- Subdirectories: lowercase, plural nouns matching Claude Code conventions:
+  `agents/`, `commands/`, `skills/`, `hooks/`, `scripts/`
+- Skill subdirectories: `skills/<skill-name>/` (kebab-case)
 
-**Functions:**
-- Handler functions: descriptive verb-based names (e.g., `handleBuild`, `validateInput`, `parseArguments`)
-- Utility functions: noun-based names describing what they operate on (e.g., `formatOutput`, `extractMetadata`)
-- Hook handlers: prefixed with context (e.g., `postToolUseHandler`, `preCommandHandler`)
+**JavaScript identifiers:**
+- Functions: camelCase (e.g., `buildWorkspaceIndex`, `resolvePathAlias`)
+- Variables: camelCase (e.g., `workspaceIndex`, `projectEntry`)
+- Constants: SCREAMING_SNAKE_CASE for true constants (e.g., `DEFAULT_CONFIG`, `MAX_BUFFER`)
+- Classes: PascalCase (e.g., `HandleStore`, `ReplSandbox`)
 
-**Variables:**
-- camelCase for all JavaScript/TypeScript variables and function parameters
-- Boolean variables: prefix with `is`, `has`, `can`, or `should` (e.g., `isEnabled`, `hasError`, `canProceed`)
-- Constants: UPPER_SNAKE_CASE for module-level constants
-- Configuration objects: camelCase keys in JSON/object definitions
+**REPL globals (user-facing):** lowercase, short, verb or noun (e.g., `deps()`, `search()`,
+`files()`, `workspace`, `projects`). Terminal signals in UPPER_CASE: `FINAL()`,
+`FINAL_VAR()`, `SHOW_VARS()`.
 
-**Types/Interfaces:**
-- PascalCase for TypeScript interfaces, types, and classes
-- Use `I` prefix for interfaces only if disambiguating from classes (not required)
-- Exported types live at module top-level, not nested
-- Type files: `*.types.ts` or `*.d.ts` pattern (when creating shared types)
+**Handle identifiers:** Dollar-prefixed, auto-incrementing (e.g., `$res1`, `$res2`).
+Follows the Matryoshka convention established in architecture research.
 
 ## Code Style
 
 **Formatting:**
-- Prettier configuration (if used): 2-space indentation standard
-- Line length: 80-120 characters (soft limit)
-- No trailing semicolons in favor of ASI (Automatic Semicolon Insertion)
-- Single quotes for strings (when configured)
+- Tool: Prettier 3.x
+- Config: `.prettierrc` -- single setting: `{ "singleQuote": true }`
+- Single quotes for all strings in JavaScript
+- Prettier handles indentation, line length, and all other formatting automatically
 
 **Linting:**
-- ESLint configuration enforced for TypeScript/JavaScript code
-- Rules focus on preventing common mistakes and ensuring consistency
-- Modern syntax preferred: ES2020+
-- Use of `const` and `let`, avoid `var`
+- Tool: ESLint 8.x (Nx-managed, `@nx/eslint` plugin)
+- Config: `eslint.config.mjs` per project (flat config format, not `.eslintrc.json`)
+- Run via Nx: `pnpm nx lint <project>`
 
-**Node.js Scripts:**
-- Cross-platform compatibility required (macOS, Linux, Windows)
-- Use Node.js for scripts requiring cross-platform operations
-- Avoid shell-specific commands; use Node.js alternatives
-- No emoji or Unicode symbols in script output (Windows cp1252 limitation) — use ASCII replacements like `[OK]`, `[ERROR]`, `[SUCCESS]`, `[WARN]`, `[SKIP]`, `[INFO]`
+**TypeScript strict mode (for type checking):**
+
+The root `tsconfig.base.json` enforces:
+- `strict: true` -- enables all strict type checks
+- `noUnusedLocals: true` -- no dead variables
+- `noImplicitReturns: true` -- all code paths must return
+- `noFallthroughCasesInSwitch: true` -- explicit breaks in switch
+- `noImplicitOverride: true` -- explicit `override` keyword
+- `isolatedModules: true` -- each file is independently compilable
+
+Plugin scripts (`.mjs`) use JSDoc instead of TypeScript syntax but must be
+consistent with these principles in spirit -- no unused variables, all returns
+explicit, no implicit any.
+
+## Control Flow and Returns
+
+Insert a blank line before and after `if`, `for`, `while`, `switch`, `try`,
+`catch`, `finally`, and `return` statements. Exception: skip the blank line when
+the statement is the first or last line inside a block.
+
+Always use braces for control flow bodies -- never braceless one-liners:
+
+```javascript
+// Correct
+if (projects.size === 0) {
+  throw new Error('[ERROR] No projects found in workspace index');
+}
+
+return result;
+
+// Wrong - braceless
+if (projects.size === 0) throw new Error('...');
+```
 
 ## Import Organization
 
 **Order:**
-1. Built-in Node.js modules (`fs`, `path`, `util`, etc.)
-2. External npm packages and dependencies
-3. Internal modules and utilities (relative imports with `../` or alias paths)
-4. Type-only imports (optional separate group if many)
+1. Node.js built-in modules (`node:` prefix)
+2. Internal module imports (relative paths within the plugin)
 
-**Path Aliases:**
-- Use configured aliases for common paths (if TypeScript `paths` config exists)
-- Relative imports for adjacent files
-- Absolute imports from project root for shared utilities
-
-**Example:**
 ```javascript
-import fs from 'fs';
-import path from 'path';
-import { parseArguments } from '@utils/parse';
-import { parseHookInput } from './hook-input-parser';
+import { execSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve, join, dirname } from 'node:path';
+import { loadConfig } from './rlm-config.mjs';
+import { HandleStore } from './handle-store.mjs';
 ```
+
+No third-party npm imports. The plugin has zero external dependencies by design
+(see `.planning/research/STACK.md`). Use only `node:` built-ins.
+
+**Path aliases:** Not used in plugin scripts. Use relative imports with `.mjs`
+extension. `tsconfig.base.json` defines workspace path aliases for library code,
+but plugin scripts are standalone.
 
 ## Error Handling
 
-**Patterns:**
-- Errors are thrown as `Error` instances or custom error classes
-- Hook scripts use structured output with `decision: "block"` and `reason` fields to communicate errors to Claude
-- Validation errors should include specific details about what failed
-- Never silently catch and ignore errors; either handle or propagate
-- Use try-catch for hook scripts that parse potentially invalid input
+**Error format:** Use ASCII prefix tags consistently for console output. Never
+use Unicode/emoji (Windows cp1252 compatibility):
 
-**Example Pattern:**
 ```javascript
-const result = input.tool_result || input.tool_response?.stdout || '';
-
-if (!result) {
-  return {
-    decision: 'block',
-    reason: 'Tool execution failed or returned no output. Please check the command syntax.'
-  };
-}
+// Correct ASCII prefix tags
+console.error('[ERROR] Workspace index not found: ' + indexPath);
+console.warn('[WARN] Nx daemon timeout, falling back to cache');
+console.log('[OK] Workspace index built in ' + elapsed + 'ms');
+console.log('[INFO] Processing ' + projectCount + ' projects');
+console.log('[SKIP] Project already indexed: ' + name);
 ```
+
+**Thrown errors:** Use `Error` with descriptive messages. Prefix with `[ERROR]`
+to match the ASCII replacement convention:
+
+```javascript
+throw new Error('[ERROR] Command not in allowlist: ' + command);
+```
+
+**Guardrail error messages:** When RLM guardrails halt execution, return a
+string starting with `[ERROR]` rather than throwing:
+
+```javascript
+return `[ERROR] Aborted after ${consecutiveErrors} consecutive errors. Last error: ${result.error}`;
+return '[ERROR] Max iterations reached without FINAL answer.';
+```
+
+**execSync calls:** Always set `maxBuffer` explicitly. Default 200 KB is
+insufficient for `nx graph --print` on large workspaces:
+
+```javascript
+const output = execSync('npx nx show projects --json', {
+  encoding: 'utf8',
+  maxBuffer: 10 * 1024 * 1024, // 10 MB
+  timeout: 30_000,
+});
+```
+
+**Async error propagation in REPL:** The VM sandbox wraps all code in async
+IIFEs. Errors thrown inside the REPL block are captured and returned as
+`result.error` -- they do not bubble to the caller. The execution loop checks
+`result.error` after each iteration.
 
 ## Logging
 
-**Framework:** console (Node.js built-in)
+**Framework:** `console` (no logging library; zero dependencies rule applies).
 
 **Patterns:**
-- Use `console.log()` for standard output
-- Use `console.error()` for error messages and diagnostics
-- Use `console.warn()` for warnings
-- Prefix log messages with context (e.g., `[INFO]`, `[WARN]`, `[ERROR]`)
-- Avoid excessive logging in production code
-- Include relevant context: variable values, error messages, timestamps when helpful
-
-**Example:**
-```javascript
-console.log('[INFO] Processing build for project:', projectName);
-if (buildResult.failed) {
-  console.error('[ERROR] Build failed:', buildResult.error);
-}
-```
+- Script progress output uses ASCII prefix tags: `[OK]`, `[ERROR]`, `[WARN]`,
+  `[INFO]`, `[SKIP]`
+- Script output goes to stdout (user-visible) or stderr (diagnostic only)
+- No log files except when explicitly implementing telemetry features
 
 ## Comments
 
-**When to Comment:**
-- Document non-obvious logic and decisions
-- Explain WHY code does something, not WHAT it does (code should be self-documenting)
-- Comment complex algorithms or workarounds
-- Use comments to explain hook behavior and integration points
-- Document assumptions about external inputs or API contracts
+**When to comment:**
+- Document the "why", not the "what"
+- Security decisions and known limitations require comments (especially vm sandbox caveats)
+- Non-obvious platform workarounds require inline explanation
 
-**JSDoc/TSDoc:**
-- Use JSDoc for public functions and exports
-- Include parameter types, return types, and brief description
-- Mark deprecated code with `@deprecated` tag
-- Example: Document hook scripts with their input/output format
+**JSDoc for all exported functions:**
 
-**Example:**
 ```javascript
 /**
- * Parses hook input which may come in different formats from the plugin system.
- * @param {object} input - The hook input object
- * @returns {string} The extracted tool result or response
+ * Builds the workspace index from Nx CLI output.
+ *
+ * @param {string} workspaceRoot - Absolute path to the Nx workspace root
+ * @param {import('./rlm-config.mjs').RLMConfig} config - RLM configuration
+ * @returns {Promise<import('./workspace-indexer.mjs').WorkspaceIndex>}
  */
-function extractToolResult(input) {
-  return input.tool_result || input.tool_response?.stdout || '';
+export async function buildWorkspaceIndex(workspaceRoot, config) {
+  // ...
 }
 ```
 
-## Function Design
+**Typedef declarations for data structures:**
 
-**Size:**
-- Keep functions focused on a single responsibility
-- Aim for <50 lines; break down longer functions
-- Hook handlers may be longer but should be well-structured
-
-**Parameters:**
-- Maximum 3-4 parameters; use object destructuring for more
-- Name parameters descriptively
-- Provide default values for optional parameters
-- Document parameter meaning in JSDoc
-
-**Return Values:**
-- Functions should return consistent types
-- Hook scripts return structured objects with `decision` and `reason` fields
-- Use early returns to reduce nesting
-- For errors in hooks, return `{ decision: 'block', reason: '...' }` to communicate with Claude
-
-**Example:**
 ```javascript
-function validateCommand({ command, allowedPatterns }) {
-  const isAllowed = allowedPatterns.some(pattern =>
-    matchPattern(command, pattern)
-  );
-
-  if (!isAllowed) {
-    return {
-      decision: 'block',
-      reason: `Command not allowed: ${command}`
-    };
-  }
-
-  return { decision: 'allow' };
-}
+/**
+ * @typedef {Object} ProjectEntry
+ * @property {string} name
+ * @property {string} root - Source root relative to workspace
+ * @property {'app' | 'lib' | 'e2e'} type
+ * @property {string[]} tags
+ * @property {string[]} targets - Available build targets
+ */
 ```
 
 ## Module Design
 
-**Exports:**
-- Export only what needs to be public
-- Use named exports for clarity
-- Re-export utility functions from index files (barrel exports) for convenience
-- Prefer CommonJS or ES modules consistently (project-wide decision)
+**Exports:** Named exports only. No default exports. Each `.mjs` file exports
+exactly what consumers need by name:
 
-**Barrel Files:**
-- `index.ts/index.js` files can re-export common utilities
-- Use sparingly to avoid circular dependencies
-- Helpful for organizing hooks and skill utilities
-
-**Plugin Structure:**
-Each plugin uses this structure:
-- `.claude-plugin/plugin.json` - Plugin metadata and version
-- `README.md` - User-facing documentation
-- `agents/` - AI agent definitions (multiple agent files allowed)
-- `commands/` - Slash command definitions (multiple command files allowed)
-- `hooks/hooks.json` - Hook configuration with environment variable substitution
-- `hooks/scripts/` - Hook implementation scripts (typically JavaScript)
-- `skills/<skill-name>/SKILL.md` - Skill definition
-- `skills/<skill-name>/references/` - Reference documentation for skill
-- `skills/<skill-name>/examples/` - Usage examples for skill
-
-## Hook Scripts
-
-**PostToolUse Hooks:**
-- Receive input in two possible formats; handle both:
-  - `input.tool_result` (direct string)
-  - `input.tool_response?.stdout` (nested response object)
-- Always check for empty/null results before processing
-- Return structured output: `{ decision: 'block', reason: 'message' }` to communicate with Claude
-- Use `additionalContext` for supplementary information Claude may consider
-- Use `decision: 'block'` with `reason` when Claude must take specific action
-
-**Hook Implementation Pattern:**
 ```javascript
-module.exports = async (input) => {
-  const result = input.tool_result || input.tool_response?.stdout || '';
+// Correct
+export function buildWorkspaceIndex(root, config) { ... }
+export class HandleStore { ... }
+export const DEFAULT_CONFIG = { ... };
 
-  if (!result || result.length === 0) {
-    return {
-      decision: 'block',
-      reason: 'Tool produced no output'
-    };
-  }
-
-  // Process result...
-
-  return {
-    decision: 'allow',
-    additionalContext: 'Processed successfully'
-  };
-};
+// Wrong - avoid default exports
+export default function buildWorkspaceIndex() { ... }
 ```
 
-## Command Definition
+**Module responsibilities:** One primary concern per script file. The planned
+scripts follow this pattern:
+- `workspace-indexer.mjs` -- builds/reads workspace index only
+- `path-resolver.mjs` -- path alias resolution only
+- `repl-sandbox.mjs` -- VM sandbox execution only
+- `handle-store.mjs` -- handle Map operations only
+- `rlm-config.mjs` -- config loading and defaults only
+- `nx-runner.mjs` -- Nx CLI wrapping and allowlisting only
 
-**allowed-tools Syntax:**
-- Use modern wildcard syntax: `Bash(command *)` (not deprecated colon syntax `Bash(command :*)`)
-- Restrict available tools based on command purpose
-- Pattern examples:
-  - `Bash(nx build *)` - Allows `nx build`, `nx build my-app`, `nx build my-app --prod`
-  - `Bash(nx *)` - Allows all nx commands
-  - `Bash(nx run *)` - Allows all nx run targets
+**Barrel files:** Not used. Import directly from the specific `.mjs` file.
 
-**Avoiding Command Substitution:**
-- Commands with `$()` or backtick substitution trigger permission prompts even with `allowed-tools` patterns
-- Split into separate commands: get timestamp first, then use the value
-- Bad: `nx build --output-path=dist/$(date -u +"%Y%m%d-%H%M%SZ")`
-- Good: First run `date -u +"%Y%m%d-%H%M%SZ"`, then use the timestamp value
+## Claude Code Plugin Conventions
 
-**Cross-Platform Timestamps:**
-- Use `date -u +"%Y%m%d-%H%M%SZ"` which works on macOS, Linux, and Windows (Git Bash)
-- The `Z` suffix indicates UTC
+**allowed-tools syntax:** Use modern wildcard-only syntax. The deprecated colon
+syntax must not appear in any new plugin files:
 
-## Testing Changes
+```yaml
+# Correct - modern syntax
+allowed-tools: Bash(node scripts/*), Bash(npx nx show *), Read
 
-After modifying plugin files, verify:
-1. Scripts execute correctly on the current platform (test cross-platform)
-2. Hook configurations are valid JSON
-3. Markdown files render correctly
-4. Commands work with expected arguments
-5. Plugin structure follows established conventions
+# Wrong - deprecated
+allowed-tools: Bash(node scripts/:*), Bash(npx nx show :*)
+```
+
+**Agents:** Use array format for tools in agent frontmatter:
+
+```markdown
+---
+name: repl-executor
+tools: ["Bash", "Read"]
+model: sonnet
+---
+```
+
+**Argument parsing:** Parse `$ARGUMENTS` from the markdown command/skill file.
+Document expected arguments with `argument-hint` in frontmatter.
+
+**Path references in scripts:** Use `node:path` functions to resolve paths
+relative to `import.meta.url`. Never hardcode absolute paths:
+
+```javascript
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const configPath = resolve(__dirname, '../.claude/rlm-config.json');
+```
+
+**CLAUDE_PLUGIN_ROOT:** Use only in `hooks.json` (substituted by the plugin
+system). Do not use in command markdown files or script arguments -- it is not
+substituted there.
+
+**Hook output format:**
+- Use `additionalContext` when Claude should consider information passively
+- Use `decision: "block"` with `reason` when Claude must take specific action
+
+```javascript
+// Active intervention required
+process.stdout.write(JSON.stringify({
+  decision: 'block',
+  reason: 'Workspace index is stale. Run: node scripts/workspace-indexer.mjs',
+}));
+
+// Passive context injection
+process.stdout.write(JSON.stringify({
+  additionalContext: 'Workspace has ' + projectCount + ' projects indexed.',
+}));
+```
+
+**Hook input handling:** PostToolUse hooks receive different formats. Handle both:
+
+```javascript
+const result = input.tool_result || input.tool_response?.stdout || '';
+```
+
+## Cross-Platform Requirements
+
+All plugin scripts must run identically on macOS, Linux, and Windows (Git Bash).
+
+**Path separators:** Use `node:path` functions, never string concatenation.
+Forward slashes work on all platforms -- never use backslashes.
+
+**Shell commands:** Use `execSync` with explicit `encoding: 'utf8'` (Git Bash
+on Windows is UTF-8). Set `maxBuffer: 10 * 1024 * 1024` on all `execSync` calls.
+
+**Timestamps:** Use `date -u +"%Y%m%d-%H%M%SZ"` in bash contexts (works on
+macOS, Linux, Windows via Git Bash). Use `Date.now()` or `new Date().toISOString()`
+in Node.js scripts.
+
+**Command substitution:** Never use `$()` in hook commands or `allowed-tools`
+patterns -- triggers permission prompts regardless of allowlist configuration.
+Split into separate commands instead.
+
+**No emojis or Unicode in scripts:** Console output from scripts must use only
+ASCII characters. Use prefix tags: `[OK]`, `[ERROR]`, `[WARN]`, `[INFO]`,
+`[SKIP]`, `[DIR]`, `[FILE]`. This applies to all `.mjs`, `.ps1`, and `.py` scripts.
 
 ---
 

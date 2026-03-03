@@ -4,176 +4,188 @@
 
 ## Pattern Overview
 
-**Overall:** Knowledge Repository and Plugin Design Specification
-
-This is a **research and design specification repository** for Claude Code plugins targeting Nx monorepos. The architecture is documentation-driven, organized by research domain with synthesized findings and plugin brainstorm proposals. No production code yet exists.
+**Overall:** Layered Claude Code plugin system with RLM (Recursive Language Model) execution core
 
 **Key Characteristics:**
-- Research-based knowledge capture (corpus of external articles, documentation, specifications)
-- Synthesized findings organized by focus area
-- Plugin design specification using RLM (Recursive Language Model) principles
-- Cross-referenced research documents forming a knowledge graph
-- Focus on token efficiency, context rot prevention, and workspace navigation patterns
+- "Scripts at the bottom, agents at the top": deterministic Node.js scripts form the foundation; Claude Code agents drive LLM-powered workflows on top
+- Zero external npm dependencies -- all components use Node.js 24 LTS built-in modules only
+- Context externalization pattern: intermediate exploration results never enter the main conversation; only distilled `FINAL()` answers cross the boundary
+- Nx-native workspace model: the plugin understands Nx project graphs, dependency edges, path aliases, and project tags natively
+
+**Status:** Pre-implementation. This documents the planned architecture from `.planning/PROJECT.md`, `.planning/research/ARCHITECTURE.md`, and `.planning/ROADMAP.md`. No `plugins/` directory exists yet. Phase 1 (Plugin Shell and Foundation) is next.
 
 ## Layers
 
-**Research Layer:**
-- Purpose: Capture external knowledge from blogs, documentation, and academic papers
-- Location: `research/` subdirectories
-- Contains: Markdown transcriptions of blog posts, documentation excerpts, video notes, synthesis documents
-- Depends on: Public sources (blogs, docs, papers)
-- Used by: Synthesis layer for analysis and summarization
+**User Layer (Claude Code conversation):**
+- Purpose: Entry points for user interaction -- slash commands and skills exposed by the plugin
+- Location: `plugins/lz-nx.rlm/commands/` (zero-LLM deterministic commands), `plugins/lz-nx.rlm/skills/` (RLM-powered skills)
+- Contains: Markdown files with frontmatter that Claude Code parses for command/skill registration
+- Depends on: Agent layer (skills delegate to agents), Foundation scripts (commands invoke Node.js scripts directly via Bash tool)
+- Used by: End users typing slash commands in Claude Code
 
-**Synthesis Layer:**
-- Purpose: Distill research findings into actionable insights
-- Location: `research/*/SYNTHESIS.md` (RLM, prompt-engineering, claude-agent-teams)
-- Contains: Organized summaries, key takeaways, patterns, constraints
-- Depends on: Research layer documents
-- Used by: Design layer
+**Agent Layer:**
+- Purpose: Drive LLM execution loops and perform model-routed work
+- Location: `plugins/lz-nx.rlm/agents/`
+- Contains: `repl-executor.md` (Sonnet agent, drives fill/solve loop), `haiku-searcher.md` (Haiku agent, mechanical search sub-calls)
+- Depends on: REPL sandbox (via Bash tool invoking `node scripts/repl-sandbox.mjs`), Foundation scripts
+- Used by: Skills (skills instruct Claude to spawn agents as subagents)
 
-**Design Layer:**
-- Purpose: Define plugin architecture, workflows, and implementation patterns
-- Location: `research/claude-plugin/BRAINSTORM.md`, `research/claude-plugin/README.md`
-- Contains: Use case proposals, component definitions, token projections, implementation roadmap
-- Depends on: Synthesis layer
-- Used by: Plugin developers (when implementing)
+**REPL Sandbox:**
+- Purpose: Execute LLM-generated JavaScript in an isolated Node.js VM context; keep intermediate results out of conversation context
+- Location: `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs`
+- Contains: `node:vm` context with workspace-aware globals; handle store integration; variable persistence via `const/let` -> `globalThis` transformation
+- Depends on: Foundation scripts (workspace-indexer, handle-store, rlm-config, nx-runner)
+- Used by: Agent layer (repl-executor agent invokes sandbox per REPL turn)
 
-**Foundation Layer (Proposed):**
-- Purpose: Reusable patterns and Node.js scripts for workspace indexing and REPL isolation
-- Location: `plugins/` (future) or `scripts/` directory
-- Contains: workspace-indexer.mjs, path-resolver.mjs, repl-sandbox.mjs, nx-runner.mjs
-- Depends on: Nx CLI, Node.js vm module, file system
-- Used by: Individual plugin skills and commands
+**Foundation Scripts:**
+- Purpose: Deterministic, zero-LLM Node.js scripts that build and query the workspace index
+- Location: `plugins/lz-nx.rlm/scripts/`
+- Contains: `workspace-indexer.mjs`, `path-resolver.mjs`, `nx-runner.mjs`, `handle-store.mjs`, `rlm-config.mjs`
+- Depends on: External layer only (Nx CLI, filesystem, git)
+- Used by: REPL sandbox (as injected globals), commands (directly via Bash tool), agents
+
+**External:**
+- Nx CLI (`nx show projects --json`, `nx graph --print`, `nx show project <name>`)
+- Filesystem (file reading, glob matching)
+- Git (`git grep` for `search()` REPL global)
 
 ## Data Flow
 
-**Research Capture → Synthesis → Design → Implementation**
+**RLM explore skill invocation (`/lz-nx.rlm:explore "question"`):**
 
-1. **Research Ingestion** - External knowledge (blogs, docs) captured as `.md` files in research subdirectories
-2. **Synthesis** - SYNTHESIS.md in each research domain distills patterns and findings
-3. **Design Specification** - BRAINSTORM.md consolidates synthesis into concrete plugin architecture
-4. **Plugin Implementation** (future) - Developers read specification and build `plugins/` with skills, commands, hooks, agents
+1. User types `/lz-nx.rlm:explore "Where is X?"`
+2. Claude reads `plugins/lz-nx.rlm/skills/explore/SKILL.md` and spawns `repl-executor` subagent
+3. `repl-executor` agent receives query and workspace index path
+4. Agent loads `workspace-index.json` as REPL `workspace` variable
+5. Agent generates JavaScript in `repl` code blocks
+6. REPL sandbox executes code via `node:vm` `vm.runInContext()`
+7. If code returns large result (>10 items), result stored in handle store; LLM receives stub: `"$res1: Array(247) [...]"`
+8. REPL returns `{ stdout, stderr, locals, error }` to agent
+9. Agent appends truncated output as user message (2KB cap), generates next code block
+10. Loop continues until `FINAL(answer)` is called or guardrail limit reached
+11. `FINAL()` answer returned to main conversation; intermediate results discarded
+12. Main conversation displays distilled result (only this enters conversation context)
 
-**Key Workflow Example (RLM Plugin):**
+**Deterministic command flow (`/lz-nx.rlm:deps my-project`):**
 
-1. Research layer: `research/rlm/` contains 20+ documents on RLM theory and implementation
-2. Synthesis layer: `research/rlm/SYNTHESIS.md` extracts core patterns, architectural choices
-3. Design layer: `research/claude-plugin/BRAINSTORM.md` proposes RLM REPL environment for Nx workspace
-4. Implementation (future): `plugins/rlm-nx-plugin/` would contain REPL sandbox, workspace indexer, skills
+1. User types `/lz-nx.rlm:deps my-project`
+2. Command markdown in `plugins/lz-nx.rlm/commands/deps.md` invokes: `node ${CLAUDE_PLUGIN_ROOT}/scripts/deps-tree.mjs my-project`
+3. Script reads `workspace-index.json`
+4. Script walks adjacency list in `index.deps`, formats dependency tree
+5. Output displayed directly -- zero LLM tokens consumed
+
+**Handle store flow (large result compression):**
+
+1. REPL code: `let results = search("AuthService", allPaths)`
+2. `search()` function calls `git grep`, returns 247 matches -- exceeds threshold
+3. Results stored in `HandleStore` Map: `{ "$res1": [...247 items...] }`
+4. LLM receives stub only: `"$res1: Array(247) [libs/auth/src/..., ...]"` (~50 tokens vs ~12K)
+5. LLM navigates: `let subset = handle.filter("$res1", item => item.path.includes("feature"))`
+6. `filter()` runs server-side on stored data, returns new handle `"$res2"`
+7. Only materialized preview data enters LLM context
 
 **State Management:**
-- Research documents are immutable captures (git-tracked)
-- Synthesis documents are curated summaries (git-tracked, hand-edited)
-- Design documents are specifications (git-tracked, version with plugin)
-- Plugin code (future) will be separate, version-controlled with its own lifecycle
+- Workspace index: JSON file (`workspace-index.json`) built once per session by `workspace-indexer.mjs`; read-only during REPL execution
+- Handle store: in-memory `Map<string, unknown[]>` scoped to one REPL session; discarded when sandbox is reset
+- REPL variable state: `globalThis` properties on the vm context; persisted across turns within one execution loop
+- RLM config: loaded once from `.claude/rlm-config.json` (or defaults) at session start
 
 ## Key Abstractions
 
-**Workspace Index:**
-- Purpose: Externalize Nx workspace structure as a navigable variable instead of files to read
-- Examples: `research/claude-plugin/BRAINSTORM.md` Section 1a (workspace-indexer.mjs proposal)
-- Pattern: Node.js script generates compact JSON from `nx show projects --json`, `nx graph --print`, `tsconfig.base.json`
-- Represents: Projects, dependencies, path aliases, component registry, store registry, service registry
-- Benefit: Eliminates 5-15 tool calls per session; replaces with single structured Read
+**WorkspaceIndex:**
+- Purpose: Structured representation of the entire Nx monorepo as a JSON-serializable object; the primary navigable variable in the REPL
+- Examples: `plugins/lz-nx.rlm/scripts/workspace-indexer.mjs` (builder), loaded as `workspace` REPL global
+- Schema:
+  ```javascript
+  {
+    version: number,
+    generated: string,          // ISO timestamp
+    root: string,               // workspace root path
+    projects: Record<string, { name, root, type, tags, targets }>,
+    deps: Record<string, string[]>,         // adjacency list
+    reverseDeps: Record<string, string[]>,  // reverse adjacency
+    aliases: Record<string, string>,        // tsconfig path aliases
+    stats: { projectCount, fileCount }
+  }
+  ```
 
-**RLM REPL Environment:**
-- Purpose: Execute workspace queries in an isolated Node.js VM, discarding intermediate results
-- Examples: `research/claude-plugin/BRAINSTORM.md` Section 2a (repl-sandbox.mjs proposal)
-- Pattern: Node.js vm.createContext() with globals (workspace, projects, components, read(), search())
-- Represents: Navigable codebase accessible to recursively-spawned LLM calls
-- Benefit: Context rot prevention; intermediate results never enter conversation
+**REPL Globals (Sandbox API):**
+- Purpose: Workspace-aware functions injected into the vm context; the interface between LLM-generated code and the underlying data
+- Examples: defined in `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs`
+- Key globals: `workspace`, `projects`, `deps(name)`, `dependents(name)`, `read(path, start?, end?)`, `files(glob)`, `search(pattern, paths?)`, `nx(command)`, `llm_query(prompt)`, `FINAL(answer)`, `FINAL_VAR(name)`, `print(...args)`, `SHOW_VARS()`
 
-**Skill System:**
-- Purpose: User-invokable workflows for common tasks (explore, impact analysis, test generation, pattern audit)
-- Examples: `/rlm:explore`, `/rlm:impact`, `/rlm:test-gen`, `/rlm:patterns`
-- Pattern: Markdown skill definitions with triggered agents and result formatting
-- Represents: LLM-driven workflows that leverage workspace index and REPL
+**Handle:**
+- Purpose: Lightweight reference to a large result set stored server-side; prevents large arrays from entering LLM context
+- Examples: defined in `plugins/lz-nx.rlm/scripts/handle-store.mjs`
+- Pattern: auto-incrementing names (`$res1`, `$res2`); stub format `"$res1: Array(537) [preview...]"`
+- Operations: `store(data)`, `get(handle)`, `stub(handle)`, `preview(handle, n)`, `filter(handle, predicate)`, `count(handle)`
 
-**Command System:**
-- Purpose: Deterministic, zero-LLM operations for quick queries
-- Examples: `/rlm:nx-deps`, `/rlm:nx-find`, `/rlm:nx-alias`, `/rlm:status`
-- Pattern: Node.js scripts invoked directly, output to markdown, no LLM interpretation needed
-- Represents: Navigation and lookup operations (dependency trees, file search, alias resolution, metrics)
+**RLM Execution Loop:**
+- Purpose: The fill/solve cycle -- LLM generates code (fill), sandbox executes and appends result (solve), repeat until `FINAL()` or guardrail
+- Examples: implemented in `repl-executor` agent (`plugins/lz-nx.rlm/agents/repl-executor.md`) using Bash tool to invoke `repl-sandbox.mjs`
+- Guardrails: `maxIterations` (default 20), `maxConsecutiveErrors` (default 3), `maxTimeout` (default 120s), `maxDepth` (default 2)
 
-**Hook System:**
-- Purpose: Automated behaviors triggered by plugin events (SessionStart, PreCompact, PreToolUse, PostToolUse)
-- Examples: Session index, strategy hints, knowledge preservation, search optimization, result caching
-- Pattern: JSON configuration + Node.js scripts
-- Represents: Cross-cutting concerns that improve efficiency without user action
-
-**Agent System:**
-- Purpose: Specialized LLM workers for specific task classes
-- Examples: haiku-searcher (mechanical search), haiku-classifier (task routing), repl-executor (RLM loop)
-- Pattern: Agent definitions with model choice, tools, temperature settings
-- Represents: Model routing strategy (Haiku for mechanical work, Sonnet for reasoning)
+**Claude Code Plugin Manifest:**
+- Purpose: Declares plugin identity, version, and auto-registration metadata for Claude Code discovery
+- Examples: `plugins/lz-nx.rlm/.claude-plugin/plugin.json`
+- Pattern: Standard Claude Code plugin structure per `AGENTS.md` conventions
 
 ## Entry Points
 
-**User Entry - Skills:**
-- Location: `/rlm:explore`, `/rlm:impact`, `/rlm:analyze`, `/rlm:test-gen`, `/rlm:search`, `/rlm:trace`, `/rlm:patterns`
-- Triggers: User types slash command in Claude Code
-- Responsibilities: Dispatch to appropriate agent, format results, prevent context rot
+**`/lz-nx.rlm:explore` skill:**
+- Location: `plugins/lz-nx.rlm/skills/explore/SKILL.md` (planned)
+- Triggers: User invokes `/lz-nx.rlm:explore "question"` in Claude Code
+- Responsibilities: Accept natural language question, instruct Claude to spawn `repl-executor` subagent, surface only the `FINAL()` answer to conversation
 
-**User Entry - Commands:**
-- Location: `/rlm:nx-deps`, `/rlm:nx-find`, `/rlm:nx-alias`, `/rlm:status`
-- Triggers: User types slash command in Claude Code
-- Responsibilities: Execute Node.js script, format output, return immediately (no LLM)
+**`/lz-nx.rlm:deps` command:**
+- Location: `plugins/lz-nx.rlm/commands/deps.md` (planned)
+- Triggers: User invokes `/lz-nx.rlm:deps <project-name>`
+- Responsibilities: Run `node scripts/deps-tree.mjs <project>`, print dependency tree from workspace index; zero LLM tokens
 
-**Automated Entry - SessionStart Hook:**
-- Location: `hooks/SessionStart`
-- Triggers: Claude Code session begins
-- Responsibilities: Run workspace indexer, inject strategy hints
+**`/lz-nx.rlm:find` command:**
+- Location: `plugins/lz-nx.rlm/commands/find.md` (planned)
+- Triggers: User invokes `/lz-nx.rlm:find <pattern>`
+- Responsibilities: Search files scoped to Nx project source roots using workspace index; zero LLM tokens
 
-**Automated Entry - Search Interception (PreToolUse Hook):**
-- Location: `hooks/PreToolUse`
-- Triggers: Claude attempts tool use that matches search intent
-- Responsibilities: Route to lower-token strategies (workspace index lookup, smart search agent)
+**`/lz-nx.rlm:alias` command:**
+- Location: `plugins/lz-nx.rlm/commands/alias.md` (planned)
+- Triggers: User invokes `/lz-nx.rlm:alias <input>`
+- Responsibilities: Bidirectional tsconfig path alias resolution (alias <-> filesystem path); zero LLM tokens
 
-**Documentation Entry - Research Domain:**
-- Location: `research/`
-- Triggers: Plugin developer reads repository
-- Responsibilities: Explain domain knowledge (RLM, prompt engineering, Nx, Claude agent teams), provide context for design choices
+**`repl-executor` agent:**
+- Location: `plugins/lz-nx.rlm/agents/repl-executor.md` (planned)
+- Triggers: Spawned by `explore` skill (and future skills) as a Claude Code subagent
+- Responsibilities: Drive RLM fill/solve execution loop on Sonnet; isolate intermediate exploration from parent conversation
 
 ## Error Handling
 
-**Strategy:** Graceful degradation with fallback to baseline Claude Code when plugin features unavailable
+**Strategy:** Errors returned to LLM for self-correction; consecutive error counter halts on repeated failures
 
 **Patterns:**
-- Workspace index unavailable → Fall back to git grep + Explore agent
-- REPL sandbox failure → Return error message with debugging info, suggest manual Explore
-- Hook script error → Log to session and continue without blocking
-- Missing Nx workspace → Detect and disable Nx-specific features (deps tree, project awareness)
-- Network/permission issues → Cache results locally, notify user of stale data
-
-**Design principle:** Plugin features are optimizations, not requirements. All tasks must remain possible without them.
+- Sandbox execution errors are appended as user messages: `"Error: <message>\nFix the error and try again."` -- allows LLM to self-correct
+- `maxConsecutiveErrors` (default 3) aborts loop after N back-to-back failures: `"[ERROR] Aborted after 3 consecutive errors."`
+- `maxIterations` (default 20) halts loop with: `"[ERROR] Max iterations reached without FINAL answer."`
+- `maxTimeout` (default 120s) enforces wall-clock limit; each code block has a 5s individual sandbox timeout
+- No-code response (LLM returns text without code blocks) triggers nudge: `"Write code to explore the workspace or call FINAL(answer)."`
+- Graceful degradation: workspace index missing -> fall back to `nx show projects` at query time; REPL sandbox error -> return error to conversation, suggest manual Explore
 
 ## Cross-Cutting Concerns
 
-**Logging:** Documented in proposed hook system; session metrics available via `/rlm:status` command. Token counting optional (opt-in via `token-benchmark.mjs`).
+**Logging:** ASCII-only output to stdout/stderr in all scripts (no emojis; Windows cp1252 compatibility required per `AGENTS.md`)
 
-**Validation:**
-- Workspace index validates against actual workspace on SessionStart
-- Script inputs validated before Nx/fs operations
-- Hook configurations validated as JSON at plugin load time
-- Skill arguments parsed from `$ARGUMENTS` with fallback to defaults
+**Validation:** Nx-runner allowlist enforces read-only Nx CLI commands; REPL sandbox restricts globals (no `process`, `require`, `child_process` directly); `codeGeneration: { strings: false, wasm: false }` blocks `eval()` in sandbox
 
-**Authentication:**
-- No external auth required
-- Nx commands use workspace credentials (same as developer environment)
-- File access restricted to workspace directory
+**Authentication:** None for v1; `llm_query()` (if implemented via direct API call in Phase 4) requires `ANTHROPIC_API_KEY` from environment; the Claude Code plugin system handles model routing via native subagent declarations
 
-**Token Efficiency (Core Concern):**
-- Workspace index: Replaces 50K tokens of Explore overhead with 4-8K index Read
-- REPL isolation: Discards intermediate results, saves 20-50K tokens per exploration task
-- Model routing: Haiku for mechanical tasks (grep, indexing), Sonnet for reasoning
-- Handle-based storage: Results referenced by handle rather than regenerated (97% token savings for large results)
-- Command-based lookups: Zero LLM tokens for deterministic operations
+**Model Routing:**
+| Operation | Model | Config |
+|-----------|-------|--------|
+| `repl-executor` agent | Sonnet | `model: sonnet` in agent frontmatter |
+| `haiku-searcher` agent | Haiku | `model: haiku` in agent frontmatter |
+| Main conversation | User's choice | Plugin does not override |
+| Foundation scripts | None (Node.js) | Pure data transformation |
 
-**Context Rot Prevention (Core Concern):**
-- REPL isolation: Intermediate navigation results never enter conversation
-- Progressive disclosure: Provide high-level summaries first, drill into details only if asked
-- Compaction-aware history: REPL command history preserved across compaction events
-- Tiered context management: Separate prompt sections for index, findings, active task
+**Cross-platform:** All scripts use `.mjs` (ESM), Node.js built-in modules only, `node:path` for path manipulation, `child_process.execSync` for CLI calls -- no shell-specific syntax, runs identically on macOS, Linux, and Windows (Git Bash)
 
 ---
 
