@@ -1,590 +1,806 @@
-# Architecture Patterns
+# Architecture Research
 
-**Domain:** RLM-powered Nx Claude Code plugin
+**Domain:** RLM-powered Nx Claude Code plugin -- component integration, data flow, error boundaries
 **Researched:** 2026-03-03
+**Confidence:** HIGH
 
-## Recommended Architecture
-
-The plugin is a layered system with five major components. Each component has clear boundaries, communicates through defined interfaces, and can be built incrementally. The architecture follows a "scripts at the bottom, agents at the top" principle: deterministic Node.js scripts provide the foundation, the REPL sandbox provides the execution environment, and Claude Code agents drive the LLM-powered workflows.
-
-```
-+----------------------------------------------------------------+
-|  USER LAYER (Claude Code conversation)                         |
-|  Skills (/explore, /deps, /find, /alias)                       |
-|  Commands (zero-LLM deterministic operations)                  |
-+---------------------------+------------------------------------+
-                            |
-+---------------------------v------------------------------------+
-|  AGENT LAYER                                                   |
-|  repl-executor (Sonnet) -- drives the RLM fill/solve loop     |
-|  haiku-searcher (Haiku) -- mechanical search sub-calls         |
-+---------------------------+------------------------------------+
-                            |
-+---------------------------v------------------------------------+
-|  REPL SANDBOX (Node.js vm.createContext)                        |
-|  Workspace globals: workspace, projects, deps(), read(),       |
-|  search(), files(), nx(), llm_query(), FINAL(), SHOW_VARS()    |
-|  Handle store for large result sets                            |
-+---------------------------+------------------------------------+
-                            |
-+---------------------------v------------------------------------+
-|  FOUNDATION SCRIPTS (deterministic Node.js, 0 LLM tokens)     |
-|  workspace-indexer.mjs  path-resolver.mjs  nx-runner.mjs       |
-|  handle-store.mjs  rlm-config.mjs                              |
-+---------------------------+------------------------------------+
-                            |
-+---------------------------v------------------------------------+
-|  EXTERNAL (Nx CLI, filesystem, git)                            |
-+----------------------------------------------------------------+
-```
-
-### Component Boundaries
-
-| Component | Responsibility | Communicates With | Data Format |
-|-----------|---------------|-------------------|-------------|
-| **Foundation Scripts** | Build workspace index, resolve paths, wrap Nx CLI, manage config | Nx CLI (via child_process), filesystem | JSON files, structured objects |
-| **Handle Store** | Store large results, return lightweight stubs to LLM | REPL sandbox (in-process), foundation scripts | Handle strings (`$res1`, `$res2`), Map entries |
-| **REPL Sandbox** | Execute LLM-generated JavaScript in isolated VM context | Handle store (in-process), foundation scripts (via injected globals), agents (via llm_query callback) | SandboxResult objects (stdout, stderr, locals, error) |
-| **Agent Layer** | Drive RLM execution loop, perform mechanical search | REPL sandbox (via execute()), Claude API (via subagent spawning) | Message arrays, final answer strings |
-| **User Layer** | Skills and commands exposed to user | Agent layer (via subagent delegation), foundation scripts (via Bash tool) | Markdown-formatted results, $ARGUMENTS input |
-
-### Data Flow
-
-**Skill invocation flow (e.g., `/lz-nx.rlm:explore "Where is X?"`):**
+## System Overview
 
 ```
-1. User types /lz-nx.rlm:explore "Where is X?"
-2. Claude reads SKILL.md, decides to spawn repl-executor agent
-3. repl-executor agent receives query + workspace index path
-4. Agent loads workspace index as REPL `workspace` variable
-5. Agent generates JavaScript code in ```repl blocks
-6. REPL sandbox executes code via vm.runInContext()
-7. If code calls llm_query() -> spawns haiku-searcher subagent
-8. REPL returns stdout/stderr/locals to agent
-9. Agent appends truncated output as user message, generates next code
-10. Loop continues until FINAL(answer) or max iterations
-11. Final answer returned to main conversation
-12. Main conversation displays distilled result to user
++------------------------------------------------------------------+
+|  USER LAYER                                                      |
+|  /explore "question"  |  /deps project  |  /find pattern         |
+|                       |                 |                        |
+|  SKILL.md instructs   |  Command .md    |  Command .md           |
+|  Claude to spawn      |  runs script    |  runs script           |
+|  repl-executor agent  |  via Bash tool  |  via Bash tool         |
++----------+------------+--------+--------+--------+--------+------+
+           |                     |                 |
+           v                     |                 |
++----------+------------------+  |                 |
+|  AGENT LAYER                |  |                 |
+|                             |  |                 |
+|  repl-executor (Sonnet)     |  |                 |
+|  - Generates ```repl code   |  |                 |
+|  - Calls Bash to invoke     |  |                 |
+|    repl-sandbox.mjs         |  |                 |
+|  - Parses SandboxResult     |  |                 |
+|  - Loops until FINAL()      |  |                 |
+|                             |  |                 |
++----------+------------------+  |                 |
+           |                     |                 |
+           v                     v                 v
++----------+---------------------+-----------------+---------------+
+|  SCRIPT LAYER (Node.js, 0 LLM tokens)                            |
+|                                                                  |
+|  repl-sandbox.mjs    workspace-indexer.mjs    nx-runner.mjs      |
+|  handle-store.mjs    path-resolver.mjs        rlm-config.mjs     |
+|                                                                  |
++----------+-------------------------------------------------------+
+           |
+           v
++----------+-------------------------------------------------------+
+|  EXTERNAL LAYER                                                  |
+|  Nx CLI (child_process)  |  filesystem (fs)  |  git (git grep)   |
++------------------------------------------------------------------+
 ```
 
-**Command flow (e.g., `/lz-nx.rlm:deps my-project`):**
+## Data Flow: Complete Path for `/explore "question"`
+
+This is the exact sequence of data crossing each boundary, with formats specified.
+
+### Step 1: User invokes skill
 
 ```
-1. User types /lz-nx.rlm:deps my-project
-2. Command markdown invokes: node scripts/deps-tree.mjs my-project
-3. Script reads workspace-index.json
-4. Script walks adjacency list, formats tree
-5. Output displayed directly (0 LLM tokens)
+User types: /lz-nx.rlm:explore "Where is the UserService defined?"
+
+Claude reads: plugins/lz-nx.rlm/skills/explore/SKILL.md
+  -> Injects skill instructions into conversation context
+  -> Instructions tell Claude to spawn the repl-executor agent
+
+Data crossing boundary: $ARGUMENTS string -> Claude's context
+Format: Plain text string
 ```
 
-**Handle store flow (large result sets):**
+### Step 2: Claude spawns repl-executor agent
 
 ```
-1. REPL code: let results = search("pattern", allPaths)
-2. search() returns 500 matches -> stored in handle store
-3. LLM sees: "$res1: Array(500) [first match preview...]" (~50 tokens)
-4. LLM navigates: let subset = handle.filter("$res1", item => ...)
-5. filter() operates server-side, returns new handle "$res2"
-6. LLM inspects: handle.preview("$res2", 5) -> first 5 items
-7. Only materialized data enters LLM context
+Claude uses the Agent tool to spawn repl-executor.
+
+Data crossing boundary:
+  IN:  Prompt containing the user's question + workspace index path
+  OUT: (later) The agent's final text response
+
+The agent receives:
+  - System prompt from agents/repl-executor.md
+  - User message with the query and index location
+  - Tools: Bash, Read (restricted set)
+  - Model: sonnet
+
+Format: Claude Agent tool protocol (internal, not controllable)
 ```
 
-## Component Detail: REPL Sandbox
+### Step 3: Agent loads workspace index
 
-The REPL sandbox is the architectural centerpiece. It provides the isolated execution environment where LLM-generated code manipulates the workspace without polluting the conversation context.
+```
+repl-executor uses Bash tool:
+  node scripts/workspace-indexer.mjs --check
 
-### Design Decision: `vm.createContext` with Defense in Depth
+If index is stale or missing:
+  node scripts/workspace-indexer.mjs --build
 
-**Use Node.js `vm.createContext`** because it provides the right trade-off for this use case:
+Agent then uses Read tool:
+  Read: plugins/lz-nx.rlm/.cache/workspace-index.json
 
-- The code running in the sandbox is **LLM-generated, not user-submitted**. The threat model is "LLM writes buggy code" not "adversary crafts escape payload."
-- Sub-5ms startup, no subprocess overhead, true async/await support.
-- Already proven in Hampton-io/RLM and code-rabi/rllm implementations.
-- Natural fit for JavaScript workspace (TypeScript monorepo).
+Data crossing boundary: JSON file -> agent context
+Format: WorkspaceIndex JSON (~50-100KB)
+Size impact: Consumed as agent context tokens (~15-25K tokens for 537 projects)
+```
 
-**The `node:vm` module is explicitly NOT a security sandbox** -- Node.js documentation says so. However, security sandboxing against adversarial input is not the threat model here. The LLM generates code; we control what globals are available; we add defense-in-depth mitigations.
+### Step 4: Agent generates REPL code and invokes sandbox
 
-**Defense-in-depth mitigations (mandatory):**
+```
+Agent generates JavaScript in a ```repl fenced block:
 
-| Mitigation | Purpose | Implementation |
-|-----------|---------|----------------|
-| `codeGeneration: { strings: false, wasm: false }` | Block `eval()` and WASM compilation attacks | vm.createContext option |
-| Restricted global scope | No `process`, `require`, `child_process`, `fs` exposed directly | Explicit allowlist of globals |
-| Controlled wrappers only | File/search/nx access only through sandboxed functions with validation | Injected functions that validate inputs |
-| Execution timeout per block | Prevent infinite loops from hanging the session | `vm.Script.runInContext({ timeout })` |
-| Output truncation | Prevent context blowup from verbose output | Truncate stdout to configurable limit (2KB default) |
-| Max consecutive errors | Abort if sandbox enters error loop | Counter in execution loop |
-| Max iterations | Hard stop on REPL turns | Counter in execution loop |
+  ```repl
+  let libs = Object.keys(workspace.projects)
+    .filter(name => name.includes('user'))
+  print(libs)
+```
 
-**When to upgrade to stronger isolation:**
+Agent invokes via Bash tool:
+  node scripts/repl-sandbox.mjs --index .cache/workspace-index.json
 
-If the plugin is ever extended to run user-provided code (not LLM-generated), or if it processes untrusted workspace content that could influence code generation, then upgrade to `isolated-vm` (V8 isolates with separate heaps) or QuickJS-in-WASM (`@sebastianwessel/quickjs`). Both provide real security boundaries at the cost of complexity and performance.
+  The code is passed via stdin (not CLI argument, to avoid shell escaping):
+  echo '<CODE>' | node scripts/repl-sandbox.mjs --index .cache/workspace-index.json
 
-**Confidence:** HIGH. The vm.createContext approach is used by both Node.js RLM implementations (Hampton-io, code-rabi) and is appropriate for the LLM-generated-code threat model. The security concerns documented in CVE-2026-22709 and related vm2 escapes apply to adversarial sandbox escape scenarios, not to controlled LLM output.
+Data crossing boundary (Agent -> Script):
+  IN: JavaScript source code (stdin) + index path (CLI arg)
+  Format: UTF-8 text on stdin, CLI flag for index path
 
-### Variable Persistence Pattern
+Data crossing boundary (Script -> Agent):
+  OUT: SandboxResult as JSON on stdout
+  Format: JSON object (see schema below)
+```
 
-LLM-generated code uses `const` and `let` declarations that are block-scoped inside the async IIFE wrapper. To persist variables across REPL turns, use the transformation pattern from Hampton-io:
+### Step 5: SandboxResult schema
+
+The REPL sandbox always returns this structure on stdout:
 
 ```javascript
-// LLM writes:
-const results = search("pattern")
-
-// Transformer converts to:
-globalThis.results = search("pattern")
-```
-
-This ensures variables created in one REPL turn are accessible in subsequent turns. The Hampton-io implementation uses a regex replacement: `code.replace(/\b(const|let)\s+(\w+)\s*=/g, 'globalThis.$2 =')`. The Matryoshka implementation uses a more sophisticated AST-level extraction that separates declarations from assignments.
-
-**Recommendation:** Use the regex approach for v1 (simpler, proven). Switch to AST-based extraction if destructuring or complex declarations become common.
-
-### Async LLM Query Bridge
-
-The sandbox needs to call `llm_query()` which is async (it spawns a Claude subagent). The Node.js `vm` module does not natively support awaiting promises that resolve via external callbacks. Both Hampton-io and code-rabi solve this with a **pending query queue**:
-
-```typescript
-// Inside sandbox, llm_query() creates a Promise and queues it
-const llm_query = (prompt) => new Promise((resolve, reject) => {
-  pendingQueries.push({ prompt, resolve, reject });
-});
-
-// Outside sandbox, executor processes the queue concurrently
-async function executeWithQueryProcessing(executionPromise) {
-  while (isExecuting || pendingQueries.length > 0) {
-    while (pendingQueries.length > 0) {
-      const query = pendingQueries.shift();
-      const result = await callSubagent(query.prompt);
-      query.resolve(result);
-    }
-    await sleep(10); // Allow more queries to queue
-  }
+// SandboxResult -- the contract between repl-sandbox.mjs and the agent
+{
+  "stdout": "connect-shared-users-data-access\nconnect-shared-users-feature",
+  "error": null,              // or error message string
+  "locals": {                 // variables created during execution
+    "libs": ["connect-shared-users-data-access", "..."]
+  },
+  "handles": {                // new handles created this turn
+    "$res1": "Array(47) [connect-shared-users-data-access, ...]"
+  },
+  "final": null,              // or the FINAL() answer string
+  "executionTimeMs": 3,
+  "iterationHint": null       // or "error_recovery" | "no_output" | "max_output"
 }
 ```
 
-This pattern enables true async/await inside the REPL while keeping LLM calls external to the sandbox.
+### Step 6: Agent parses result and decides next action
 
-**Confidence:** HIGH. Both Hampton-io and code-rabi use this exact pattern.
+```
+Agent receives SandboxResult JSON as Bash tool output.
 
-## Component Detail: Handle Store
+Decision tree:
+  if result.final != null:
+    Return result.final as the agent's response -> Step 9
+  if result.error != null:
+    Increment consecutive error count
+    if consecutiveErrors >= 3: abort with error summary -> Step 9
+    Generate fix code -> Step 4
+  if result.stdout is empty:
+    Generate probing code -> Step 4
+  else:
+    Reset consecutive error count
+    Analyze output, generate next code -> Step 4
 
-### Design Decision: In-Memory Map (Not SQLite)
-
-For v1, use an in-memory `Map<string, unknown[]>` instead of SQLite:
-
-- Simpler implementation (no native module dependency).
-- Fast enough for session-scoped data (no persistence needed across sessions).
-- JSON workspace index is already in memory as a REPL variable.
-- Matryoshka uses SQLite because it persists data across sessions; this plugin does not need that in v1.
-
-**Handle naming convention:** `$res1`, `$res2`, ... (auto-incrementing). Follows Matryoshka convention.
-
-**Handle stub format:** `"$res1: Array(537) [connect, connect-e2e, assets, ...]"` -- type, count, preview of first items. This is what the LLM sees instead of the full data.
-
-### Operations on Handles
-
-Borrowing from Matryoshka's `HandleOps` pattern, the handle store should support server-side operations that return new handles:
-
-| Operation | Input | Output | Purpose |
-|-----------|-------|--------|---------|
-| `store(data)` | `unknown[]` | Handle string | Create handle from data |
-| `get(handle)` | Handle string | `unknown[]` or null | Retrieve full data |
-| `stub(handle)` | Handle string | String | Get LLM-friendly stub |
-| `preview(handle, n)` | Handle + count | `unknown[]` | First N items |
-| `filter(handle, predicate)` | Handle + JS predicate string | New handle | Filter items |
-| `count(handle)` | Handle string | Number | Count items |
-
-**Key insight from Matryoshka:** Operations chain on handles server-side. The LLM never needs to see the full dataset. `filter("$res1", "item.type === 'lib'")` creates `$res2` with only matching items, and the LLM only sees the stub.
-
-**Confidence:** MEDIUM. The in-memory Map is simpler than SQLite but loses data on sandbox reset. This is acceptable for v1 where sessions are ephemeral. If cross-session persistence is added later, migrate to SQLite.
-
-## Component Detail: Agent Layer
-
-### Inter-Component Communication
-
-Claude Code plugins have a specific communication model between components:
-
-**Skills -> Agents:** Skills are markdown files that inject instructions into the conversation. When a skill needs to delegate work, it instructs Claude to spawn a subagent using the Agent tool. The skill's text becomes part of Claude's context, guiding it on when and how to use the subagent.
-
-**Agents -> REPL:** The repl-executor agent uses the Bash tool to invoke `node scripts/repl-sandbox.mjs` with code passed as arguments or via stdin. Alternatively, the agent can use the Bash tool to execute a persistent REPL process that accepts code blocks over IPC. The simpler approach (per-invocation) is recommended for v1.
-
-**Agents -> Agents:** Claude Code subagents cannot spawn other subagents (architectural constraint). This means `llm_query()` inside the REPL cannot spawn a haiku-searcher subagent directly. Instead, `llm_query()` must be implemented as a Bash call to a script that invokes Claude's API directly, or the repl-executor agent processes `llm_query()` requests itself by reading pending queries from the sandbox output and handling them in its own context.
-
-**Hooks -> Scripts:** Hooks invoke Node.js scripts via shell commands. Hook input arrives as JSON on stdin. Hook output is JSON on stdout. Hooks can inject `additionalContext` into the conversation or block actions with `decision: "block"`.
-
-### The repl-executor Agent Pattern
-
-The repl-executor is the most critical agent. It drives the RLM fill/solve loop:
-
-```markdown
----
-name: repl-executor
-description: Drives the RLM execution loop for workspace exploration.
-  Use when the user invokes /lz-nx.rlm:explore or similar RLM skills.
-tools: Bash, Read
-model: sonnet
----
-
-You are an RLM execution agent. Your conversation context is externalized
-as navigable variables in a JavaScript REPL.
-
-## Available REPL Globals
-- workspace: The workspace index (projects, deps, aliases)
-- projects: Shorthand for workspace.projects
-- deps(name): Dependency tree for a project
-- dependents(name): Reverse dependency tree
-- read(path, start?, end?): Read file content
-- files(glob): Find files matching pattern
-- search(pattern, paths?): Search file contents (git grep)
-- nx(command): Run allowlisted Nx CLI command
-- llm_query(prompt): Sub-LLM call for semantic work
-- FINAL(answer): Mark final answer
-- print(...args): Capture output
-
-## Execution Protocol
-1. Write JavaScript code in ```repl blocks
-2. Each block executes in the REPL, output returned
-3. Navigate the workspace programmatically -- DO NOT load full files
-4. Use llm_query() for semantic work on small chunks
-5. Call FINAL(answer) when done
-
-## Guardrails
-- Max 20 iterations per query
-- Max 3 consecutive errors before abort
-- 2-minute wall clock timeout
-- Output truncated at 2KB per turn
+Data crossing boundary: JSON stdout -> agent's message history
+Format: Agent appends raw output (truncated to 2KB) as context
+Truncation: If result.stdout > 2048 chars, truncated with "[truncated]" marker
 ```
 
-### llm_query() Implementation Strategy
+### Step 7: Iteration loop
 
-Because subagents cannot spawn other subagents, `llm_query()` requires a workaround. Three options analyzed:
+```
+Steps 4-6 repeat up to maxIterations (default: 20).
 
-**Option A: Script-based API call (RECOMMENDED for v1)**
-The REPL's `llm_query()` function calls a Node.js script via `child_process.execSync` that makes a direct Claude API call using the Anthropic SDK. The script is thin: it reads a prompt from stdin, calls the API with a Haiku model, and returns the response to stdout.
+Each iteration:
+  - Agent sends ONE Bash call to repl-sandbox.mjs
+  - Sandbox executes code, returns SandboxResult
+  - Agent appends assistant message (code) + user message (result) to its history
+  - Agent generates next code block
 
-- Pros: Simple, no subagent nesting, full control over model choice.
-- Cons: Requires API key management (can use `ANTHROPIC_API_KEY` from environment).
-- Confidence: MEDIUM. Depends on API key availability in the Claude Code plugin environment.
-
-**Option B: Pending-query protocol**
-The repl-executor agent parses sandbox output for `[LLM_QUERY: ...]` markers, handles them itself, and feeds results back into the next sandbox execution.
-
-- Pros: No external API call needed, uses the agent's own model.
-- Cons: Adds complexity to the execution loop, burns Sonnet tokens on Haiku-grade tasks.
-- Confidence: MEDIUM. More complex but avoids API key dependency.
-
-**Option C: Deferred to v1.1**
-Ship v1 without `llm_query()`. The repl-executor agent handles all semantic reasoning itself between REPL turns. The REPL provides only deterministic operations (search, read, deps, files).
-
-- Pros: Simplest v1, no API key management, no subagent nesting issues.
-- Cons: Loses the "cheap sub-call" optimization. All reasoning uses the root model (Sonnet).
-- Confidence: HIGH. This is the simplest path and validates the core architecture without the sub-call complexity.
-
-**Recommendation:** Start with Option C for the first milestone. The core value proposition (workspace navigation without context rot) works without `llm_query()`. Add Option A in a subsequent milestone once the execution loop is proven.
-
-## Component Detail: Foundation Scripts
-
-### workspace-indexer.mjs
-
-Builds the JSON workspace index from Nx CLI output. This is the single most important script because it converts an opaque 537-project workspace into a navigable data structure.
-
-**Input sources:**
-- `nx show projects --json` -> project names and metadata
-- `nx graph --print` -> dependency adjacency list
-- `tsconfig.base.json` -> path aliases
-- `nx show project <name>` (per project) -> targets, tags, source root
-
-**Output:** `workspace-index.json` (~50-100KB for large workspaces)
-
-**Schema:**
-```typescript
-interface WorkspaceIndex {
-  version: number;
-  generated: string; // ISO timestamp
-  root: string; // workspace root path
-  projects: Record<string, ProjectEntry>;
-  deps: Record<string, string[]>; // adjacency list
-  reverseDeps: Record<string, string[]>; // reverse adjacency
-  aliases: Record<string, string>; // tsconfig path aliases
-  stats: { projectCount: number; fileCount: number; };
-}
-
-interface ProjectEntry {
-  name: string;
-  root: string; // source root relative to workspace
-  type: "app" | "lib" | "e2e";
-  tags: string[];
-  targets: string[]; // available build targets
-}
+State persistence between iterations:
+  - The sandbox process is invoked fresh each iteration
+  - BUT the workspace index is re-read from the same JSON file
+  - AND variables from previous turns are serialized in a session state file
+    (.cache/repl-session-<id>.json) that the sandbox loads on startup
 ```
 
-**Performance:** Full index build for 537 projects takes ~10-30 seconds (dominated by per-project `nx show project` calls). Incremental rebuild using git diff to detect changed `project.json` files reduces this to <2 seconds for typical changes.
+### Step 8: FINAL answer detection
 
-### nx-runner.mjs
+```
+The LLM calls FINAL("answer string") inside REPL code:
 
-Safe wrapper for Nx CLI commands. Enforces an allowlist of read-only operations.
+  ```repl
+  let answer = `UserService is defined in:
+  - libs/connect/shared/users/data-access/src/lib/user.service.ts
+  It is provided in root and used by 12 projects.`
+  FINAL(answer)
+```
 
-**Allowlisted commands:**
-- `show projects` (with flags: `--json`, `--affected`, `--type`, `--tag`)
-- `show project <name>` (per-project metadata)
-- `graph --print` (dependency graph as JSON)
-- `report` (workspace report)
+Sandbox sets result.final to the answer string.
+Agent sees result.final != null and returns it.
 
-**Blocked:** Any command that modifies the workspace (`build`, `test`, `lint`, `serve`, `generate`, `migrate`, `run`).
+Data format: Plain text string (the distilled answer)
+```
 
-**Timeout:** 30 seconds per command. `nx graph --print` on large workspaces can take 3-5 seconds.
+### Step 9: Agent returns to main conversation
 
-**Caching:** Results cached in memory with 5-minute TTL. `nx graph --print` output is stable within a session.
+```
+The repl-executor agent's response becomes the Agent tool output
+in the main conversation.
 
-### rlm-config.mjs
+Data crossing boundary: Agent response -> main conversation
+Format: Plain text (the FINAL answer)
+Token impact: Only the distilled answer enters the conversation (~200-1000 tokens)
+             All intermediate iterations stay in the agent's context (discarded)
+```
 
-Configuration with sensible defaults and override capability:
+## Data Flow: Deterministic Commands
+
+Commands bypass the agent layer entirely.
+
+```
+/lz-nx.rlm:deps my-project
+  |
+  v
+Command markdown (deps.md):
+  !`node ${CLAUDE_PLUGIN_ROOT}/scripts/deps-tree.mjs my-project`
+  |
+  v
+deps-tree.mjs:
+  1. Reads .cache/workspace-index.json
+  2. Walks adjacency list from "my-project"
+  3. Formats tree as text
+  4. Writes to stdout
+    |
+    v
+    Output displayed directly to user (0 LLM tokens)
+
+Data formats:
+  IN: project name as CLI argument
+  OUT: Formatted dependency tree as text on stdout
+```
+
+## REPL Sandbox Communication Protocol
+
+### Per-Invocation Model (Recommended for v1)
+
+Each REPL turn is a separate `node` process invocation. This is simpler than a persistent process and avoids IPC complexity.
+
+```
+Agent                          repl-sandbox.mjs
+  |                                  |
+  |--- Bash: node repl-sandbox.mjs --|
+  |    stdin: { code, sessionId }    |
+  |                                  |
+  |                        1. Load workspace index from JSON
+  |                        2. Load session state (variables from prior turns)
+  |                        3. Create vm.createContext with globals
+  |                        4. Transform const/let -> globalThis
+  |                        5. Wrap in async IIFE
+  |                        6. Execute via vm.Script.runInContext
+  |                        7. Capture stdout, error, locals
+  |                        8. If large results, store in handles
+  |                        9. Save session state (variables for next turn)
+  |                       10. Write SandboxResult JSON to stdout
+  |                                  |
+  |<-- stdout: SandboxResult JSON ---|
+  |                                  |
+  (process exits)
+```
+
+### Session State Persistence
+
+Between per-invocation sandbox calls, state persists via a session file:
 
 ```javascript
-const DEFAULT_CONFIG = {
-  maxIterations: 20,
-  maxDepth: 1, // No recursive sub-RLMs in v1
-  maxTimeout: 120_000, // 2 minutes
-  maxConsecutiveErrors: 3,
-  outputTruncation: 2048, // 2KB per turn
-  sandboxTimeout: 5_000, // 5s per code block
-};
-```
-
-Config loaded from `.claude/rlm-config.json` if present, merged with defaults.
-
-## Patterns to Follow
-
-### Pattern 1: Execution Loop with Error Recovery
-
-**What:** The core REPL loop that drives the fill/solve cycle.
-**When:** Every RLM invocation.
-
-```typescript
-async function executeRLMLoop(
-  query: string,
-  sandbox: Sandbox,
-  config: RLMConfig
-): Promise<string> {
-  const messages: Message[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: formatQuery(query, sandbox.getWorkspaceStats()) },
-  ];
-
-  let consecutiveErrors = 0;
-
-  for (let i = 0; i < config.maxIterations; i++) {
-    // 1. Get LLM response
-    const response = await llm.complete(messages);
-    const code = parseCodeBlocks(response, "repl");
-
-    // 2. No code? Prompt the LLM to act
-    if (!code) {
-      messages.push({ role: "assistant", content: response });
-      messages.push({
-        role: "user",
-        content: "Write code to explore the workspace or call FINAL(answer).",
-      });
-      continue;
-    }
-
-    // 3. Execute code in sandbox
-    const result = await sandbox.execute(code);
-
-    // 4. Check for final answer
-    const finalAnswer = sandbox.getFinalAnswer();
-
-    if (finalAnswer) {
-      return finalAnswer;
-    }
-
-    // 5. Handle errors with recovery
-    if (result.error) {
-      consecutiveErrors++;
-
-      if (consecutiveErrors >= config.maxConsecutiveErrors) {
-        return `[ERROR] Aborted after ${consecutiveErrors} consecutive errors. Last error: ${result.error}`;
-      }
-
-      messages.push({ role: "assistant", content: response });
-      messages.push({
-        role: "user",
-        content: `Error: ${result.error}\nFix the error and try again.`,
-      });
-      continue;
-    }
-
-    // 6. Success -- reset error counter, append result
-    consecutiveErrors = 0;
-    messages.push({ role: "assistant", content: response });
-    messages.push({
-      role: "user",
-      content: truncate(result.stdout, config.outputTruncation),
-    });
-  }
-
-  return "[ERROR] Max iterations reached without FINAL answer.";
+// .cache/repl-session-<id>.json
+{
+  "sessionId": "explore-1709478234",
+  "variables": {
+    "libs": ["connect-shared-users-data-access", "..."],
+    "results": "$res1"  // handle reference
+  },
+  "handles": {
+    "$res1": { "type": "Array", "count": 47, "data": [...] }
+  },
+  "turnCount": 3,
+  "createdAt": "2026-03-03T12:30:34Z"
 }
 ```
 
-**Key resilience patterns applied:**
-- **Error routing back to LLM:** Errors are appended as user messages so the LLM can self-correct (the dominant pattern across all implementations).
-- **Consecutive error counter:** Prevents infinite error loops.
-- **No-code nudging:** If the LLM generates text without code, prompt it to act.
-- **Output truncation:** Prevents a single execution from bloating the message history.
+Why per-invocation (not persistent process):
+1. Claude Code's Bash tool starts a fresh shell for each call -- no IPC channel
+2. No orphaned processes if the agent crashes
+3. Simpler error recovery (process crash = clean next invocation)
+4. Session state is explicit (JSON file) rather than implicit (process memory)
 
-### Pattern 2: Handle-Based Result Compression
+The cost is ~50-100ms startup overhead per turn (Node.js process launch + JSON parse). Over 20 iterations, that is 1-2 seconds total -- acceptable for a workflow that takes 30-120 seconds.
 
-**What:** Store large results in handles, pass only stubs to the LLM.
-**When:** Any REPL function that returns more than ~50 items.
+### Handle Store Data Flow
 
-```typescript
-// In sandbox globals
-const handleStore = new HandleStore();
+```
+REPL code: let results = search("UserService", allPaths)
+  |
+  v
+search() function inside sandbox:
+  1. Calls git grep via child_process.execSync
+  2. Parses output: [{file, line, content}, ...]
+  3. If results.length > 10:
+       handle = handleStore.store(results)
+       return handleStore.stub(handle)
+       // Returns: "$res1: Array(47) [libs/connect/shared/users/...]"
+  4. If results.length <= 10:
+       return JSON.stringify(results)
+       // Returns full data inline
+  |
+  v
+LLM sees compact stub (~50 tokens) not full data (~5000 tokens)
+  |
+  v
+Next turn: LLM writes: let subset = handle.preview("$res1", 5)
+  -> Returns first 5 items from stored handle
+  -> Still only ~200 tokens in context
 
-function search(pattern: string, paths?: string[]): string {
-  const rawResults = gitGrep(pattern, paths); // May return hundreds of matches
-
-  if (rawResults.length <= 10) {
-    return JSON.stringify(rawResults, null, 2); // Small enough to inline
-  }
-
-  // Store in handle, return stub
-  const handle = handleStore.store(rawResults);
-  return handleStore.stub(handle);
-  // Returns: "$res1: Array(247) [libs/connect/shared/users/...]"
-}
+Handle operations (all server-side, return stubs or new handles):
+  handle.preview(h, n)    -> first N items (returns data inline)
+  handle.filter(h, pred)  -> new handle with filtered items
+  handle.count(h)         -> number
+  handle.describe(h)      -> { count, fields, sample }
 ```
 
-### Pattern 3: Graceful Degradation
+## llm_query() Architecture: The Subagent Nesting Constraint
 
-**What:** Plugin features are optimizations, not requirements. All tasks remain possible without them.
-**When:** Any component failure.
+### The Problem
 
-| Failure | Degradation | User Impact |
-|---------|-------------|-------------|
-| Workspace index missing/stale | Fall back to `nx show projects` at query time | Slower first query (~10s), then cached |
-| REPL sandbox error | Return error to conversation, suggest manual Explore | User can still explore normally |
-| Nx CLI unavailable | Disable Nx-specific features, basic file search still works | No dependency analysis |
-| Handle store overflow | Truncate results inline instead of storing | More tokens in context but still functional |
+Claude Code subagents cannot spawn other subagents. The repl-executor is already a subagent. Therefore `llm_query()` inside the REPL cannot use the Agent tool to spawn a haiku-searcher.
 
-## Anti-Patterns to Avoid
+### Recommended Solution: Deferred to v1.1 (Option C)
 
-### Anti-Pattern 1: Loading Full Files into LLM Context
+For the first milestone, **do not implement `llm_query()`**. The repl-executor agent handles all reasoning itself between REPL turns. The REPL provides only deterministic operations.
 
-**What:** Using `read(path)` without line bounds and returning full file content to the conversation.
-**Why bad:** A single 500-line file is ~2000 tokens. Ten files is 20K tokens of context pollution -- exactly what RLM is designed to prevent.
-**Instead:** Always use `read(path, startLine, endLine)` for targeted extraction. Use `search()` to find relevant lines first, then read only those ranges.
+**Why this is sufficient:**
 
-### Anti-Pattern 2: Subagent Spawning Subagents
+1. The core value proposition (workspace navigation without context rot) works without sub-LLM calls
+2. The agent already uses Sonnet, which is capable enough for the semantic analysis that `llm_query()` would delegate to Haiku
+3. The fill/solve loop pattern still works -- the agent writes code to search/read/filter, then reasons about results in its own context
+4. Avoids API key management complexity in v1
 
-**What:** Attempting to have `repl-executor` spawn `haiku-searcher` as a nested subagent.
-**Why bad:** Claude Code subagents cannot spawn other subagents. This is an architectural constraint, not a bug.
-**Instead:** Use direct API calls for sub-LLM queries (Option A), or handle all reasoning in the root agent (Option C). The `llm_query()` function must be implemented outside the subagent spawning mechanism.
+**What is lost:**
 
-### Anti-Pattern 3: Unbounded REPL Output
+1. No cost optimization from routing mechanical tasks to Haiku (~3x cheaper)
+2. Agent burns Sonnet tokens on tasks Haiku could handle
+3. No parallel sub-LLM processing for batch operations (pattern audits)
 
-**What:** Allowing `print()` or function return values to dump unlimited data into the message history.
-**Why bad:** REPL output is appended as user messages to the agent's context. Large outputs cause the same context rot that RLM is designed to prevent -- but inside the agent's own context window.
-**Instead:** Truncate all output at a configurable limit (2KB default). Use handle store for large results. The Matryoshka pattern of returning stubs instead of full data is the correct approach.
+### Future Implementation: Direct API Script (Option A, for v1.1+)
 
-### Anti-Pattern 4: Trusting vm.createContext for Security
+When `llm_query()` is added later, implement as a script:
 
-**What:** Relying on `node:vm` to prevent malicious code execution.
-**Why bad:** `node:vm` is explicitly not a security mechanism. CVE-2026-22709 and the long history of vm2 escapes demonstrate this. Even with `codeGeneration: { strings: false, wasm: false }`, prototype chain attacks can escape the sandbox.
-**Instead:** Accept that `vm.createContext` provides scope isolation, not security isolation. The defense is: (1) control what code enters the sandbox (LLM-generated only), (2) restrict available globals, (3) add timeouts and output limits. If the threat model changes to include untrusted input, upgrade to `isolated-vm` or container-based isolation.
+```
+REPL code: let answer = await llm_query("Summarize this function", codeSnippet)
+  |
+  v
+llm_query() inside sandbox:
+  1. Writes query to temp file: .cache/llm-query-<id>.json
+     { "prompt": "...", "context": "...", "model": "haiku" }
+  2. Calls: child_process.execSync('node scripts/llm-query.mjs --input .cache/llm-query-<id>.json')
+  3. llm-query.mjs reads the input, calls Anthropic API directly
+  4. Returns response as string
+  |
+  v
+REPL code receives answer as string, continues execution
+
+Requirements:
+  - ANTHROPIC_API_KEY environment variable (Claude Code sets this)
+  - @anthropic-ai/sdk as an optional dependency (or raw HTTP fetch)
+  - Rate limiting and timeout in the script
+```
+
+### Why NOT Option B (Pending-Query Protocol)
+
+The pending-query protocol (repl-executor processes `[LLM_QUERY: ...]` markers from sandbox output) was considered but rejected because:
+
+1. It couples the agent's prompt engineering to a custom protocol
+2. The agent would need to parse structured markers from sandbox output, handle them, and re-invoke the sandbox with results -- adding 2-3 extra Bash calls per `llm_query()`
+3. It burns Sonnet tokens on Haiku-grade work (the agent IS the model doing the work)
+4. When `llm_query()` calls are the bottleneck in a turn, Option A (direct API call) is faster and cheaper
+
+## Error Boundaries
+
+### Boundary 1: REPL Sandbox Crash
+
+```
+Trigger: vm.Script throws (syntax error, runtime error, timeout)
+Detection: repl-sandbox.mjs catches all errors
+Recovery:
+  1. SandboxResult.error is set to the error message
+  2. SandboxResult.stdout contains any output captured before crash
+  3. SandboxResult.locals contains any variables set before crash
+  4. Process exits normally (exit code 0) -- error is in the JSON, not the exit code
+  5. Agent sees the error and generates corrective code
+
+Agent-level guardrail:
+  - consecutiveErrors counter increments on error
+  - After 3 consecutive errors, agent aborts with error summary
+  - Any successful execution resets the counter to 0
+
+Example error flow:
+  Turn 3: Code throws "TypeError: workspace.projects is not iterable"
+  Turn 4: Agent sees error, fixes: "let names = Object.keys(workspace.projects)"
+  Turn 4: Succeeds -> consecutiveErrors reset to 0
+```
+
+### Boundary 2: Nx CLI Timeout
+
+```
+Trigger: nx-runner.mjs command exceeds timeout (30s default)
+Detection: child_process.execSync throws with code ETIMEDOUT
+Recovery:
+  1. nx-runner catches the timeout error
+  2. Returns: { error: "Nx command timed out after 30000ms: nx graph --print", data: null }
+  3. REPL global function (nx()) surfaces this as a thrown error in sandbox
+  4. Sandbox catches it, returns in SandboxResult.error
+  5. Agent can retry with a simpler command or skip
+
+Degradation: If nx is completely unavailable:
+  - Workspace indexer fails at build time (before any REPL session)
+  - Commands like /deps still work if a cached index exists
+  - The error message tells the user to run the indexer manually
+```
+
+### Boundary 3: Workspace Index Stale or Missing
+
+```
+Trigger: workspace-index.json does not exist or is outdated
+Detection: workspace-indexer.mjs --check compares file mtime against
+           nx.json, tsconfig.base.json, and project.json files
+
+Recovery strategy:
+  Missing:
+    1. repl-executor agent runs: node scripts/workspace-indexer.mjs --build
+    2. If build fails (no Nx workspace), agent reports error to user
+    3. Skill instructs agent to check for index first
+
+  Stale (>5 minutes old or files changed):
+    1. Agent can rebuild: node scripts/workspace-indexer.mjs --build
+    2. Or proceed with stale index (most queries are structure-based, not time-sensitive)
+    3. SandboxResult can include a warning: "Index is 2 hours old"
+
+  Corrupted (invalid JSON):
+    1. workspace-indexer.mjs --build overwrites the file
+    2. If JSON.parse fails in the sandbox, error surfaces normally
+
+Graceful degradation:
+  Without index, the REPL globals still work but are slower:
+    - projects: falls back to runtime `nx show projects --json` (~3s)
+    - deps(): falls back to runtime `nx graph --print` (~5s)
+    - These are cached in-memory for the session after first call
+```
+
+### Boundary 4: FINAL() Never Called
+
+```
+Trigger: Agent reaches maxIterations (20) without calling FINAL()
+Detection: Iteration counter in agent's execution loop
+
+Recovery:
+  1. Agent receives SandboxResult with final: null for 20 turns
+  2. After maxIterations, agent MUST produce a response:
+     - Summarize what was found in the REPL session
+     - Include explicit note: "[Exploration reached maximum iterations without
+       a definitive answer. Partial findings above.]"
+  3. This is handled by the skill's instructions to the agent, not by code
+
+Prevention (in agent prompt):
+  - "You MUST call FINAL(answer) before iteration 20"
+  - "If you cannot answer definitively, call FINAL with partial findings"
+  - "Call FINAL with 'I could not determine X because Y' rather than looping"
+
+Why this matters:
+  If the agent just stops responding, the main conversation sees
+  the agent's last message as the response -- which may be raw REPL output,
+  not a useful answer. The skill instructions must make FINAL() mandatory.
+```
+
+### Boundary 5: Sandbox Process Crash (Node.js Crash, OOM)
+
+```
+Trigger: Node.js process dies (segfault, OOM, uncaught exception outside try/catch)
+Detection: Bash tool returns non-zero exit code with stderr
+
+Recovery:
+  1. Agent sees Bash tool error output (not a SandboxResult JSON)
+  2. Agent can retry (the per-invocation model means the next call is a fresh process)
+  3. If crash persists, agent reports to user
+
+This is rare because:
+  - vm.createContext isolates memory within a single V8 context
+  - OOM at the process level requires >4GB memory (Node.js default heap)
+  - Uncaught exceptions outside the sandbox are programming bugs, not runtime issues
+```
+
+### Boundary 6: Wall Clock Timeout
+
+```
+Trigger: Overall explore session exceeds maxTimeout (120s default)
+Detection: NOT automatically enforced -- Claude Code sessions don't have
+           explicit timers. This is a soft guardrail.
+
+Implementation:
+  1. The skill's instructions tell the agent to track elapsed time
+  2. Each SandboxResult includes executionTimeMs
+  3. Agent sums total execution time and compares against maxTimeout
+  4. If exceeded, agent calls FINAL with partial results
+
+Alternative (stronger enforcement):
+  A wrapper script could enforce wall clock:
+    timeout 120 node scripts/repl-sandbox.mjs ...
+  But this kills the process abruptly, losing session state.
+  Prefer the soft guardrail in v1.
+```
+
+### Error Boundary Summary Table
+
+| Boundary | Detection | Recovery | Severity |
+|----------|-----------|----------|----------|
+| REPL syntax/runtime error | `SandboxResult.error` | Agent generates fix code | LOW -- self-healing |
+| REPL timeout (per block) | vm.Script timeout option | Error in SandboxResult | LOW -- retry with simpler code |
+| Nx CLI timeout | execSync ETIMEDOUT | Return error, agent retries | MEDIUM -- may need fallback |
+| Nx CLI not available | execSync ENOENT | Report to user | HIGH -- plugin non-functional |
+| Index missing | File not found | Rebuild (10-30s) | MEDIUM -- delays first query |
+| Index stale | Mtime check | Rebuild or use stale | LOW -- usually acceptable |
+| Index corrupted | JSON.parse error | Rebuild | LOW -- overwrite fixes it |
+| FINAL() not called | Iteration counter | Force partial answer | MEDIUM -- degraded output |
+| Process crash (OOM) | Non-zero exit code | Retry (fresh process) | LOW -- rare |
+| Wall clock timeout | Agent tracks elapsed | Force FINAL with partial | MEDIUM -- soft guardrail |
+
+## Workspace Index Sharing Strategy
+
+### The Question
+
+How should the workspace index be shared between the REPL sandbox (invoked per-turn by the agent) and the deterministic commands (invoked directly by the user)?
+
+### Recommended: JSON File on Disk, Read on Demand
+
+```
+workspace-indexer.mjs --build
+  |
+  v
+.cache/workspace-index.json  (the single source of truth)
+  |
+  +---- repl-sandbox.mjs reads on each invocation
+  |       -> Parses JSON, injects as `workspace` global
+  |       -> Cost: ~10-20ms for 100KB JSON parse
+  |
+  +---- deps-tree.mjs reads on invocation
+  |       -> Parses JSON, walks adjacency list
+  |
+  +---- find-files.mjs reads on invocation
+  |       -> Parses JSON, resolves project roots
+  |
+  +---- path-resolver.mjs reads on invocation
+          -> Parses JSON, resolves aliases
+```
+
+### Why NOT Pass as Argument
+
+The workspace index is ~50-100KB. Passing it as a CLI argument (`node repl-sandbox.mjs --index-data '{...}'`) would:
+1. Hit shell argument length limits on Windows (32KB for cmd.exe, 8KB for CreateProcess)
+2. Require shell escaping of JSON (fragile)
+3. Appear in process listings (`ps aux`)
+
+### Why NOT Cache in Memory Across Invocations
+
+Each REPL turn is a separate process (per-invocation model). There is no shared memory between processes. Options that were considered:
+
+1. **Shared memory (mmap)**: Cross-platform complexity, unnecessary for 100KB
+2. **Named pipe/socket**: Requires a background server process -- adds IPC complexity
+3. **Environment variable**: Size limited (32KB on Windows)
+4. **Temp file (what we do)**: Simple, cross-platform, fast enough
+
+### Index Location
+
+```
+plugins/lz-nx.rlm/.cache/workspace-index.json
+
+Why .cache/ (not .claude/rlm-state/):
+  - The index is derived data, not user state
+  - .cache/ can be safely deleted and rebuilt
+  - .cache/ is gitignored by convention
+  - Multiple plugins might want their own caches
+
+The .cache/ directory is relative to the plugin root (${CLAUDE_PLUGIN_ROOT}/.cache/),
+NOT to the target workspace. This keeps plugin state isolated.
+```
+
+### Index Freshness Protocol
+
+```
+1. Commands (deps, find, alias):
+     Read index from disk. If missing, error with message:
+     "Workspace index not found. Run: /lz-nx.rlm:explore to build it."
+
+2. Explore skill (via repl-executor agent):
+     Check index freshness before starting REPL loop:
+       node scripts/workspace-indexer.mjs --check
+     Returns JSON: { "stale": true/false, "reason": "tsconfig.base.json changed" }
+     If stale, rebuild:
+       node scripts/workspace-indexer.mjs --build
+
+3. Rebuild triggers:
+     - Any project.json modified since last build
+     - tsconfig.base.json modified since last build
+     - nx.json modified since last build
+     - Index file missing
+     - Manual: user can force with node scripts/workspace-indexer.mjs --build --force
+```
+
+## Component Dependency Graph and Build Order
+
+```
+Build order follows arrows (dependency direction):
+
+  rlm-config.mjs          (no dependencies -- pure config with defaults)
+       |
+       v
+  nx-runner.mjs            (depends on rlm-config for timeout values)
+       |
+       v
+  workspace-indexer.mjs    (depends on nx-runner for Nx CLI calls)
+       |
+       v
+  path-resolver.mjs        (depends on workspace index schema)
+       |
+       v
+  handle-store.mjs         (no dependencies -- pure data structure)
+       |
+       v
+  repl-sandbox.mjs         (depends on: handle-store, workspace-indexer output,
+       |                     nx-runner, path-resolver, rlm-config)
+       v
+  agents/repl-executor.md  (depends on: repl-sandbox.mjs being functional)
+       |
+       v
+  skills/explore/SKILL.md  (depends on: repl-executor agent)
+       |
+       v
+  commands/deps.md         (depends on: workspace-indexer output only)
+  commands/find.md         (depends on: workspace-indexer output, nx-runner)
+  commands/alias.md        (depends on: path-resolver)
+```
+
+### New vs. Modified Components
+
+All components are new (greenfield plugin). No existing code to modify.
+
+| Component | Type | File Count | Complexity | Dependencies |
+|-----------|------|------------|------------|--------------|
+| rlm-config.mjs | Script | 1 | LOW | None |
+| nx-runner.mjs | Script | 1 | LOW | rlm-config |
+| workspace-indexer.mjs | Script | 1 | MEDIUM | nx-runner |
+| path-resolver.mjs | Script | 1 | LOW | workspace index |
+| handle-store.mjs | Script | 1 | MEDIUM | None |
+| repl-sandbox.mjs | Script | 1 | HIGH | handle-store, nx-runner, all globals |
+| repl-executor.md | Agent | 1 | HIGH | repl-sandbox.mjs |
+| explore/SKILL.md | Skill | 1 | MEDIUM | repl-executor agent |
+| deps.md | Command | 1 | LOW | workspace index |
+| find.md | Command | 1 | LOW | workspace index, nx-runner |
+| alias.md | Command | 1 | LOW | path-resolver |
+| plugin.json | Config | 1 | LOW | None |
+
+### Recommended Build Phases
+
+```
+Phase 1: Foundation Scripts
+  Build: rlm-config.mjs, nx-runner.mjs, workspace-indexer.mjs, path-resolver.mjs
+  Test: Unit tests with mock Nx CLI output
+  Milestone: `node scripts/workspace-indexer.mjs --build` produces valid JSON index
+
+Phase 2: REPL Core
+  Build: handle-store.mjs, repl-sandbox.mjs
+  Test: Execute JavaScript code with workspace globals, verify SandboxResult format
+  Milestone: `echo 'print(Object.keys(workspace.projects).length)' | node scripts/repl-sandbox.mjs`
+
+Phase 3: Agent Integration
+  Build: agents/repl-executor.md, skills/explore/SKILL.md
+  Test: End-to-end explore workflow with real questions
+  Milestone: /lz-nx.rlm:explore "How many projects are there?" returns correct answer
+
+Phase 4: Deterministic Commands
+  Build: commands/deps.md, commands/find.md, commands/alias.md
+  Test: Each command produces correct output
+  Milestone: All three commands work on target workspace
+```
+
+**Why commands come AFTER agent integration (Phase 4 not Phase 3):**
+
+The previous research suggested commands before agents (to provide immediate user value). However, the explore skill is the primary validation target for the RLM approach. If the REPL + agent integration does not work, the project's core thesis is unvalidated. Commands are trivial wrappers over the workspace index -- they will work if the index works. The riskiest integration (agent driving REPL) should be validated as early as possible.
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Passing Code as CLI Arguments
+
+**What people do:** `node repl-sandbox.mjs --code "let x = workspace.projects"`
+**Why it's wrong:** Shell escaping breaks on quotes, backticks, newlines, and special characters. LLM-generated code routinely contains all of these.
+**Do this instead:** Pass code via stdin. The sandbox reads from fd 0.
+
+### Anti-Pattern 2: Persistent REPL Process
+
+**What people do:** Start a long-lived Node.js process that accepts code over IPC (socket, named pipe, HTTP).
+**Why it's wrong:** Claude Code's Bash tool has no mechanism to send data to a running process. Each Bash call is a new shell invocation. The persistent process also creates cleanup problems (orphaned processes, port conflicts, crash recovery).
+**Do this instead:** Per-invocation model with session state persisted to a JSON file between turns.
+
+### Anti-Pattern 3: Returning Raw SandboxResult to User
+
+**What people do:** Let the agent's raw response (containing SandboxResult JSON) leak to the main conversation.
+**Why it's wrong:** The main conversation sees implementation details (variable names, handle IDs, execution times) instead of a distilled answer.
+**Do this instead:** The skill instructions MUST tell the agent to always call FINAL() with a human-readable answer. The main conversation should only see the final answer.
+
+### Anti-Pattern 4: Loading Full Index into Agent Prompt
+
+**What people do:** Include the entire workspace-index.json (100KB, ~25K tokens) in the agent's initial prompt.
+**Why it's wrong:** Burns 25K tokens of agent context on data the REPL can access directly. The agent should know the index EXISTS and where it is, not its full contents.
+**Do this instead:** Agent knows the index path. The REPL sandbox loads it as the `workspace` global. The agent uses REPL code to query it. Only the agent's initial prompt should include a brief summary (project count, top-level structure) for orientation.
+
+### Anti-Pattern 5: Using Agent Tool Output as Structured Data
+
+**What people do:** Try to parse the agent's response as JSON to extract structured data.
+**Why it's wrong:** Agent responses are natural language text, not structured data. The Agent tool does not guarantee response format.
+**Do this instead:** The agent returns a natural language answer via FINAL(). If structured data is needed, use deterministic commands (deps, find, alias) that return structured output directly via Bash.
+
+## Integration Points
+
+### Internal Boundaries
+
+| Boundary | Communication | Data Format | Error Handling |
+|----------|---------------|-------------|----------------|
+| Skill -> Agent | Agent tool (Claude internal) | Natural language prompt | Agent failure returns error text |
+| Agent -> Sandbox | Bash tool -> stdin/stdout | Code in, SandboxResult JSON out | Non-zero exit = process crash |
+| Sandbox -> Handle Store | In-process function call | JavaScript objects | Throws on invalid handle |
+| Sandbox -> nx-runner | In-process function call | Command string in, parsed JSON out | Throws on timeout/error |
+| Sandbox -> filesystem | In-process fs.readFileSync | File path in, string/Buffer out | Throws on missing file |
+| Sandbox -> git | child_process.execSync | Pattern string in, parsed matches out | Returns empty on no matches |
+| Command -> workspace index | fs.readFileSync + JSON.parse | File path in, JSON object out | Error if index missing |
+| Indexer -> Nx CLI | child_process.execSync | Nx command in, JSON stdout out | Throws on timeout/failure |
+
+### External Dependencies
+
+| External | How Used | Failure Mode | Graceful Degradation |
+|----------|----------|--------------|----------------------|
+| Nx CLI | workspace-indexer, nx-runner | Missing or incompatible version | Plugin non-functional (Nx is a hard dependency) |
+| Git | search() REPL global | Missing git binary | search() unavailable; other globals still work |
+| Filesystem | read() REPL global, index I/O | Permission errors, missing files | Error surfaces in SandboxResult |
+| Claude API | Subagent spawning (Agent tool) | Rate limits, network errors | Claude Code handles retries internally |
 
 ## Scalability Considerations
 
-| Concern | At 10 projects | At 100 projects | At 537+ projects |
-|---------|---------------|-----------------|------------------|
-| Workspace index size | ~2KB JSON | ~10KB JSON | ~50-100KB JSON |
+| Concern | 10 projects | 100 projects | 537+ projects |
+|---------|-------------|--------------|---------------|
 | Index build time | <1s | ~3s | 10-30s (full), <2s (incremental) |
-| REPL `projects` variable | Inline OK | Inline OK | Use handle store (Map with 537 entries) |
-| `search()` scope | Global OK | Scope to project roots | Must scope to project roots (otherwise 1000s of matches) |
-| `deps()` traversal | Trivial | Fast | Still fast (adjacency list lookup, not graph traversal) |
-| Per-session memory | ~5MB | ~15MB | ~50MB (index + handle store) |
+| Index file size | ~2KB | ~10KB | ~50-100KB |
+| Index parse time | <1ms | ~5ms | ~15ms |
+| search() scope | Global OK | Scope to project roots | Must scope to project roots |
+| Agent context usage | ~5K tokens (index summary) | ~8K tokens | ~15-25K tokens (summary only) |
+| Handle store entries | Rarely needed | Occasionally | Frequently (search returns 100+ results) |
+| Session state file | <1KB | ~5KB | ~20KB (with handles) |
 
-## Suggested Build Order
+### First Bottleneck: Index Build Time
 
-Build order follows the dependency chain: lower layers first, since upper layers depend on them.
+For 537 projects, `nx show project <name>` per project takes 10-30 seconds total. Mitigation: incremental rebuild using `git diff` to detect changed `project.json` files. Reduces to <2 seconds for typical changes.
 
-```
-Phase 1: Foundation
-  1. rlm-config.mjs (configuration, no dependencies)
-  2. nx-runner.mjs (Nx CLI wrapper, depends on config for timeouts)
-  3. workspace-indexer.mjs (depends on nx-runner)
-  4. path-resolver.mjs (depends on workspace index)
+### Second Bottleneck: Agent Context Growth
 
-Phase 2: REPL Core
-  5. handle-store.mjs (in-memory Map, no dependencies)
-  6. repl-sandbox.mjs (depends on handle-store, workspace-indexer output)
-     - vm.createContext with workspace globals
-     - execute() with timeout, error capture, output truncation
-     - Variable persistence via globalThis transformation
+Each REPL turn adds ~1-3KB to the agent's message history (assistant code + user result). After 20 turns, that is 20-60KB. At 537 projects, the workspace summary in the agent's initial prompt adds another 15-25KB. Total agent context can approach 80-100K tokens for complex queries.
 
-Phase 3: Agent Integration
-  7. repl-executor agent (depends on repl-sandbox)
-     - Execution loop with error recovery
-     - FINAL answer detection
-     - Output truncation and message formatting
-  8. explore skill (depends on repl-executor)
-     - SKILL.md with instructions and argument handling
-
-Phase 4: Commands
-  9. /deps command (depends on workspace-indexer)
-  10. /find command (depends on workspace-indexer, nx-runner)
-  11. /alias command (depends on path-resolver)
-
-Phase 5: Enhancements (deferred)
-  12. llm_query() via direct API call (Option A)
-  13. haiku-searcher agent
-  14. Hooks (SessionStart index, PreCompact preservation)
-```
-
-**Rationale for this ordering:**
-- Phases 1-2 are testable without any LLM involvement. Pure Node.js scripts with unit tests.
-- Phase 3 is the first point where LLM interaction occurs. The execution loop can be tested with a mock LLM before connecting to Claude.
-- Phase 4 delivers immediate user value (zero-LLM commands) while the RLM loop is being refined.
-- Phase 5 adds optimizations that require the core to be stable first.
+Mitigation: Output truncation (2KB per turn), handle store (large results compressed to stubs), and the maxIterations guardrail (20 turns max).
 
 ## Sources
 
 ### Implementation References (analyzed source code)
 
-- Hampton-io/RLM VMSandbox: `D:/projects/github/hampton-io/RLM/src/sandbox/vm-sandbox.ts` -- vm.createContext with pending query queue, variable persistence, tool registry
-- Hampton-io/RLM Executor: `D:/projects/github/hampton-io/RLM/src/executor.ts` -- execution loop, FINAL detection, sub-query handling, cost tracking
-- Hampton-io/RLM CostTracker: `D:/projects/github/hampton-io/RLM/src/cost-tracker.ts` -- budget enforcement, depth-based tracking
-- code-rabi/rllm Sandbox: `D:/projects/github/code-rabi/rllm/src/sandbox.ts` -- vm.createContext with restricted globals, llm_query bridge, execution timeout
-- Matryoshka HandleRegistry: `D:/projects/github/yogthos/Matryoshka/src/persistence/handle-registry.ts` -- handle creation, stub generation, context building
-- Matryoshka HandleOps: `D:/projects/github/yogthos/Matryoshka/src/persistence/handle-ops.ts` -- filter, map, sort, preview on handles
-- Matryoshka Sandbox: `D:/projects/github/yogthos/Matryoshka/src/sandbox.ts` -- declaration extraction, REPL state persistence, sub-call limiting
-- rand/rlm-claude-code Hooks: `D:/projects/github/rand/rlm-claude-code/hooks/hooks.json` -- SessionStart init, PreCompact trajectory save, complexity classification
-- rand/rlm-claude-code Agent: `D:/projects/github/rand/rlm-claude-code/agents/rlm-orchestrator.md` -- depth-based model cascade, REPL protocol
+- Hampton-io/RLM VMSandbox: `D:/projects/github/hampton-io/RLM/src/sandbox/vm-sandbox.ts` -- pending query queue, async IIFE wrapping, const/let transformation, SandboxResult interface
+- Hampton-io/RLM Executor: `D:/projects/github/hampton-io/RLM/src/executor.ts` -- execution loop, FINAL detection (function-call + text-parse dual path), sub-query handling, formatExecutionResult
+- code-rabi/rllm Sandbox: `D:/projects/github/code-rabi/rllm/src/sandbox.ts` -- SandboxResult with stdout/stderr/locals/error, variable capture via context key enumeration, wrapped error reporting for LLM self-correction
+- Matryoshka HandleRegistry: `D:/projects/github/yogthos/Matryoshka/src/persistence/handle-registry.ts` -- handle creation, stub generation, buildContext for LLM
+- Matryoshka HandleOps: `D:/projects/github/yogthos/Matryoshka/src/persistence/handle-ops.ts` -- server-side filter/map/sort/preview operations that chain on handles
+- brainqub3/claude_code_RLM: `D:/projects/github/brainqub3/claude_code_RLM/ImplementMe.txt` -- Claude Code skill+subagent pattern, persistent REPL via Python pickle, chunk-based sub-LLM handoff
+- rand/rlm-claude-code: `D:/projects/github/rand/rlm-claude-code/agents/rlm-orchestrator.md` -- depth-based model cascade, FINAL protocol, REPL variable access patterns
+- rand/rlm-claude-code hooks: `D:/projects/github/rand/rlm-claude-code/hooks/hooks.json` -- SessionStart init, PreCompact trajectory save, complexity classification
 
-### Official Documentation
+### Architectural Constraints (Claude Code)
 
-- [Claude Code Plugins](https://code.claude.com/docs/en/plugins) -- plugin structure, manifest, skills, agents, hooks
-- [Claude Code Hooks Reference](https://code.claude.com/docs/en/hooks) -- hook events, JSON input/output, decision control
-- [Claude Code Subagents](https://code.claude.com/docs/en/sub-agents) -- agent definition, tool restrictions, model selection, hook integration
-- [Node.js VM Documentation](https://nodejs.org/api/vm.html) -- explicit disclaimer: "not a security mechanism"
+- Subagents cannot spawn other subagents (confirmed in brainqub3 ImplementMe.txt and PROJECT.md)
+- Agent tool communication is natural language, not structured data
+- Bash tool starts fresh shell per invocation (no persistent process communication)
+- Skills inject instructions into the conversation context (not executable code)
+- Commands use `!` backtick syntax for direct script execution
 
-### Security Research
+### Prior Research
 
-- [CVE-2026-22709: Critical vm2 Sandbox Escape](https://thehackernews.com/2026/01/critical-vm2-nodejs-flaw-allows-sandbox.html) -- Promise handler bypass in vm2 (January 2026)
-- [Snyk: Security Concerns of JavaScript Sandbox with Node.js VM Module](https://snyk.io/blog/security-concerns-javascript-sandbox-node-js-vm-module/) -- prototype chain escapes, RCE risks
-- [DEV Community: node:vm Is Not a Sandbox](https://dev.to/dendrite_soup/nodevm-is-not-a-sandbox-stop-using-it-like-one-2f74) -- common misuse patterns
-- [isolated-vm: Secure & isolated JS environments](https://github.com/laverdet/isolated-vm) -- V8 isolate-based alternative
-- [@sebastianwessel/quickjs: QuickJS in WASM](https://github.com/sebastianwessel/quickjs) -- WASM-based sandbox alternative
-- [Node.js January 2026 Security Releases](https://nodejs.org/en/blog/vulnerability/december-2025-security-releases) -- CVE-2025-55131 vm module memory leak
+- RLM Synthesis: `research/rlm/SYNTHESIS.md` -- Sections 3 (architecture), 8 (REPL environments), 15 (Node.js patterns), 16 (limitations)
+- Plugin Brainstorm: `research/claude-plugin/BRAINSTORM.md` -- Sections 2 (REPL design), 5 (agent architecture), 12 (plugin structure)
+- Previous Architecture: `.planning/research/ARCHITECTURE.md` (this file, prior version) -- layered system, component boundaries, build order
 
-### Resilience Patterns
-
-- [4 Fault Tolerance Patterns Every AI Agent Needs](https://dev.to/klement_gunndu/4-fault-tolerance-patterns-every-ai-agent-needs-in-production-jih) -- error classification, LLM-as-error-handler
-- [Handling Timeouts and Retries in LLM Systems](https://dasroot.net/posts/2026/02/handling-timeouts-retries-llm-systems/) -- adaptive timeouts, circuit breakers
-- [Retries, Fallbacks, and Circuit Breakers in LLM Apps](https://portkey.ai/blog/retries-fallbacks-and-circuit-breakers-in-llm-apps/) -- provider outage handling
-
-### Existing Research
-
-- RLM Synthesis: `research/rlm/SYNTHESIS.md` -- Sections 3, 8, 15 (architecture, REPL environments, Node.js patterns)
-- Plugin Brainstorm: `research/claude-plugin/BRAINSTORM.md` -- Sections 2, 12 (REPL design, plugin structure)
-- Codebase Architecture: `.planning/codebase/ARCHITECTURE.md` -- current repo state analysis
+---
+*Architecture research for: RLM-powered Nx Claude Code plugin*
+*Researched: 2026-03-03*

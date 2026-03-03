@@ -1,7 +1,8 @@
 # Domain Pitfalls
 
 **Domain:** RLM-powered Nx Claude Code plugin (JavaScript REPL sandbox + Nx workspace navigation)
-**Researched:** 2026-03-03
+**Researched:** 2026-03-04 (updated with Node.js API deep-dive findings)
+**Priority ordering:** By likelihood of causing implementation failure during the first milestone
 
 ---
 
@@ -9,465 +10,971 @@
 
 Mistakes that cause rewrites, security breaches, or fundamental architecture failures.
 
-### Pitfall 1: Node.js `vm` Module Is Not a Security Sandbox
+### Pitfall 1: `const`/`let` to `globalThis` Transformation Breaks Destructuring, `for` Loops, and Multi-Declarations
 
-**What goes wrong:** The Node.js `vm` module is explicitly documented as "not a security mechanism." Code running inside `vm.createContext()` can escape the sandbox via prototype chain traversal (`this.constructor.constructor("return process")().exit()`), Proxy-based exception techniques, and Promise callback exploitation. CVE-2025-68613 (n8n workflow engine) and CVE-2026-22709 (vm2) demonstrate these escapes are actively exploited in the wild.
+**What goes wrong:** The Hampton-io/RLM reference implementation transforms `const`/`let` declarations to `globalThis` assignments using a naive regex: `code.replace(/\b(const|let)\s+(\w+)\s*=/g, 'globalThis.$2 =')`. This regex silently corrupts valid JavaScript in at least six common patterns that LLMs generate.
 
-**Why it happens:** Developers treat `vm.createContext()` as equivalent to Docker-level isolation. It is not. JavaScript's dynamic prototype chain means any non-primitive object injected into the sandbox context provides an escape vector. Even `Object.create(null)` for the context object is insufficient if any helper functions or objects (like arrays, Maps, or the workspace index object) are passed in -- attackers reach the host `Function` constructor via `someObject.constructor.constructor("return process")()`.
+**Why it happens:** In a `vm.createContext()` persistent context, `const` and `let` declarations are block-scoped to the script execution and do NOT appear on the context object or `globalThis`. The Node.js documentation confirms: block-scoped bindings exist only within the script's "global" scope, not as properties of the global object. Since the REPL needs variables to persist across iterations, the transformation is necessary. But the regex approach is inherently fragile.
+
+**Concrete failure cases:**
+
+```javascript
+// 1. Destructuring assignment
+const { name, root } = projects.get('my-app');
+// Becomes: globalThis.{ name, root } = projects.get('my-app');
+// Result: SyntaxError
+
+// 2. Array destructuring
+const [first, ...rest] = workspace.projects.values();
+// Becomes: globalThis.[first, ...rest] = workspace.projects.values();
+// Result: SyntaxError
+
+// 3. Multi-variable declaration
+const a = 1, b = 2, c = 3;
+// Becomes: globalThis.a = 1, b = 2, c = 3;
+// Result: Only `a` persists; `b` and `c` are lost
+
+// 4. for-loop initializers
+for (let i = 0; i < projects.size; i++) { /* ... */ }
+// Becomes: for (globalThis.i = 0; globalThis.i < projects.size; globalThis.i++) { /* ... */ }
+// Result: Pollutes global scope with loop variable, may work but leaks state
+
+// 5. for-of / for-in loops
+for (const [name, project] of projects) { /* ... */ }
+// Becomes: for (globalThis.[name, project] of projects) { /* ... */ }
+// Result: SyntaxError
+
+// 6. Arrow function parameters that look like declarations
+const fn = (let_me_explain) => let_me_explain + 1;
+// The word `let` inside `let_me_explain` triggers the regex
+// Becomes: globalThis.fn = (globalThis.me_explain) => ...
+// Result: Broken function
+```
 
 **Consequences:**
-- Arbitrary code execution on the host machine if the LLM generates (or is prompt-injected into generating) an escape payload
-- File system access, process spawning, environment variable exfiltration
-- In a Claude Code plugin context, this means the REPL could be used to execute arbitrary shell commands outside the allowlisted set
+- LLM generates valid JavaScript; REPL produces SyntaxError; LLM wastes iterations debugging phantom syntax errors it did not create
+- Iteration count inflates by 2-5 per corrupted code block (model tries to "fix" code that was correct)
+- Worst case: model enters infinite retry loop on destructuring-heavy code, burning all 20 iterations
 
 **Warning signs:**
-- Passing non-frozen objects (arrays, Maps, plain objects) into the VM context
-- REPL globals that return complex objects (e.g., `deps()` returning a full graph object with prototype chain intact)
-- Not testing sandbox escape vectors during development
+- SyntaxError on code that looks correct to the model
+- Model avoids destructuring (a sign it learned from previous failures in-context)
+- Repeated "let me try a different approach" messages
 
 **Prevention:**
-1. Accept that `vm` provides **scope isolation, not security isolation**. The threat model is "prevent accidental access to host APIs," not "prevent malicious escape."
-2. Freeze all objects passed into the sandbox context: `Object.freeze()` recursively on the workspace index, registry Maps, and any objects returned by REPL globals.
-3. Create the context with `Object.create(null)` and only inject primitive-returning wrapper functions, never raw objects with live prototype chains.
-4. Set `codeGeneration: { strings: false, wasm: false }` to block `eval()` and WASM-based attacks.
-5. Wrap every REPL global function to return frozen copies or primitives, never references to host objects.
-6. For v1 where the LLM generates the code (not untrusted users), this is acceptable risk. If the plugin is ever exposed to user-supplied code, move to `isolated-vm` or Worker Thread isolation.
-7. Monitor for future Node.js security releases affecting `vm` (CVE-2025-55131 demonstrated a buffer allocation race condition in the vm module with timeouts).
+1. **Use an AST-based transformation, not regex.** Parse the code with a lightweight parser (e.g., `acorn` or `meriyah` -- both zero-dependency ESM parsers) and selectively rewrite only top-level `VariableDeclaration` nodes of kind `const`/`let` to assignment expressions on `globalThis`. Leave `for` loop initializers, destructuring patterns, and nested scopes untouched.
+2. **If regex must be used for v1**, use a multi-pass approach that handles each case:
+   ```javascript
+   // Step 1: Protect for-loop declarations (replace temporarily)
+   // Step 2: Handle simple `const/let name =` only (not destructuring)
+   // Step 3: Restore for-loop declarations
+   // Step 4: Leave destructuring as-is (they won't persist, but won't crash)
+   ```
+3. **Document the limitation:** If destructuring doesn't persist across iterations, add a REPL hint: "Note: `const {a, b} = obj` does not persist variables. Use `globalThis.a = obj.a; globalThis.b = obj.b;` instead."
+4. **Test the transformation** against a corpus of 20+ LLM-generated code samples before shipping. Include destructuring, `for` loops, arrow functions, and template literals.
 
-**Detection:** Automated test suite with known escape payloads (`this.constructor.constructor`, Proxy throws, Promise chain exploitation). Run on every change to `repl-sandbox.mjs`.
+**Detection:** Unit test suite with every pattern above. Each test asserts both no SyntaxError and correct variable persistence.
 
-**Phase relevance:** Must be addressed in the first phase when building `repl-sandbox.mjs`. Get the isolation model right from day one.
+**Phase relevance:** REPL sandbox core (Phase 2). This is the single most likely cause of "the REPL feels broken" during initial testing.
 
-**Confidence:** HIGH -- multiple CVEs, official Node.js documentation warning, and community consensus all confirm this.
+**Confidence:** HIGH -- verified by reading Hampton-io/RLM source code (line 289 of `vm-sandbox.ts`). The regex `\b(const|let)\s+(\w+)\s*=/g` is exactly as described. The edge cases are straightforward JavaScript semantics.
 
 **Sources:**
-- [Snyk: Security concerns of JavaScript sandbox with Node.js VM module](https://snyk.io/blog/security-concerns-javascript-sandbox-node-js-vm-module/)
+- [Hampton-io/RLM vm-sandbox.ts line 289](D:/projects/github/hampton-io/RLM/src/sandbox/vm-sandbox.ts)
+- [Node.js vm documentation: const/let behavior](https://nodejs.org/api/vm.html)
+- [MDN: globalThis scope with var/let/const](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis)
+
+---
+
+### Pitfall 2: Async Code in VM Context -- Timeout Escape and Error Propagation Failures
+
+**What goes wrong:** Both reference implementations wrap LLM-generated code in an `async () => { ... }` IIFE to support `await`. This creates three interrelated problems: (a) the `timeout` option on `vm.runInContext()` only bounds *synchronous* execution -- once the IIFE returns a Promise, the timeout no longer applies; (b) errors thrown inside the async IIFE can be silently swallowed if the returned Promise is not properly awaited; (c) `microtaskMode` defaults mean Promise resolutions from the sandbox can interleave unpredictably with the host event loop.
+
+**Why it happens:** The V8 timeout mechanism works by checking the interrupt flag on each JavaScript bytecode execution. When `vm.runInContext()` starts an async IIFE, the synchronous part (creating the Promise) completes almost instantly and within the timeout. The actual work happens in microtasks and callbacks that run *after* `runInContext` returns -- outside the timeout's jurisdiction. This is a documented, unfixed limitation (Node.js issue #3020, open since 2015).
+
+**Concrete failure patterns:**
+
+```javascript
+// Pattern 1: Timeout escape via Promise
+// The vm timeout of 5000ms does NOT apply to this:
+const result = await llm_query("summarize this file");
+// If llm_query takes 60 seconds, the vm timeout is irrelevant
+
+// Pattern 2: Infinite async loop escapes timeout
+while (true) {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  // This runs forever -- vm timeout only applied to synchronous code
+}
+
+// Pattern 3: Swallowed async error
+(async () => {
+  const data = await read("/nonexistent/path");
+  // Error thrown here becomes an unhandled rejection
+  // The REPL reports "no output" instead of the error
+})();
+// If the outer wrapper doesn't await, error is lost
+
+// Pattern 4: Cross-realm Promise confusion
+const p = new Promise((resolve) => resolve(42));
+// This creates a Promise using the sandbox's Promise constructor
+// When awaited in the host, instanceof Promise returns false
+// WARNING: microtaskMode: 'afterEvaluate' seems like a fix but causes async/await DEADLOCKS
+// See nodejs/node#55546. Use Promise.race timeout from the host instead.
+```
+
+**Consequences:**
+- REPL appears to hang when `llm_query()` or `read()` takes too long -- the vm timeout does not save you
+- Silent error swallowing makes debugging impossible: the model sees "no output" and has no clue what went wrong
+- Cross-realm Promise issues cause `TypeError: Cannot read properties of undefined` in the host when trying to await a sandbox Promise
+
+**Prevention:**
+1. **Layer two timeout mechanisms:** Use `vm.runInContext({ timeout })` for synchronous protection AND an external `AbortController` + `setTimeout` for the overall async execution:
+   ```javascript
+   const controller = new AbortController();
+   const timer = setTimeout(() => controller.abort(), maxTimeout);
+   try {
+     const promise = script.runInContext(context, { timeout: 5000 });
+     const result = await Promise.race([
+       promise,
+       new Promise((_, reject) => {
+         controller.signal.addEventListener('abort', () =>
+           reject(new Error('Async execution timeout'))
+         );
+       })
+     ]);
+   } finally {
+     clearTimeout(timer);
+   }
+   ```
+2. **Do NOT use `microtaskMode: 'afterEvaluate'` -- it causes async/await deadlocks.** There is an [open Node.js bug (#55546)](https://github.com/nodejs/node/issues/55546) where `afterEvaluate` gives the context its own microtask queue, but `await` suspends execution and hands control to the event loop. Since the context's microtask queue only drains after evaluation completes, and evaluation is suspended waiting for the `await`, a deadlock occurs. This affects Node.js 22-25+ and is unresolved. Both reference implementations avoid `afterEvaluate`. Instead, rely on `Promise.race` timeout (point 1 above) for async timeout safety.
+3. **Always await the IIFE result and wrap in try/catch at the host level:** The code-rabi/rllm implementation does this correctly -- check if `scriptResult instanceof Promise` and await it. Hampton-io does the same with `executeWithQueryProcessing`.
+4. **Use `util.types.isNativeError()` for cross-realm error detection** instead of `instanceof Error` (see Pitfall 6).
+5. **For Worker Thread isolation (recommended for production):** Run the VM in a Worker Thread. The main thread can call `worker.terminate()` as a hard kill regardless of what the VM is doing -- sync, async, or native code.
+
+**Detection:** Integration tests that: (a) run code with `await new Promise(resolve => setTimeout(resolve, 10000))` and verify it times out within `maxTimeout`; (b) throw inside async IIFE and verify error appears in output; (c) create a cross-realm Promise and verify it resolves correctly in the host.
+
+**Phase relevance:** REPL sandbox core (Phase 2). The Hampton-io implementation has the right architectural pattern for query processing, but the timeout gap is not fully addressed.
+
+**Confidence:** HIGH -- Node.js issue #3020 (open since 2015, 200+ comments), verified in both reference implementations.
+
+**Sources:**
+- [Promises allow vm.runInContext timeout to be escaped (Node.js #3020)](https://github.com/nodejs/node/issues/3020)
+- [vm.runInThisContext fails with top-level await (Node.js #40898)](https://github.com/nodejs/node/issues/40898)
+- [vm timeout breaks console.log/stdout (Node.js #34678)](https://github.com/nodejs/node/issues/34678)
+- [microtaskMode afterEvaluate deadlocks async/await (Node.js #55546)](https://github.com/nodejs/node/issues/55546)
+- [Node.js vm documentation: microtaskMode](https://nodejs.org/api/vm.html)
+- [Hampton-io/RLM executeWithQueryProcessing pattern](D:/projects/github/hampton-io/RLM/src/sandbox/vm-sandbox.ts)
+- [code-rabi/rllm Promise awaiting pattern](D:/projects/github/code-rabi/rllm/src/sandbox.ts)
+
+---
+
+### Pitfall 3: Node.js `vm` Prototype Chain Escape via Injected Objects
+
+**What goes wrong:** Every non-primitive object injected into the VM context provides an escape vector via the prototype chain. The classic exploit `this.constructor.constructor("return process")()` gets the host `Function` constructor, which can execute arbitrary code in the host environment. Even with `Object.create(null)` for the context, any injected function, Map, Array, or object (like the workspace index) re-establishes the chain.
+
+**Why it happens:** `vm.createContext()` creates a separate execution scope but NOT a separate realm for object prototypes. When you inject `workspace` (a plain object) into the sandbox, its `__proto__` chain leads back to the host's `Object.prototype`, then `Function`, then `Function.constructor`. The `codeGeneration: { strings: false, wasm: false }` option blocks `eval()` and WASM but does NOT block `this.constructor.constructor` -- that traversal does not involve string-based code generation.
+
+**Our specific risk profile:**
+
+The LLM generates the code that runs in the sandbox. The threat model is NOT adversarial user input -- it is LLM prompt injection or model error causing unintended escape. This is a LOW probability event in practice because:
+- Claude does not spontaneously generate sandbox escape payloads
+- The sandbox runs in the user's own Claude Code session, not a multi-tenant server
+- The user already has full system access via Claude Code's Bash tool
+
+However, the risk is NON-ZERO because:
+- Indirect prompt injection via file contents (malicious comments in source code)
+- Future expansion to user-supplied code paths
+
+**Concrete escape payloads to test against:**
+
+```javascript
+// Classic prototype chain escape
+this.constructor.constructor("return process")().exit();
+
+// Via injected object (e.g., workspace)
+workspace.constructor.constructor("return process")().env;
+
+// Via Error object
+try { null.f() } catch(e) { e.constructor.constructor("return process")().exit() }
+
+// Via Function.prototype.call on an injected function
+deps.constructor("return process")();
+
+// Via Proxy (if available in sandbox)
+const handler = { get: (t, p) => t.constructor.constructor("return process")() };
+```
+
+**Prevention:**
+1. **`codeGeneration: { strings: false, wasm: false }` blocks some but not all vectors.** The `strings: false` option prevents `Function("return process")` but the `this.constructor.constructor` variant is a different code path. Hampton-io's test suite verifies this escape is blocked, but the protection comes from their `Object.create(null)` context + the fact that `this` inside the async IIFE refers to the contextified global, not a regular object.
+2. **Freeze all injected objects recursively:**
+   ```javascript
+   function deepFreeze(obj, seen = new WeakSet()) {
+     if (obj === null || typeof obj !== 'object' || seen.has(obj)) {
+       return obj;
+     }
+     seen.add(obj);
+     Object.freeze(obj);
+     for (const value of Object.values(obj)) {
+       deepFreeze(value, seen);
+     }
+     return obj;
+   }
+   ```
+3. **Wrap all REPL globals as arrow functions** (arrow functions have no `.prototype`):
+   ```javascript
+   // BAD: regular function exposes Function.prototype
+   sandbox.deps = function(name) { return getDeps(name); };
+   // GOOD: arrow function, frozen result
+   sandbox.deps = (name) => deepFreeze(getDeps(name));
+   ```
+4. **Use `Object.create(null)` for the sandbox base** (both reference implementations do this).
+5. **Add a test suite of known escape payloads** and run it on every change to `repl-sandbox.mjs`. Hampton-io's `sandbox-security.test.ts` is a good starting point.
+6. **Accept the risk model explicitly:** Document that `vm` provides scope isolation for LLM-generated code, not adversarial sandbox security. If user-supplied code is ever executed, migrate to Worker Thread + `vm` (defense in depth) or `isolated-vm`.
+
+**Detection:** Automated test suite with 5+ known escape payloads. Run on CI for every commit that touches sandbox code.
+
+**Phase relevance:** REPL sandbox core (Phase 2). Get the isolation model right from day one.
+
+**Confidence:** HIGH -- multiple CVEs (CVE-2025-68613, CVE-2026-22709), official Node.js documentation warning, Hampton-io security tests confirm the patterns.
+
+**Sources:**
+- [Node.js vm is not a sandbox -- DEV Community](https://dev.to/dendrite_soup/nodevm-is-not-a-sandbox-stop-using-it-like-one-2f74)
 - [CVE-2025-68613: n8n sandbox escape](https://www.penligent.ai/hackinglabs/cve-2025-68613-deep-dive-how-node-js-sandbox-escapes-shatter-the-n8n-workflow-engine/)
-- [CVE-2026-22709: vm2 critical sandbox escape](https://www.endorlabs.com/learn/cve-2026-22709-critical-sandbox-escape-in-vm2-enables-arbitrary-code-execution)
-- [Node.js vm escape gist](https://gist.github.com/jcreedcmu/4f6e6d4a649405a9c86bb076905696af)
+- [Hampton-io security test suite](D:/projects/github/hampton-io/RLM/tests/sandbox-security.test.ts)
+- [Semgrep: vm2 escape analysis](https://semgrep.dev/blog/2026/calling-back-to-vm2-and-escaping-sandbox/)
 
 ---
 
-### Pitfall 2: REPL Execution Loop Infinite Loops and Runaway Resource Consumption
+### Pitfall 4: REPL Execution Loop Infinite Loops and `FINAL()` Termination Brittleness
 
-**What goes wrong:** The RLM execution loop (`fill -> solve -> FINAL`) can get stuck in several ways: (a) the LLM never emits `FINAL()`, looping indefinitely through fill iterations; (b) LLM-generated code contains `while(true){}` or equivalent CPU-bound constructs that block the Node.js event loop; (c) recursive `llm_query()` calls cascade without convergence, spawning unbounded sub-calls; (d) `vm.runInContext` timeout fails to terminate native code execution (e.g., `BigInt("1".repeat(1e8))`).
+**What goes wrong:** The RLM execution loop (`fill -> solve -> FINAL`) can fail to terminate in several ways: (a) the LLM never emits `FINAL()`, looping to `maxIterations` with no answer; (b) the LLM emits `FINAL()` too early with an incomplete answer; (c) consecutive similar code blocks indicate the model is stuck but the loop continues; (d) the LLM calls `FINAL()` inside a conditional branch that is not taken, causing the loop to miss the termination signal.
 
-**Why it happens:**
-- Current frontier models have not been trained on the RLM paradigm (the "training gap" from the research). They may not reliably produce `FINAL()` termination signals, especially on complex tasks.
-- The `timeout` option on `vm.runInContext` relies on V8's interrupt mechanism, which only works for JavaScript-level loops. Native code (BigInt construction, regex backtracking, large string operations) cannot be interrupted.
-- `timeout` passed to the `vm.Script` constructor is silently ignored -- it must be passed to `.runInContext()` directly, a subtle API footgun.
-- Model-dependent behavior: GPT-4 might use ~10 sub-calls for a task while Qwen-Coder uses ~1000 for the same task.
+**Why it happens:** The "training gap" (Section 16 of the RLM paper) is the root cause. Current frontier models have NOT been trained on the RLM paradigm. They may not reliably produce `FINAL()` termination signals, especially on complex tasks. The RLM paper explicitly flags "brittleness in answer termination" as an open problem.
 
-**Consequences:**
-- Node.js process hangs indefinitely, blocking the Claude Code session
-- The Claude Code hook system has a 60-second timeout for hooks; a hung REPL would exceed this and cause silent failures
-- Token cost runaway if `llm_query()` sub-calls cascade without depth limits
-- User perceives the plugin as broken/frozen with no error feedback
+**Specific failure modes to guard against:**
 
-**Warning signs:**
-- REPL iteration counts approaching `maxIterations` without progress toward `FINAL()`
-- Consecutive iterations producing the same or similar code (model stuck in a loop)
-- Sub-call depth exceeding 2 without convergence
-- Execution time per REPL block exceeding 5 seconds
+```javascript
+// Mode 1: FINAL() inside dead code path
+if (results.length > 100) {
+  FINAL("Found many results: " + results.length);
+}
+// FINAL never called because results.length is 5
+
+// Mode 2: FINAL() called but return value not captured
+// The code-rabi/rllm implementation stores FINAL in a variable and checks after execution.
+// Hampton-io stores it in __FINAL_ANSWER__. Both approaches work, but
+// the check must happen AFTER awaiting the async execution.
+
+// Mode 3: LLM generates similar code across iterations
+// Iteration 5: const files = search("Component", "libs/");
+// Iteration 6: const files = search("Component", "libs/");
+// Iteration 7: const files = search("Component", "libs/");
+// Model is stuck. Without detection, burns 15 more iterations.
+
+// Mode 4: FINAL() with [object Object]
+// Hampton-io had to add special handling for this:
+FINAL("The answer is: " + complexObject);
+// Produces: "The answer is: [object Object]"
+// Hampton-io patches Object.prototype.toString to return JSON instead
+```
 
 **Prevention:**
-1. **Layer four independent guards:** `maxIterations` (default 20), `maxTimeout` (default 120s wall clock), `maxConsecutiveErrors` (default 3), and per-block execution timeout (default 5s).
-2. **Run VM execution in a Worker Thread**, not the main thread. This allows `worker.terminate()` as a hard kill when `vm.runInContext` timeout fails on native code. The main thread stays responsive.
-3. **Detect stale loops:** Track code similarity across iterations. If the LLM produces substantially similar code 3 iterations in a row, force-terminate with an error message. Hash or fingerprint each code block.
-4. **Pass `timeout` to `.runInContext()`, never to the `vm.Script` constructor.** The constructor silently ignores it.
-5. **Cap `llm_query()` sub-call depth** at 2 (matching the paper's tested configuration of `max_depth=1`). At max depth, `rlm_query()` downgrades to `llm_query()`.
-6. **Instrument iteration telemetry:** Log iteration count, elapsed time, and code hash per iteration. Emit warnings at 50% and 80% of limits.
-7. **Provide graceful degradation:** When limits are hit, return the best partial answer accumulated so far (from REPL variables), not just an error.
+1. **Four-layer guard stack** (all must ship together with the loop):
+   - `maxIterations` (default: 20) -- hard cap on loop count
+   - `maxTimeout` (default: 120s wall clock) -- covers async operations
+   - `maxConsecutiveErrors` (default: 3) -- break on repeated failures
+   - Stale loop detection (3 similar code blocks in a row -> force terminate)
+2. **Stale loop detection algorithm:**
+   ```javascript
+   function isStaleLoop(codeHistory, windowSize = 3) {
+     if (codeHistory.length < windowSize) return false;
+     const recent = codeHistory.slice(-windowSize);
+     const normalized = recent.map(c => c.replace(/\s+/g, ' ').trim());
+     return new Set(normalized).size === 1;
+   }
+   ```
+3. **Mid-loop hint injection:** At 50% of `maxIterations`, inject a system message: "You have used N of M iterations. If you have enough information, call FINAL() now. If stuck, try a different approach."
+4. **Graceful degradation on timeout:** When any limit is hit, return the best partial answer from REPL variables (scan `globalThis` for plausible answer strings), not just an error.
+5. **`FINAL()` value validation:** Reject `FINAL("[object Object]")` and re-prompt the model with "FINAL received but contained [object Object]. Use `JSON.stringify()` or construct a string answer."
+6. **Hampton-io's `Object.prototype.toString` patch** prevents `[object Object]` corruption entirely. Consider adopting it:
+   ```javascript
+   Object.prototype.toString = function() {
+     if (this && typeof this === 'object' &&
+         this.constructor === Object) {
+       try { return JSON.stringify(this); } catch { }
+     }
+     return originalToString.call(this);
+   };
+   ```
 
-**Detection:** Integration tests that deliberately trigger each failure mode: infinite JS loop, `FINAL()` never called, cascading sub-calls, native code timeout evasion.
+**Detection:** Integration tests that deliberately trigger each failure mode. Mock LLM responses to produce: never-FINAL, FINAL-too-early, stuck loop, and [object Object] FINAL.
 
-**Phase relevance:** Core to the REPL engine phase. The execution loop and all four guards must ship together -- never ship the loop without the guards.
+**Phase relevance:** Agent integration (Phase 4). The execution loop and all guards must ship together.
 
-**Confidence:** HIGH -- documented in the RLM paper (Section 16), Prime Intellect ablations, and Node.js vm module documentation.
+**Confidence:** HIGH -- documented in the RLM paper (Section 16), Prime Intellect ablations, and both reference implementation source code.
 
 **Sources:**
-- [Node.js vm.Script timeout issue](https://github.com/nodejs/node/issues/20982)
-- [vm.runInContext timeout performance impact](https://github.com/nodejs/node/issues/52261)
 - [RLM paper: limitations and open problems](https://arxiv.org/html/2512.24601v1)
-- [Prime Intellect: RLM paradigm of 2026](https://www.primeintellect.ai/blog/rlm)
+- [Prime Intellect: environment tips](https://www.primeintellect.ai/blog/rlm)
+- [Hampton-io FINAL/FINAL_VAR implementation](D:/projects/github/hampton-io/RLM/src/sandbox/vm-sandbox.ts)
+- [code-rabi/rllm giveFinalAnswer validation](D:/projects/github/code-rabi/rllm/src/sandbox.ts)
 
 ---
 
-### Pitfall 3: `CLAUDE_PLUGIN_ROOT` Path Separator Corruption on Windows
+### Pitfall 5: `llm_query()` Sub-Calls Cannot Directly Spawn Claude Subagents from Node.js Scripts
 
-**What goes wrong:** On Windows, `${CLAUDE_PLUGIN_ROOT}` is set to a Windows-style path with backslashes (e.g., `C:\Users\user\.claude\plugins\...`). When this variable is interpolated into bash hook commands, the backslashes are either stripped (producing `C:Usersuser.claude...`) or interpreted as escape sequences. Plugin hooks fail with "No such file or directory" errors.
+**What goes wrong:** The REPL design assumes `llm_query()` can invoke LLM API calls from within the sandbox. But Claude Code plugins interact with Claude through declarative markdown definitions (agents, skills, commands) and hooks -- not through programmatic API calls from arbitrary JavaScript. There is no `claude.complete()` function available to Node.js scripts.
 
-**Why it happens:** Claude Code runs hooks via Git Bash (MSYS2) on Windows. The variable substitution for `${CLAUDE_PLUGIN_ROOT}` happens before the command reaches bash, but the path uses Windows backslash separators. Bash interprets backslashes as escape characters, corrupting the path. This is tracked as open issues on the Claude Code repository (#18527, #22449) with no official fix as of March 2026.
+**Why it happens:** The RLM reference implementation uses a TCP-based LMHandler that routes `llm_query()` to external LLM backends. In Claude Code, the closest equivalent is the `Task` tool, which spawns a subagent. But `Task` is a tool that Claude uses in conversation, not a function that Node.js scripts can call directly.
 
-**Consequences:**
-- All plugin hooks fail silently on Windows: SessionStart, PreToolUse, PostToolUse, Stop
-- Plugin appears completely non-functional on Windows despite working on macOS/Linux
-- The AGENTS.md for this repo explicitly requires cross-platform support (macOS, Linux, Windows)
+**The architectural gap:**
 
-**Warning signs:**
-- Hook scripts that reference `${CLAUDE_PLUGIN_ROOT}` in `hooks.json`
-- Testing only on macOS/Linux during development
-- Error messages containing mangled paths like `C:Users...` in Windows CI or testing
+```
+RLM reference:  REPL code -> llm_query() -> TCP socket -> LMHandler -> OpenAI API
+                 (synchronous from REPL's perspective)
 
-**Prevention:**
-1. **Never rely on `${CLAUDE_PLUGIN_ROOT}` in bash hook commands.** The project's own AGENTS.md already documents this: "CLAUDE_PLUGIN_ROOT is substituted by the plugin system in hooks.json but NOT in command markdown files."
-2. **In hooks.json, use Node.js scripts that resolve their own path:** The hook command should be `node "${CLAUDE_PLUGIN_ROOT}/scripts/some-script.mjs"` -- Node.js handles the path normalization. The plugin system correctly passes the path to `node` even on Windows because Node.js accepts both separators.
-3. **If hooks must use bash scripts,** convert the path to POSIX format inside the script: `plugin_root=$(cygpath -u "$CLAUDE_PLUGIN_ROOT")`.
-4. **Use forward slashes everywhere in plugin paths.** PowerShell, Node.js, and Git Bash all accept forward slashes on Windows.
-5. **Test on Windows in CI from the first phase.** Do not defer Windows testing.
+Claude Code:     REPL code -> llm_query() -> ??? -> Claude subagent -> ???
+                 (no direct API available from Node.js scripts)
+```
 
-**Detection:** CI matrix that includes Windows. Specific test that runs each hook and verifies the script path resolves correctly.
+**Possible implementation patterns (from analysis of existing plugins):**
 
-**Phase relevance:** Affects every phase that adds hooks or scripts. Establish the path handling convention in phase 1 and enforce it in code review.
+1. **Callback-based delegation (Hampton-io pattern):** The REPL `llm_query()` creates a Promise and queues it. The host (agent layer) processes the queue, dispatches to the subagent, and resolves the Promise. This is exactly what Hampton-io's `pendingQueries` array and `executeWithQueryProcessing` loop implement.
 
-**Confidence:** HIGH -- multiple open GitHub issues with reproduction steps, confirmed by the project's own AGENTS.md documentation.
+2. **Agent-driven REPL (brainqub3 pattern):** The root agent generates REPL code, the skill's Node.js script executes it, and when `llm_query()` is encountered, the script outputs a structured request. The agent layer reads the output, dispatches the sub-call, and feeds the result back to the REPL in the next iteration.
 
-**Sources:**
-- [Plugin bash hooks fail on Windows: mixed path separators](https://github.com/anthropics/claude-code/issues/18527)
-- [CLAUDE_PLUGIN_ROOT backslashes stripped on Windows](https://github.com/anthropics/claude-code/issues/22449)
-- [Windows Git Bash recurring command issues](https://github.com/anthropics/claude-code/issues/29346)
+3. **File-based IPC:** The REPL writes a request to a temp file, the agent reads it, dispatches, and writes the response to another temp file. The REPL polls for the response. Ugly but works within Claude Code's constraints.
 
----
-
-### Pitfall 4: Nx Daemon Timeouts and OOM on Large Workspaces
-
-**What goes wrong:** On a 537-project workspace, Nx daemon operations can take minutes instead of seconds. `nx graph --print` triggers full project graph computation that can consume 38+ GB of memory and crash with OOM. The daemon can hang indefinitely when plugins produce graph errors, leaving a zombie process that blocks subsequent Nx commands.
-
-**Why it happens:** The Nx daemon maintains an in-memory project graph. For large workspaces, initial graph computation is expensive (reported at 8-10 minutes in Nx v21+). `nx graph --print` forces serialization of the entire graph to JSON, which for 537 projects with full dependency edges can produce a multi-MB JSON blob. If the daemon encounters an error during graph computation (e.g., malformed `project.json`), it hangs and holds its socket, preventing new commands.
-
-**Consequences:**
-- `workspace-indexer.mjs` on SessionStart hangs for minutes, making the plugin feel broken on first use
-- OOM crash if the daemon tries to build the full graph on a machine with limited memory (the 16 GB max usable RAM constraint from the dev machine spec)
-- Zombie daemon process blocks all subsequent Nx commands until `nx reset` is run
-- JSON serialization of the full graph can exceed Node.js default `maxBuffer` (200 KB for `execSync`), silently truncating output
-
-**Warning signs:**
-- `nx graph --print` taking more than 10 seconds on the target workspace
-- Node.js process memory climbing above 2 GB during workspace indexing
-- "Calculating the project graph on the Nx Daemon is taking longer than expected" messages
-- Truncated JSON output from `execSync` (missing closing brackets)
+**The critical question:** Can the `repl-executor` agent's system prompt instruct it to recognize when the REPL output contains a `llm_query()` request and dispatch it via `Task`? This is the most natural pattern for Claude Code but has risks:
+- Subagent context limits (167K usable tokens before compaction)
+- Subagent output token limits (32K default, may not be enforced per issue #10738)
+- Rate limit false positives from rapid subagent spawning (issue #27053)
 
 **Prevention:**
-1. **Never call `nx graph --print` in the SessionStart hook.** Cache the graph and rebuild incrementally. Use the daemon's cached graph at `.nx/workspace-data/project-graph.json` when available.
-2. **Set `maxBuffer` explicitly** on all `execSync` calls to Nx: `execSync('npx nx ...', { maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' })` (10 MB).
-3. **Implement timeout + fallback** for all Nx CLI calls: if `nx show projects --json` takes more than 30 seconds, fall back to reading `nx.json` and `project.json` files directly.
-4. **Use `NX_DAEMON=false`** for indexing operations to avoid daemon state issues, or pipe output directly instead of relying on daemon caching.
-5. **Use `nx show projects --json`** (lightweight, returns only project names) instead of `nx graph --print` (heavyweight, returns full dependency graph) when full graph is not needed.
-6. **Build the dependency graph incrementally:** First get project names (`nx show projects --json`), then get per-project details on demand (`nx show project <name> --json`), caching results.
-7. **Handle `nx reset` recovery:** If any Nx command fails with a daemon error, automatically run `nx reset` and retry once.
+1. **Prototype the callback pattern in Phase 2** (REPL sandbox core), even with mock LLM responses. Verify the Promise-based queueing works: REPL code calls `llm_query()`, execution pauses, host resolves the Promise, execution resumes.
+2. **Wire to real subagents in Phase 4** (agent integration). The `repl-executor` agent markdown must include explicit instructions for handling `llm_query()` requests in REPL output.
+3. **Have a fallback plan:** If programmatic sub-calls prove infeasible (rate limits, context limits), implement a "single-model REPL" where the root Sonnet agent handles all iterations without sub-delegation. This loses Haiku cost optimization but preserves the REPL navigation value.
+4. **Test subagent limits empirically:** Before committing to the sub-call architecture, run 10 test queries that each spawn 3-5 subagent calls and measure: latency, token usage, rate limit behavior, and context stability.
 
-**Detection:** Performance benchmarks for the indexing script on the target 537-project workspace. Alert if indexing takes more than 30 seconds.
+**Detection:** Phase 2 proof-of-concept that demonstrates end-to-end: REPL code calls `llm_query()` -> message reaches agent layer -> subagent spawns and returns -> result flows back to REPL.
 
-**Phase relevance:** Critical for the workspace indexer phase. The indexing strategy must be designed around daemon limitations from the start.
+**Phase relevance:** Architecture-defining decision. Must be prototyped in Phase 2, fully implemented in Phase 4. If it fails, the entire sub-call architecture needs to pivot.
 
-**Confidence:** HIGH -- multiple GitHub issues (#26786, #28487, #32265) with detailed reproduction on large workspaces. The target workspace (537 projects) is squarely in the affected range.
+**Confidence:** MEDIUM -- the Hampton-io callback pattern is sound, but no existing Claude Code plugin implements this specific REPL-to-subagent bridge. The subagent rate limit bug (#27053) and output token cap (#10738) are real risks that need empirical validation.
 
 **Sources:**
-- [Nx daemon OOM on project graph](https://github.com/nrwl/nx/issues/26786)
-- [Nx tasks hanging 30+ minutes](https://github.com/nrwl/nx/issues/28487)
-- [Slow project graph calculation](https://github.com/nrwl/nx/issues/32265)
-- [Nx Daemon documentation](https://nx.dev/docs/concepts/nx-daemon)
-
----
-
-### Pitfall 5: The RLM Training Gap -- Models Underutilize or Misuse the REPL
-
-**What goes wrong:** Current frontier models (Claude Sonnet, GPT-4, etc.) have not been trained on the RLM paradigm. They underutilize sub-calls, make poor decomposition choices, fail to emit `FINAL()` reliably, and sometimes perform worse with RLM scaffolding than without it. Prime Intellect's ablations confirm: without strategy hints in the system prompt, RLM can actually degrade performance compared to a plain LLM call.
-
-**Why it happens:** The RLM paper's experiments show that models need explicit RL training on RLM trajectories to use the REPL effectively. The first natively recursive model (RLM-Qwen3-8B) required distillation from 1,072 quality trajectories to improve by 28.3%. Without training, models treat the REPL as a novelty rather than a systematic navigation tool. They may:
-- Dump entire file contents into `print()` instead of extracting specific lines
-- Call `llm_query()` for tasks that could be done with `search()` or `files()`
-- Attempt to read the entire workspace into a REPL variable instead of navigating incrementally
-- Generate syntactically invalid JavaScript for the REPL
-
-**Consequences:**
-- Token savings evaporate if the model uses the REPL inefficiently (negating the core value proposition)
-- REPL output truncation at 2K chars causes information loss when the model dumps large results
-- Model confusion when REPL output is truncated, leading to repeated attempts
-- False perception that the plugin "doesn't work" when the model simply isn't leveraging it correctly
-
-**Warning signs:**
-- Average iteration count exceeding 15 for simple queries (should be 3-7)
-- `print()` output regularly hitting the truncation limit
-- Model generating `read()` calls on entire files when only specific functions are needed
-- Model not using workspace index lookups and instead doing `search()` for project names
-
-**Prevention:**
-1. **Invest heavily in the system prompt and strategy hints.** The Prime Intellect research shows strategy hints are the single most impactful mitigation. Include explicit examples of good REPL usage patterns:
-   - "Use `projects.get('name')` to find a project, not `search('name')`"
-   - "Use `read(path, startLine, endLine)` to read specific functions, not entire files"
-   - "Call `FINAL(answer)` as soon as you have the answer -- do not continue exploring"
-2. **Provide concrete REPL usage examples** in the agent prompt, not just API documentation. Show 2-3 complete fill-solve trajectories for common query types.
-3. **Truncate `print()` output aggressively** (2K chars default) and append a hint: `"[truncated at 2000 chars -- use targeted reads instead of dumping full content]"`.
-4. **Pre-populate REPL with helper patterns:** Instead of exposing raw `workspace` object, expose high-level query functions (`findProject()`, `findComponent()`, `getDeps()`) that return concise results.
-5. **Implement progressive prompt refinement:** If the first 5 iterations show no progress toward FINAL, inject a mid-loop hint: "You have used 5 of 20 iterations. Consider calling FINAL() with your current best answer."
-6. **Benchmark model-specific behavior** early. Claude Sonnet may behave differently than expected. Run the same 5 queries against the REPL and measure iteration count, token usage, and answer quality.
-
-**Detection:** Per-query telemetry: iteration count, total tokens, print truncation count, time-to-FINAL. Establish baselines in phase 1 and alert on regression.
-
-**Phase relevance:** Spans all phases. The system prompt and strategy hints should be iterated throughout development. This is a continuous tuning problem, not a one-time fix.
-
-**Confidence:** HIGH -- the training gap is the most consistently cited limitation across the RLM paper, Prime Intellect blog, community implementations, and the project's own synthesis document.
-
-**Sources:**
-- [RLM paper: Section 16 limitations](https://arxiv.org/html/2512.24601v1)
-- [Prime Intellect: environment tips and strategy hints](https://www.primeintellect.ai/blog/rlm)
-- [RLM synthesis: Section 13 community perspectives](D:/projects/github/LayZeeDK/lz-nx-ai-plugins/research/rlm/SYNTHESIS.md)
+- [Claude Code subagent documentation](https://code.claude.com/docs/en/sub-agents)
+- [Hampton-io pendingQueries pattern](D:/projects/github/hampton-io/RLM/src/sandbox/vm-sandbox.ts)
+- [Task tool subagent rate limit bug](https://github.com/anthropics/claude-code/issues/27053)
+- [Output token limit not applied to subagents](https://github.com/anthropics/claude-code/issues/10738)
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 6: `child_process.execSync` Encoding Mismatch on Windows
+### Pitfall 6: Cross-Realm `Error` Objects -- `instanceof Error` Returns `false` in VM Contexts
 
-**What goes wrong:** `execSync` returns a Buffer by default. When `{ encoding: 'utf8' }` is specified, it decodes as UTF-8. But on Windows, child processes (like `git grep`, `nx`) may output text in the system's legacy code page (cp1252 or cp437), not UTF-8. File paths containing non-ASCII characters, Nx project names with special characters, or git output with unicode branch names produce garbled text.
+**What goes wrong:** Errors thrown inside `vm.createContext()` are instances of the sandbox's `Error` constructor, not the host's. When caught in the host (or in error handling wrappers), `instanceof Error` returns `false`. The error is silently dropped, converted to `[object Object]`, or causes a secondary TypeError.
 
-**Why it happens:** Windows console default code page is cp1252. Node.js `execSync` with `encoding: 'utf8'` assumes the child process outputs UTF-8. When the child process uses the system code page instead, the decoding produces mojibake (garbled characters). This is especially problematic with `git grep` output that includes file paths with accented characters (common in international codebases).
+**Why it happens:** Each VM context has its own set of built-in constructors. `new Error("test")` in the sandbox creates an object whose prototype chain leads to the sandbox's `Error.prototype`, not the host's. `instanceof` checks the prototype chain against the host's constructor, which fails.
+
+**Concrete impact in our code:**
+
+```javascript
+// In repl-sandbox.mjs error handling:
+try {
+  const result = script.runInContext(context, { timeout: 5000 });
+} catch (e) {
+  if (e instanceof Error) {
+    // FALSE for errors from the VM context!
+    // This branch is never taken for sandbox errors
+    return { error: e.message };
+  }
+  // Falls through to generic handler -- may lose error details
+  return { error: String(e) }; // Works but loses stack trace
+}
+```
 
 **Prevention:**
-1. **Always get raw Buffer first** and decode explicitly: `execSync('command', { encoding: 'buffer' })` then inspect for valid UTF-8 before decoding.
-2. **Prepend `chcp 65001 &&`** to commands that need UTF-8 output on Windows, but only when `process.platform === 'win32'`.
-3. **For Git Bash on Windows** (which is the shell Claude Code uses), UTF-8 is typically the default. But verify by checking the `LANG` environment variable -- it should contain `UTF-8`.
-4. **Set `maxBuffer` on all `execSync` calls.** Default is 200 KB, which is easily exceeded by `git grep` on a 537-project workspace.
-5. **Always pass `{ encoding: 'utf8' }` to `execSync`** when running through Git Bash (which does use UTF-8), but test with real data on Windows.
+1. **Use `util.types.isNativeError(e)` instead of `instanceof Error`** -- this works across realms and is available in Node.js without any polyfill:
+   ```javascript
+   import { types } from 'node:util';
+   if (types.isNativeError(e)) {
+     // Works for errors from any realm
+   }
+   ```
+2. **`Error.isError()` is now TC39 Stage 4** and available in Node.js 24+. Prefer it over `instanceof Error` everywhere:
+   ```javascript
+   if (Error.isError(e)) {
+     // Realm-safe error detection
+   }
+   ```
+3. **Duck-type errors as a fallback:** Check for `.message` and `.stack` properties rather than using `instanceof`:
+   ```javascript
+   function isErrorLike(e) {
+     return e && typeof e === 'object' && 'message' in e && 'stack' in e;
+   }
+   ```
+4. **code-rabi/rllm handles this correctly:** Their error handling uses `e instanceof Error ? ... : String(e)`, which works because they catch errors in the wrapping code that runs IN the same context as the thrown error. Copy this pattern: catch errors inside the async IIFE (same realm), format them as strings, and pass strings out.
 
-**Detection:** Unit tests with non-ASCII file paths on Windows. CI matrix including Windows.
+**Detection:** Unit test that creates an `Error` inside a VM context, catches it in the host, and verifies the detection method returns `true`.
 
-**Phase relevance:** Affects the workspace indexer and all scripts that shell out to Git or Nx. Establish the encoding convention in phase 1.
+**Phase relevance:** REPL sandbox core (Phase 2). Apply the pattern consistently from the start.
 
-**Confidence:** MEDIUM -- well-documented Node.js behavior, but Git Bash mitigates most cases. Risk is real for edge cases.
+**Confidence:** HIGH -- well-documented JavaScript behavior, confirmed by Node.js docs, MDN, and the new TC39 `Error.isError()` proposal reaching Stage 4.
 
 **Sources:**
-- [Node.js help: UTF-8 encoding in child processes](https://github.com/nodejs/help/issues/3781)
-- [Node.js child_process docs](https://nodejs.org/api/child_process.html)
+- [Error.isError(): A Better Way to Check Error Types (TC39 Stage 4)](https://www.trevorlasn.com/blog/error-iserror-javascript)
+- [MDN: instanceof with cross-realm objects](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof)
+- [Node.js util.types.isNativeError](https://nodejs.org/api/util.html#utiltypesisnativeerrorvalue)
 
 ---
 
-### Pitfall 7: REPL State Corruption Across Iterations
+### Pitfall 7: Git Bash (MSYS2) Automatic Path Conversion Corrupts Arguments
 
-**What goes wrong:** The Node.js VM REPL persists state via `globalThis` across iterations (by design -- this is the "filling phase" accumulating variables). But this persistence creates mutation hazards: (a) a failed iteration can leave partially initialized variables; (b) `const` re-declarations fail with `SyntaxError` on subsequent iterations; (c) the LLM may overwrite critical REPL globals (like `workspace`, `deps`, `FINAL`) with user variables.
+**What goes wrong:** Git Bash automatically converts any argument that looks like a Unix path (`/c/`, `/usr/`, `/tmp/`) to a Windows path (`C:\`, `C:\Program Files\Git\usr\`, etc.) when calling native Windows binaries. This silently corrupts arguments to `child_process.execSync` when running Nx commands, git grep, or any tool that accepts paths or path-like arguments.
 
-**Why it happens:** The `vm` module's persistent context is a mutable global namespace. There is no mechanism for transactional iteration (rollback on error) or namespace protection for built-in REPL globals. The Hampton-io/RLM and code-rabi/rllm implementations handle this via `globalThis` transformation (`const x = 5` becomes `globalThis.x = 5`) and scaffold restoration after each `exec()`.
+**Why it happens:** MSYS2 (the environment underlying Git Bash) has automatic POSIX-to-Windows path conversion that applies to all arguments passed to non-MSYS executables. This conversion is aggressive: any argument starting with `/` followed by a single letter and `/` is treated as a drive path. Arguments like `/filter/`, `/query/`, or regex patterns like `/src\/lib/` can be corrupted.
+
+**Concrete failure cases in our plugin:**
+
+```javascript
+// 1. git grep with path arguments
+execSync('git grep -n "pattern" -- libs/shared/')
+// Git Bash may convert "libs/shared/" based on context
+
+// 2. Nx commands with project paths
+execSync('npx nx show project my-lib --json')
+// Safe -- no path-like arguments
+
+// 3. Regex patterns that look like paths
+execSync('git grep -n "/api/v1/users"')
+// "/api/v1/users" gets converted to "C:\Program Files\Git\api\v1\users"
+// Search returns zero results
+
+// 4. JSON output containing paths
+const output = execSync('npx nx graph --print');
+// Output contains Windows paths with backslashes
+// JSON.parse succeeds but paths need normalization
+```
 
 **Prevention:**
-1. **Transform `const`/`let`/`var` declarations** to `globalThis.xxx = ...` assignments before execution. This prevents re-declaration errors across iterations.
-2. **Snapshot REPL globals** before each iteration. After execution, restore any overwritten built-in globals (`workspace`, `projects`, `deps`, `search`, `FINAL`, etc.).
-3. **Isolate error recovery:** When a code block throws, capture the error but don't abort the loop. Log the error, restore the scaffold, and let the LLM try again (up to `maxConsecutiveErrors`).
-4. **Namespace protection:** Use `Object.defineProperty` with `configurable: false, writable: false` on all built-in REPL globals to prevent accidental overwrite.
-5. **Provide `SHOW_VARS()` explicitly** so the LLM can inspect what variables exist before re-declaring.
+1. **Use Node.js `child_process` with `shell: false` (the default for `spawn`/`execFile`):** When `shell: false`, arguments are passed directly to the executable without shell interpretation, avoiding MSYS2 path conversion.
+   ```javascript
+   // BAD: shell: true triggers MSYS2 conversion
+   execSync('git grep -n "/api/users"', { shell: true });
+   // GOOD: spawn with shell: false, arguments as array
+   spawnSync('git', ['grep', '-n', '/api/users'], { encoding: 'utf8' });
+   ```
+2. **Set `MSYS_NO_PATHCONV=1` in the environment for shell commands:**
+   ```javascript
+   execSync('git grep -n "/api/users"', {
+     env: { ...process.env, MSYS_NO_PATHCONV: '1' },
+     encoding: 'utf8',
+   });
+   ```
+   **Caveat:** `MSYS_NO_PATHCONV` disables ALL path conversion. Any argument that IS a path and needs conversion will stop working. Use selectively.
+3. **Use `MSYS2_ARG_CONV_EXCL` for selective exclusion:**
+   ```javascript
+   execSync('git grep -n "/api/users"', {
+     env: { ...process.env, MSYS2_ARG_CONV_EXCL: '*' },
+     encoding: 'utf8',
+   });
+   ```
+4. **Normalize all paths in output:** When parsing Nx CLI output on Windows, normalize paths to forward slashes:
+   ```javascript
+   const normalized = outputPath.replace(/\\/g, '/');
+   ```
 
-**Detection:** Test case that declares `const x = 5` in iteration 1 and `const x = 10` in iteration 2 -- verify it succeeds after transformation.
+**Detection:** CI test on Windows that runs `git grep` with a regex containing `/` and verifies correct results.
 
-**Phase relevance:** Core REPL engine phase. Ship together with the sandbox.
+**Phase relevance:** Workspace indexer and Nx runner (Phase 1). All shell commands must be tested on Windows.
 
-**Confidence:** HIGH -- documented pattern in Hampton-io/RLM and code-rabi/rllm implementations.
-
----
-
-### Pitfall 8: Hook Execution Timeout Blocking Claude Code Sessions
-
-**What goes wrong:** Claude Code hooks have a timeout (60 seconds for most hooks). If a SessionStart hook runs the workspace indexer and it takes longer than 60 seconds (plausible for initial indexing of a 537-project workspace with full Nx graph computation), the hook silently fails. The plugin starts without a workspace index, and all REPL operations that depend on it break silently.
-
-**Why it happens:** The workspace indexer calls Nx CLI commands (`nx show projects --json`, `nx graph --print`, per-project `nx show project <name>`) that depend on the Nx daemon. First-run daemon startup on a large workspace is slow. Combined with component/store/service registry scanning (regex over 1,700+ files), the total indexing time can exceed the hook timeout.
-
-**Prevention:**
-1. **Make the SessionStart hook a fast "index check" only.** Check if a cached index exists and is fresh (compare file mtimes). If fresh, load it. If stale, trigger indexing in the background.
-2. **Split indexing into tiers:**
-   - Tier 1 (fast, < 5s): Project names from `nx show projects --json` + path aliases from `tsconfig.base.json`. This is enough for basic REPL operation.
-   - Tier 2 (medium, < 30s): Dependency graph from cached `.nx/workspace-data/project-graph.json`.
-   - Tier 3 (slow, < 120s): Full component/store/service registries from regex scanning. Run as a background task or on first demand.
-3. **Never block on full indexing in a hook.** Start with Tier 1, provide immediate value, and progressively enhance.
-4. **Provide clear user feedback** if the index is stale or incomplete: "Workspace index is building in the background. Some features may be limited."
-
-**Detection:** Timer on the SessionStart hook. Log warning if indexing exceeds 10 seconds. Alert if it exceeds 30 seconds.
-
-**Phase relevance:** Workspace indexer phase. The tiered indexing strategy must be designed upfront.
-
-**Confidence:** HIGH -- based on Nx daemon timing data from GitHub issues and Claude Code hook timeout documentation.
+**Confidence:** HIGH -- well-documented MSYS2 behavior, confirmed by the project's own CLAUDE.md warning about path issues.
 
 **Sources:**
-- [Claude Code hooks reference](https://code.claude.com/docs/en/hooks)
-- [PostToolUse hooks not executing](https://github.com/anthropics/claude-code/issues/6305)
+- [MSYS2 Filesystem Paths documentation](https://www.msys2.org/docs/filesystem-paths/)
+- [MSYS_NO_PATHCONV behavior](https://gist.github.com/borekb/cb1536a3685ca6fc0ad9a028e6a959e3)
+- [Git Bash path conversion issues](https://www.pascallandau.com/blog/setting-up-git-bash-mingw-msys2-on-windows/)
 
 ---
 
-### Pitfall 9: `llm_query()` Sub-Calls Cannot Actually Spawn Claude Subagents from Node.js VM
+### Pitfall 8: `child_process` Default Shell on Windows Is `cmd.exe`, Not Git Bash
 
-**What goes wrong:** The REPL design assumes `llm_query()` can invoke Claude API calls from within the sandbox. But the Claude Code plugin architecture does not expose a direct LLM API from Node.js scripts. Plugins interact with Claude through commands, skills, agents (markdown definitions), and hooks -- not through programmatic API calls from arbitrary JavaScript. There is no `claude.complete()` function available in the sandbox.
+**What goes wrong:** Node.js `child_process.exec()` and `execSync()` use `process.env.ComSpec` (typically `cmd.exe`) as the default shell on Windows. Commands written with Unix shell syntax (pipes, `&&` chaining, glob patterns, environment variable syntax like `$VAR`) fail or behave differently under `cmd.exe` vs. Git Bash.
 
-**Why it happens:** The RLM paper's reference implementation uses a TCP-based LMHandler that routes `llm_query()` to external LLM backends. In the Claude Code plugin context, there is no equivalent infrastructure. Claude Code plugins are declarative (markdown agent definitions, hook scripts that return JSON) rather than imperative (arbitrary API calls from code).
+**Why it happens:** Claude Code runs in Git Bash, so developers test commands that work in Git Bash. But when those same commands are executed via `execSync()` inside a Node.js script, they run under `cmd.exe`, which has different syntax for:
+- Environment variable expansion: `$VAR` vs `%VAR%`
+- Path separators: `/` (sometimes works) vs `\` (always works)
+- Command chaining: `&&` works in both, but `||` and `;` differ
+- Quoting: single quotes `'string'` not supported in `cmd.exe`
 
-**Consequences:**
-- The core RLM mechanism (symbolic recursion via `llm_query()` sub-calls) may not be implementable as designed
-- Without sub-calls, the plugin degrades from "RLM" to "REPL with workspace navigation" -- still valuable but missing the recursive component
-- Architecture redesign needed mid-development if this limitation is discovered late
+**Concrete failure in our plugin:**
+
+```javascript
+// Works in Git Bash where Claude Code runs:
+execSync("git grep -c 'pattern' -- '*.ts'");
+// Fails under cmd.exe: single quotes not recognized
+
+// Works in Git Bash:
+execSync("NX_DAEMON=false npx nx show projects --json");
+// Fails under cmd.exe: NX_DAEMON=false is not a valid cmd command
+
+// The nx-runner.mjs script uses execSync which defaults to cmd.exe
+```
 
 **Prevention:**
-1. **Design `llm_query()` to dispatch via the Claude Code `Task` tool.** The REPL executor agent (which drives the fill-solve loop) can be instructed to spawn a subagent via `Task` when the REPL code calls `llm_query()`. The flow: REPL code calls `llm_query(prompt)` -> REPL pauses -> executor agent receives the sub-call request -> spawns a Haiku subagent via `Task` tool -> receives result -> injects result back into REPL -> REPL resumes.
-2. **Implement as async callback:** The `llm_query()` global in the sandbox returns a Promise. The sandbox executor awaits it. The resolution comes from the agent layer, not from a direct API call.
-3. **Prototype this mechanism in phase 1** before building the full REPL. If the Task-based delegation pattern doesn't work (e.g., the 32K output token limit on subagents, or rate limit false positives from issue #27053), the architecture needs to pivot early.
-4. **Fallback plan:** If programmatic sub-calls prove infeasible, implement a "single-model REPL" where the root Sonnet agent handles all iterations without sub-delegation. This loses the cost optimization of Haiku sub-calls but preserves the REPL navigation value.
+1. **Prefer `spawnSync` with `shell: false` and argument arrays:** This avoids shell interpretation entirely:
+   ```javascript
+   const result = spawnSync('git', ['grep', '-c', 'pattern', '--', '*.ts'], {
+     encoding: 'utf8',
+     env: { ...process.env, NX_DAEMON: 'false' },
+   });
+   ```
+2. **If `execSync` with shell is needed, explicitly set the shell:**
+   ```javascript
+   execSync('command here', {
+     shell: process.platform === 'win32' ? 'C:\\Program Files\\Git\\bin\\bash.exe' : '/bin/sh',
+     encoding: 'utf8',
+   });
+   ```
+   But this is fragile -- Git Bash may not be at that path. Better to avoid shell commands.
+3. **Use Node.js APIs instead of shell commands where possible:**
+   ```javascript
+   // Instead of: execSync('git grep -c "pattern" -- "*.ts"')
+   // Use: spawnSync('git', ['grep', '-c', 'pattern', '--', '*.ts'])
 
-**Detection:** Proof-of-concept in phase 1 that demonstrates: REPL code calls `llm_query()` -> message reaches agent layer -> subagent spawns and returns -> result flows back to REPL.
+   // Instead of: execSync('NX_DAEMON=false npx nx ...')
+   // Use: spawnSync('npx', ['nx', ...args], { env: { ...process.env, NX_DAEMON: 'false' } })
+   ```
+4. **Set environment variables via the `env` option, never via shell syntax:**
+   ```javascript
+   // BAD: shell-specific env var syntax
+   execSync('NX_DAEMON=false nx show projects --json');
+   // GOOD: works everywhere
+   execSync('npx nx show projects --json', {
+     env: { ...process.env, NX_DAEMON: 'false' },
+   });
+   ```
 
-**Phase relevance:** This is a **go/no-go architectural decision** for phase 1. It determines whether the plugin is a true RLM implementation or a REPL-only tool.
+**Detection:** Run all shell commands on Windows under both Git Bash and cmd.exe in CI.
 
-**Confidence:** MEDIUM -- the mechanism is theoretically possible through the Task tool, but no existing Claude Code plugin implements this pattern. The subagent rate limit bug (#27053) and 32K output token cap (#10738) are real risks.
+**Phase relevance:** Workspace indexer and Nx runner (Phase 1). Every `execSync` call must be audited for shell assumptions.
+
+**Confidence:** HIGH -- standard Node.js documentation; the distinction between Bash and cmd.exe is well-known.
 
 **Sources:**
-- [Task tool subagent rate limit bug](https://github.com/anthropics/claude-code/issues/27053)
-- [Output token limit not applied to subagents](https://github.com/anthropics/claude-code/issues/10738)
-- [Claude Code hooks reference](https://code.claude.com/docs/en/hooks)
+- [Node.js child_process documentation: shell option](https://nodejs.org/api/child_process.html)
+- [Resolving compatibility issues with child_process.spawn across platforms](https://medium.com/@python-javascript-php-html-css/resolving-compatibility-issues-with-node-js-child-process-spawn-and-grep-across-platforms-b33be96f9438)
 
 ---
 
-### Pitfall 10: `nx show project <name> --json` Per-Project Calls at Scale
+### Pitfall 9: `node:fs/promises` `glob` Returns Backslash Paths on Windows
 
-**What goes wrong:** To build a complete workspace index with target availability (which projects have `build`, `test`, `lint`, `serve`, `e2e`), the indexer needs to call `nx show project <name> --json` for each of 537 projects. Each call takes 1-3 seconds. Sequentially, this is 537-1,611 seconds (9-27 minutes). Even with daemon caching, the initial population is prohibitively slow.
+**What goes wrong:** Node.js `fs.glob()` (stable since Node.js 22.17) returns paths with the platform's native separator. On Windows, this means backslashes: `libs\\shared\\utils\\src\\index.ts`. These paths break when: (a) used as keys in Maps or Sets (won't match forward-slash versions), (b) compared against user-provided paths (which may use forward slashes), (c) fed into `git grep` or other Unix-origin tools, (d) stored in the workspace index and later used in cross-platform comparisons.
 
-**Why it happens:** `nx show projects --json` returns only project names, not their configuration. `nx graph --print` provides dependency edges but not per-project target configuration. Getting target availability requires per-project queries. There is no bulk API for "show all projects with their targets."
+**Why it happens:** `fs.glob()` uses the `path` module internally, which normalizes to `\` on Windows. The `node-glob` npm package (by Isaac Z. Schlueter) explicitly normalizes to forward slashes, but the built-in `fs.glob()` does not. This is a deliberate design choice -- the built-in follows `path.sep` conventions.
 
 **Prevention:**
-1. **Do not call `nx show project` for every project.** Instead, read `project.json` files directly from disk using the project source roots obtained from `nx show projects --json` + workspace layout convention.
-2. **Parse `project.json` or `package.json` directly** for target information. Nx infers targets from files (`jest.config.ts` implies `test`, `webpack.config.js` implies `build`), but explicit targets are in `project.json`.
-3. **Use the cached project graph** at `.nx/workspace-data/project-graph.json` which contains nodes with their configuration data.
-4. **Build target information lazily:** Only resolve targets for a project when the user queries it, not upfront for all 537.
+1. **Always normalize glob results to forward slashes immediately:**
+   ```javascript
+   import { glob } from 'node:fs/promises';
 
-**Detection:** Performance benchmark: the full indexing pipeline must complete in under 30 seconds for 537 projects.
+   async function findFiles(pattern, cwd) {
+     const results = [];
+     for await (const entry of glob(pattern, { cwd })) {
+       results.push(entry.replace(/\\/g, '/'));
+     }
+     return results;
+   }
+   ```
+2. **Create a `normalizePath` utility** used consistently across all scripts:
+   ```javascript
+   export const normalizePath = (p) => p.replace(/\\/g, '/');
+   ```
+3. **Always use forward slashes in glob patterns** -- both `fs.glob()` and `fast-glob` accept forward slashes on all platforms.
+4. **Test path comparisons on Windows:** If the workspace index stores paths, verify that lookups work when the query uses either separator style.
 
-**Phase relevance:** Workspace indexer design phase.
+**Detection:** Unit test on Windows that runs `fs.glob('**/*.ts')` and verifies all results use forward slashes after normalization.
 
-**Confidence:** HIGH -- simple arithmetic (537 calls x 1-3s each = 9-27 minutes) makes this obvious.
+**Phase relevance:** Workspace indexer (Phase 1). Path normalization must be consistent from the first file lookup.
+
+**Confidence:** HIGH -- confirmed by Node.js documentation and `node-glob` issue tracker.
+
+**Sources:**
+- [node-glob: Windows paths normalized to forward slashes](https://github.com/isaacs/node-glob/issues/419)
+- [Node.js fs.glob documentation](https://nodejs.org/api/fs.html)
+- [fs.glob: coerce paths to forward slashes](https://github.com/isaacs/node-glob/issues/468)
+
+---
+
+### Pitfall 10: Handle Store Memory Growth During Long REPL Sessions
+
+**What goes wrong:** The handle-based result storage keeps large results in a `Map` (`$res1`, `$res2`, ...). Over a 20-iteration REPL session where each iteration may produce a multi-KB result, the handle store can accumulate 1-5 MB of data that is never garbage collected. In edge cases (e.g., reading many files), this grows to tens of MB.
+
+**Why it happens:** The handle store is designed to prevent large results from entering the LLM context (the core token-saving mechanism). But there is no eviction policy -- once a handle is created, it lives until the REPL session ends. The Matryoshka implementation uses SQLite for handle storage with explicit TTL, but our v1 uses an in-memory Map for simplicity.
+
+**Concrete growth scenario:**
+
+```javascript
+// Iteration 1: files() returns 537 project objects -> $res1 (50KB)
+// Iteration 3: read() returns a 2000-line file -> $res2 (80KB)
+// Iteration 5: search() returns 200 matches -> $res3 (40KB)
+// Iteration 8: deps() returns full dependency tree -> $res4 (30KB)
+// ... by iteration 20: ~500KB in handles
+
+// Worst case: model does read() on 10 large files -> 800KB+
+```
+
+**Prevention:**
+1. **Cap handle store at 50 entries** and evict LRU (least recently used) when full.
+2. **Size-cap individual handles:** If a result exceeds 100KB, truncate it and store a warning:
+   ```javascript
+   if (JSON.stringify(value).length > 100_000) {
+     store.set(handle, {
+       _truncated: true,
+       _originalSize: JSON.stringify(value).length,
+       preview: JSON.stringify(value).slice(0, 1000),
+     });
+   }
+   ```
+3. **Generation-based cleanup:** Results from iterations older than 5 iterations ago are automatically evicted. The model can re-compute them if needed.
+4. **WeakRef for optional handles:** For results the model is unlikely to revisit, use `WeakRef` so GC can reclaim them if memory pressure increases.
+
+**Detection:** Memory profiling during a 20-iteration REPL session. Alert if handle store exceeds 5 MB.
+
+**Phase relevance:** Handle store implementation (Phase 2).
+
+**Confidence:** MEDIUM -- only a problem for long REPL sessions with large intermediate results. The 20-iteration cap naturally limits exposure.
+
+---
+
+### Pitfall 11: Subagent Context Limits and Auto-Compaction Behavior
+
+**What goes wrong:** Claude Code subagents have the same context window as the main conversation (200K for Sonnet, 1M for Sonnet 1M). Auto-compaction triggers at ~95% capacity by default (configurable via `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`). If the `repl-executor` subagent accumulates 20 iterations of REPL output plus system prompt, it can hit compaction mid-session, losing critical iteration context.
+
+**Why it happens:** Each REPL iteration adds to the subagent's conversation: the code block (~200-500 tokens), the output (~200-2000 tokens), and the agent's reasoning (~100-300 tokens). Over 20 iterations at ~1000 tokens per iteration = ~20K tokens just for the REPL loop. Add the system prompt (~2-5K), the original question (~500), and the workspace index summary (~2-5K), and the subagent uses 25-30K tokens. This is well within limits for a single REPL session, but if the subagent also processes large file reads or search results, it can approach compaction.
+
+**Key finding from research:** Subagent transcripts are stored in separate files. Main conversation compaction does NOT affect subagent transcripts. Subagents compact independently. After compaction, specific variable names, exact error messages, and earlier patterns are lost -- which directly undermines the REPL's variable persistence model.
+
+**Prevention:**
+1. **Keep REPL output truncated aggressively:** The existing 2K char limit per `print()` output is critical. Never increase it without understanding the context impact.
+2. **Use handle stubs, not full data, in agent conversation:** The handle store exists precisely for this -- `$res1: Array(537) [preview...]` is 50 tokens, not 15,000.
+3. **Monitor token usage per REPL session:** If the repl-executor subagent approaches 50% of its context, inject a "wrap up" hint.
+4. **Consider model routing:** If the repl-executor uses Sonnet (200K context), 20 iterations is safe. If ever routed to a smaller model, reduce `maxIterations` proportionally.
+
+**Detection:** Log the estimated token count of each subagent REPL session. Alert if any session exceeds 100K tokens.
+
+**Phase relevance:** Agent integration (Phase 4). Needs empirical testing with real REPL sessions.
+
+**Confidence:** MEDIUM -- based on Claude Code documentation and community analysis. Exact auto-compaction behavior needs empirical validation.
+
+**Sources:**
+- [Claude Code subagent documentation](https://code.claude.com/docs/en/sub-agents)
+- [Context management with subagents](https://www.richsnapp.com/article/2025/10-05-context-management-with-subagents-in-claude-code)
+- [Claude Code context buffer analysis](https://claudefa.st/blog/guide/mechanics/context-buffer-management)
+- [Auto-compaction API docs](https://platform.claude.com/docs/en/build-with-claude/compaction)
+
+---
+
+### Pitfall 12: VM Persistent Context Memory Leaks
+
+**What goes wrong:** Node.js `vm.createContext()` contexts are not reliably garbage collected even when all JavaScript references are released. V8's `Global` handles that keep the context alive can leak, especially when the context contains closures that reference host objects.
+
+**Why it happens:** The Node.js `vm` module has a long history of memory leak issues (GitHub issues #3113, #6552). The root cause is that `v8::Global` references holding compiled function entries alive are not made weak properly. Fixes have been attempted and reverted due to use-after-free crashes. The situation has improved in Node.js 22+ but is not fully resolved.
+
+**Our specific risk:**
+
+Each REPL session creates one VM context. With our plugin, a user might run 5-10 REPL sessions per Claude Code session. If each context leaks 5-10 MB, that is 25-100 MB of leaked memory per Claude Code session -- noticeable but not catastrophic. However, if the workspace index (50-100KB) is re-injected into each context without cleanup, the leak includes the index data.
+
+**Prevention:**
+1. **Reuse a single VM context per REPL session** (both reference implementations do this). Never create a new context per iteration -- create one context and execute multiple scripts within it.
+2. **Null out references explicitly when the REPL session ends:**
+   ```javascript
+   function disposeContext(ctx) {
+     for (const key of Object.keys(ctx)) {
+       ctx[key] = undefined;
+     }
+     // ctx itself may not be GC'd, but at least the objects it held are freed
+   }
+   ```
+3. **Run the VM in a Worker Thread for hard cleanup:** `worker.terminate()` destroys the entire V8 isolate, guaranteeing no leaks. This is the recommended approach for production.
+4. **Do not worry about this for v1.** The leak is small enough per session that it will not cause problems in a plugin context (short-lived sessions, user restarts Claude Code periodically). Add Worker Thread isolation in a later milestone if profiling shows issues.
+
+**Detection:** Heap snapshot before and after 10 REPL sessions. Verify delta is under 50 MB.
+
+**Phase relevance:** Optimization (not v1). Document the known leak and plan for Worker Thread isolation later.
+
+**Confidence:** MEDIUM -- documented in Node.js issue tracker but severity is low for our use case.
+
+**Sources:**
+- [VM extreme memory growth (Node.js #3113)](https://github.com/nodejs/node/issues/3113)
+- [Fixing Node.js vm APIs: memory leaks (Joyee Cheung)](https://joyeecheung.github.io/blog/2023/12/30/fixing-nodejs-vm-apis-1/)
+- [vm memory leak in runInNewContext (Node.js v0.x #6552)](https://github.com/nodejs/node-v0.x-archive/issues/6552)
 
 ---
 
 ## Minor Pitfalls
 
-### Pitfall 11: `vm.runInContext` Timeout Performance Overhead
+### Pitfall 13: Nx CLI Output Line Ending Differences
 
-**What goes wrong:** Specifying a `timeout` on `vm.runInContext()` initializes a V8 watchdog thread for every execution. Under load (20 iterations per REPL session, multiple sessions), this creates measurable overhead -- the watchdog initialization is the bottleneck, not the code execution itself.
-
-**Prevention:** Accept the overhead (it is small for a plugin's use case -- 20 iterations, not 1000 concurrent requests). If profiling shows it's an issue, run the VM without timeout and implement external timeout via `setTimeout` + `worker.terminate()` from the parent thread.
-
-**Phase relevance:** Optimization phase, not initial build.
-
-**Confidence:** MEDIUM -- documented in Node.js issue #10453 but likely not significant at plugin scale.
-
-**Sources:**
-- [VM timeout performance impact](https://github.com/nodejs/node/issues/10453)
-- [VM timeout with watchdog thread](https://github.com/nodejs/node/issues/52261)
-
----
-
-### Pitfall 12: Nx `project.json` vs. Inferred Targets Confusion
-
-**What goes wrong:** Nx workspaces can define targets in `project.json` (explicit) or infer them from file presence (e.g., `jest.config.ts` -> `test` target). When the workspace indexer reads `project.json` directly (bypassing Nx), it may miss inferred targets. The REPL then reports "project X has no test target" when it actually does.
-
-**Prevention:** Prefer reading from the Nx project graph cache (`.nx/workspace-data/project-graph.json`) which includes both explicit and inferred targets. Fall back to `nx show project <name> --json` (which resolves inferred targets) only when the cache is stale.
-
-**Phase relevance:** Workspace indexer design phase.
-
-**Confidence:** MEDIUM -- depends on the target workspace's configuration style. The Connect monolith likely uses explicit `project.json` targets, but this should be verified.
-
----
-
-### Pitfall 13: Handle Store Memory Leaks
-
-**What goes wrong:** The handle-based result storage (`$res1: Array(537) [preview...]`) keeps large result sets in a Map. If handles are never cleaned up (e.g., REPL session runs 20 iterations, each producing large results), memory grows unbounded within a session.
-
-**Prevention:** Implement a generation-based cleanup: results from iterations older than 5 iterations ago are eligible for garbage collection. Alternatively, cap the handle store at 50 entries and evict LRU.
-
-**Phase relevance:** Handle store implementation phase.
-
-**Confidence:** MEDIUM -- only a problem for long REPL sessions with large intermediate results.
-
----
-
-### Pitfall 14: PostToolUse Hooks Silently Failing on Windows
-
-**What goes wrong:** PostToolUse and PreToolUse hooks were reported to silently fail to execute on Windows. The hooks are configured correctly in `hooks.json` but never fire. This was tracked as a bug in Claude Code that was fixed by using Git Bash instead of cmd.exe, but regressions have occurred.
+**What goes wrong:** Nx CLI output on Windows uses `\r\n` line endings. When this output is parsed with `split('\n')`, each line retains a trailing `\r`. This causes: (a) JSON parse failures if the output has trailing `\r` before a closing `}`, (b) string comparison failures (`"my-app\r" !== "my-app"`), (c) invisible bugs where logged output looks correct but string equality fails.
 
 **Prevention:**
-1. Test all hooks on Windows explicitly during development.
-2. Include a "hook health check" in the SessionStart hook that verifies all configured hooks are responsive.
-3. Log hook invocations to a file so silent failures can be detected post-hoc.
+1. **Always strip `\r` from CLI output immediately:**
+   ```javascript
+   const output = execSync('npx nx show projects --json', { encoding: 'utf8' })
+     .replace(/\r\n/g, '\n')
+     .trim();
+   ```
+2. **Use `JSON.parse()` which handles whitespace:** For JSON output, `JSON.parse` ignores trailing whitespace including `\r`. But for line-by-line parsing, explicit `\r` stripping is needed.
 
-**Phase relevance:** Any phase that adds hooks.
+**Phase relevance:** Workspace indexer (Phase 1). Apply to every `execSync` call.
 
-**Confidence:** MEDIUM -- the fix was deployed but regressions are possible given the multiple open Windows path issues.
-
-**Sources:**
-- [PostToolUse hooks not executing](https://github.com/anthropics/claude-code/issues/6305)
+**Confidence:** HIGH -- standard cross-platform issue.
 
 ---
 
-### Pitfall 15: Error Cascading in Recursive Sub-Calls
+### Pitfall 14: `CLAUDE_PLUGIN_ROOT` Path Separator Corruption on Windows
 
-**What goes wrong:** In a recursive RLM stack, a hallucination or error in a leaf node (sub-LLM call) propagates upward. Unlike attention (which ensembles information), a discrete function call returns a hard decision. If a Haiku sub-call returns incorrect information, the root Sonnet agent trusts it as fact and builds on it.
+**What goes wrong:** On Windows, `${CLAUDE_PLUGIN_ROOT}` contains backslashes. When interpolated into bash hook commands, backslashes are stripped or interpreted as escape sequences. This is tracked as open issues on Claude Code (#18527, #22449) with no official fix.
 
 **Prevention:**
-1. **Implement verification for critical sub-call results.** For factual queries (file paths, dependency relationships), verify the result against the workspace index before using it.
-2. **Use deterministic operations over LLM sub-calls when possible.** If `search()` can answer the question, do not use `llm_query()`.
-3. **Log all sub-call inputs and outputs** for debugging. When the final answer is wrong, the trajectory log reveals which sub-call introduced the error.
+1. **In hooks.json, use Node.js scripts:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/some-script.mjs"` -- Node.js handles path normalization.
+2. **In scripts, resolve paths using `import.meta.url`** or `process.argv` instead of relying on `CLAUDE_PLUGIN_ROOT`:
+   ```javascript
+   import { fileURLToPath } from 'node:url';
+   const __dirname = fileURLToPath(new URL('.', import.meta.url));
+   ```
+3. **Use forward slashes everywhere** in plugin paths.
 
-**Phase relevance:** All phases involving `llm_query()` sub-calls.
+**Phase relevance:** Plugin shell (Phase 1). Establish path conventions from day one.
 
-**Confidence:** HIGH -- documented in the RLM paper and confirmed by community experience.
+**Confidence:** HIGH -- multiple open GitHub issues with reproduction steps.
+
+**Sources:**
+- [Plugin bash hooks fail on Windows (claude-code #18527)](https://github.com/anthropics/claude-code/issues/18527)
+- [CLAUDE_PLUGIN_ROOT backslashes stripped (claude-code #22449)](https://github.com/anthropics/claude-code/issues/22449)
+
+---
+
+### Pitfall 15: Haiku 4.5 Wrapping JSON in Markdown Code Fences
+
+**What goes wrong:** When a hook script expects raw JSON output from a Haiku subagent, Haiku often wraps the response in markdown code fences (` ```json ... ``` `) or adds explanatory text before/after the JSON. This breaks `JSON.parse()` and silently fails the hook.
+
+**Prevention:**
+1. **Explicitly instruct in the agent prompt:** "Respond with raw JSON only. No markdown code fences. No explanatory text. Just the JSON object."
+2. **Parse defensively:** Strip markdown code fences before parsing:
+   ```javascript
+   function parseJSONResponse(text) {
+     const stripped = text
+       .replace(/^```(?:json)?\s*/m, '')
+       .replace(/\s*```\s*$/m, '')
+       .trim();
+     return JSON.parse(stripped);
+   }
+   ```
+3. **Validate the parsed result** against a schema before using it.
+
+**Phase relevance:** Agent integration (Phase 4) when wiring the `haiku-searcher` agent.
+
+**Confidence:** MEDIUM -- reported by multiple plugin developers but may improve with newer Haiku versions.
+
+---
+
+### Pitfall 16: `vm.Script` Timeout on Constructor vs `.runInContext()`
+
+**What goes wrong:** The `timeout` option passed to the `vm.Script` constructor is SILENTLY IGNORED. Only the `timeout` passed to `.runInContext()` / `.runInNewContext()` is honored. This is a subtle API footgun that causes "infinite hang" bugs when developers pass timeout to the wrong method.
+
+**Prevention:**
+```javascript
+// BAD: timeout is silently ignored here
+const script = new vm.Script(code, { timeout: 5000 });
+script.runInContext(context); // No timeout -- runs forever
+
+// GOOD: timeout on the execution method
+const script = new vm.Script(code);
+script.runInContext(context, { timeout: 5000 }); // This works
+```
+
+Both reference implementations (Hampton-io and code-rabi/rllm) do this correctly. Copy their pattern.
+
+**Phase relevance:** REPL sandbox core (Phase 2).
+
+**Confidence:** HIGH -- documented in Node.js issue #20982.
+
+**Sources:**
+- [vm.Script timeout issue (Node.js #20982)](https://github.com/nodejs/node/issues/20982)
+
+---
+
+### Pitfall 17: Nx Daemon Timeouts and OOM on Large Workspaces
+
+**What goes wrong:** On the target 537-project workspace, `nx graph --print` triggers full project graph computation that can consume 38+ GB of memory and crash with OOM. The daemon can hang indefinitely when plugins produce graph errors.
+
+**Prevention:**
+1. **Never call `nx graph --print` in a hook.** Use the daemon's cached graph at `.nx/workspace-data/project-graph.json` when available.
+2. **Set `maxBuffer` explicitly** on all `execSync` calls: `{ maxBuffer: 10 * 1024 * 1024 }` (10 MB).
+3. **Use `nx show projects --json`** (lightweight) instead of `nx graph --print` (heavyweight) when full graph is not needed.
+4. **Build incrementally:** Project names first, then per-project details on demand.
+5. **Handle `nx reset` recovery:** If any Nx command fails with a daemon error, run `nx reset` and retry once.
+
+**Phase relevance:** Workspace indexer (Phase 1).
+
+**Confidence:** HIGH -- multiple Nx GitHub issues (#26786, #28487, #32265).
+
+**Sources:**
+- [Nx daemon OOM on project graph (#26786)](https://github.com/nrwl/nx/issues/26786)
+- [Nx tasks hanging 30+ minutes (#28487)](https://github.com/nrwl/nx/issues/28487)
+
+---
+
+### Pitfall 18: Claude Code Agent/Skill Markdown Parsing Gotchas
+
+**What goes wrong:** Several markdown parsing issues affect agent and skill definitions: (a) consecutive `@~/` file references are incorrectly parsed due to markdown strikethrough interference, (b) bold and colored text in markdown output shifts to wrong characters on Windows due to `\r\n` line endings, (c) YAML frontmatter must be valid YAML -- trailing commas, missing quotes on strings with colons, and other JSON-like syntax causes silent failures.
+
+**Prevention:**
+1. **Validate YAML frontmatter** with a YAML linter before shipping agent/skill markdown files.
+2. **Avoid `@~/` file references** in consecutive lines -- use blank lines between them.
+3. **Test agent/skill files on Windows** to verify rendering.
+4. **Keep frontmatter minimal:** Only use `description`, `model`, and `allowedTools`. Every additional field is a potential parsing failure point.
+
+**Phase relevance:** Agent integration (Phase 4) and skill (Phase 5).
+
+**Confidence:** MEDIUM -- based on Claude Code CHANGELOG bug fixes.
+
+**Sources:**
+- [Claude Code CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)
+- [Plugins reference](https://code.claude.com/docs/en/plugins-reference)
+
+---
+
+## Integration Pitfalls (Between Components)
+
+### Pitfall 19: REPL `read()` Function and Workspace Indexer Path Mismatch
+
+**What goes wrong:** The workspace indexer stores project source roots as relative paths (e.g., `libs/shared/utils/src`). The REPL `read()` function needs absolute paths to call `fs.readFileSync()`. If the REPL code constructs paths from the index without prepending the workspace root, every `read()` call fails with `ENOENT`.
+
+**Prevention:**
+1. **Store the workspace root in the index** and make it available as a REPL global.
+2. **Have `read()` resolve relative paths** against the workspace root automatically:
+   ```javascript
+   sandbox.read = (filePath, startLine, endLine) => {
+     const abs = path.isAbsolute(filePath) ? filePath : path.join(workspaceRoot, filePath);
+     // ... read and return
+   };
+   ```
+3. **Test the full path: index lookup -> path construction -> file read** as an integration test.
+
+**Phase relevance:** Integration between Phase 1 (indexer) and Phase 2 (REPL).
+
+**Confidence:** HIGH -- straightforward path handling, but easy to miss in initial implementation.
+
+---
+
+### Pitfall 20: Model Confusion from Handle Stubs vs. Actual Data
+
+**What goes wrong:** The handle store replaces large results with stubs like `$res1: Array(537) [preview...]`. The LLM may not understand that `$res1` is a reference to stored data, not a literal string. It may try to `JSON.parse("$res1")`, iterate over the string characters, or treat the stub as the actual result.
+
+**Why it happens:** The training gap. Models have not been trained to interact with handle stubs. Without explicit instructions, the model treats all REPL output as data to be processed, not as references to be dereferenced.
+
+**Prevention:**
+1. **Add handle usage examples to the system prompt:**
+   ```
+   When you see $res1: Array(537) [...], this is a handle to stored data.
+   Access it with: const items = $res1;
+   Filter it with: const filtered = $res1.filter(x => x.type === 'lib');
+   Do NOT try to parse $res1 as a string.
+   ```
+2. **Make handles callable:** Instead of just storing data, make handles behave like live references:
+   ```javascript
+   // In the sandbox, $res1 IS the actual array, not a string
+   // The stub is only shown in the print output
+   ```
+3. **Test with 5+ real queries** to verify the model understands and correctly uses handles.
+
+**Phase relevance:** Handle store (Phase 2) and agent integration (Phase 4).
+
+**Confidence:** HIGH -- the training gap is the most consistently cited RLM limitation.
 
 ---
 
 ## Phase-Specific Warnings
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| REPL sandbox (`repl-sandbox.mjs`) | VM sandbox escape via prototype chain (Pitfall 1) | Freeze all objects, `Object.create(null)` context, `codeGeneration: false` |
-| REPL sandbox (`repl-sandbox.mjs`) | REPL state corruption across iterations (Pitfall 7) | Transform declarations, snapshot globals, namespace protection |
-| Execution loop | Infinite loops / timeout evasion (Pitfall 2) | Four-layer guards, Worker Thread isolation, stale loop detection |
-| Execution loop | Models underutilize REPL (Pitfall 5) | Strategy hints, concrete examples, progressive prompt refinement |
-| Workspace indexer | Nx daemon timeout/OOM (Pitfall 4) | Tiered indexing, cached graph, never block on full index |
-| Workspace indexer | Per-project call scaling (Pitfall 10) | Read `project.json` directly, use cached project graph |
-| Workspace indexer | Hook timeout on SessionStart (Pitfall 8) | Fast index check, background indexing, tiered loading |
-| `llm_query()` integration | Sub-calls may not be feasible in Claude Code (Pitfall 9) | Prototype Task-based delegation in phase 1, have fallback plan |
-| Cross-platform scripts | Path separator corruption on Windows (Pitfall 3) | Node.js for all path operations, forward slashes, CI matrix |
-| Cross-platform scripts | `execSync` encoding mismatch on Windows (Pitfall 6) | Raw Buffer decoding, explicit encoding, maxBuffer |
-| All hook phases | PostToolUse silent failures on Windows (Pitfall 14) | Windows CI, hook health check, invocation logging |
-| Handle store | Memory leaks from accumulated results (Pitfall 13) | Generation-based cleanup, entry cap, LRU eviction |
+| Phase | Component | Likely Pitfall | Priority |
+|-------|-----------|---------------|----------|
+| 1 | Workspace indexer | Git Bash path munging corrupts args (Pitfall 7) | HIGH |
+| 1 | Workspace indexer | `cmd.exe` default shell breaks Unix syntax (Pitfall 8) | HIGH |
+| 1 | Workspace indexer | Nx daemon timeout/OOM on large workspace (Pitfall 17) | HIGH |
+| 1 | Workspace indexer | `fs.glob` returns backslash paths on Windows (Pitfall 9) | MEDIUM |
+| 1 | Workspace indexer | Nx output line endings `\r\n` (Pitfall 13) | LOW |
+| 1 | Plugin shell | `CLAUDE_PLUGIN_ROOT` backslash corruption (Pitfall 14) | LOW |
+| 2 | REPL sandbox | `const`/`let` transformation breaks destructuring (Pitfall 1) | **CRITICAL** |
+| 2 | REPL sandbox | Async IIFE timeout escape and error swallowing (Pitfall 2) | **CRITICAL** |
+| 2 | REPL sandbox | Prototype chain escape via injected objects (Pitfall 3) | HIGH |
+| 2 | REPL sandbox | Cross-realm `instanceof Error` fails (Pitfall 6) | MEDIUM |
+| 2 | REPL sandbox | VM `Script` timeout on constructor silently ignored (Pitfall 16) | MEDIUM |
+| 2 | REPL sandbox | Persistent context memory leaks (Pitfall 12) | LOW |
+| 2 | Handle store | Memory growth without eviction (Pitfall 10) | MEDIUM |
+| 2 | Handle store | Model confusion from handle stubs (Pitfall 20) | MEDIUM |
+| 2 | REPL + Indexer | Path mismatch between index and `read()` (Pitfall 19) | MEDIUM |
+| 4 | Execution loop | Infinite loops / `FINAL()` brittleness (Pitfall 4) | **CRITICAL** |
+| 4 | `llm_query()` | Sub-calls cannot directly spawn subagents (Pitfall 5) | **CRITICAL** |
+| 4 | Subagent | Context limits and auto-compaction (Pitfall 11) | MEDIUM |
+| 4 | `haiku-searcher` | Haiku wraps JSON in code fences (Pitfall 15) | LOW |
+| 5 | Skill markdown | YAML frontmatter and rendering gotchas (Pitfall 18) | LOW |
 
 ---
 
 ## Sources
 
-### Node.js VM Security
-- [Snyk: Security concerns of JavaScript sandbox with Node.js VM module](https://snyk.io/blog/security-concerns-javascript-sandbox-node-js-vm-module/)
-- [CVE-2025-68613: n8n sandbox escape deep dive](https://www.penligent.ai/hackinglabs/cve-2025-68613-deep-dive-how-node-js-sandbox-escapes-shatter-the-n8n-workflow-engine/)
+### Node.js VM Module
+- [Node.js vm documentation](https://nodejs.org/api/vm.html)
+- [MDN: globalThis scope with var/let/const](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis)
+- [Promises allow vm.runInContext timeout to be escaped (Node.js #3020)](https://github.com/nodejs/node/issues/3020)
+- [vm.runInThisContext fails with top-level await (Node.js #40898)](https://github.com/nodejs/node/issues/40898)
+- [vm timeout breaks console.log/stdout (Node.js #34678)](https://github.com/nodejs/node/issues/34678)
+- [vm.Script timeout silently ignored on constructor (Node.js #20982)](https://github.com/nodejs/node/issues/20982)
+- [VM extreme memory growth (Node.js #3113)](https://github.com/nodejs/node/issues/3113)
+- [microtaskMode afterEvaluate deadlocks async/await (Node.js #55546)](https://github.com/nodejs/node/issues/55546)
+- [VM timeout performance impact (Node.js #10453)](https://github.com/nodejs/node/issues/10453)
+- [Fixing Node.js vm APIs: memory leaks (Joyee Cheung)](https://joyeecheung.github.io/blog/2023/12/30/fixing-nodejs-vm-apis-1/)
+- [node:vm is not a sandbox (DEV Community)](https://dev.to/dendrite_soup/nodevm-is-not-a-sandbox-stop-using-it-like-one-2f74)
+
+### VM Security
+- [CVE-2025-68613: n8n sandbox escape](https://www.penligent.ai/hackinglabs/cve-2025-68613-deep-dive-how-node-js-sandbox-escapes-shatter-the-n8n-workflow-engine/)
 - [CVE-2026-22709: vm2 critical sandbox escape](https://www.endorlabs.com/learn/cve-2026-22709-critical-sandbox-escape-in-vm2-enables-arbitrary-code-execution)
-- [Escaping Node.js VM (gist)](https://gist.github.com/jcreedcmu/4f6e6d4a649405a9c86bb076905696af)
-- [Node.js vm.Script timeout issue](https://github.com/nodejs/node/issues/20982)
-- [VM timeout performance impact](https://github.com/nodejs/node/issues/52261)
-- [VM timeout is much slower](https://github.com/nodejs/node/issues/10453)
+- [Semgrep: vm2 escape analysis](https://semgrep.dev/blog/2026/calling-back-to-vm2-and-escaping-sandbox/)
 
-### Claude Code Plugin Issues
-- [Plugin bash hooks fail on Windows: CLAUDE_PLUGIN_ROOT](https://github.com/anthropics/claude-code/issues/18527)
-- [CLAUDE_PLUGIN_ROOT backslashes stripped on Windows](https://github.com/anthropics/claude-code/issues/22449)
-- [Windows Git Bash recurring command issues](https://github.com/anthropics/claude-code/issues/29346)
-- [PostToolUse hooks not executing](https://github.com/anthropics/claude-code/issues/6305)
-- [Task tool subagent rate limit bug](https://github.com/anthropics/claude-code/issues/27053)
-- [Output token limit not applied to subagents](https://github.com/anthropics/claude-code/issues/10738)
-- [Claude Code hooks reference](https://code.claude.com/docs/en/hooks)
+### Cross-Realm Errors
+- [Error.isError(): TC39 Stage 4](https://www.trevorlasn.com/blog/error-iserror-javascript)
+- [MDN: instanceof cross-realm issues](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof)
+- [From instanceof to Error.isError](https://allthingssmitty.com/2026/02/23/from-instanceof-to-error-iserror-safer-error-checking-in-javascript/)
 
-### Nx CLI Edge Cases
-- [Nx daemon OOM on project graph](https://github.com/nrwl/nx/issues/26786)
-- [Nx tasks hanging 30+ minutes](https://github.com/nrwl/nx/issues/28487)
-- [Slow project graph calculation in Nx v21](https://github.com/nrwl/nx/issues/32265)
-- [Nx Daemon documentation](https://nx.dev/docs/concepts/nx-daemon)
-- [Add JSON output to nx show projects](https://github.com/nrwl/nx/issues/21602)
+### Cross-Platform
+- [MSYS2 Filesystem Paths documentation](https://www.msys2.org/docs/filesystem-paths/)
+- [MSYS_NO_PATHCONV behavior](https://gist.github.com/borekb/cb1536a3685ca6fc0ad9a028e6a959e3)
+- [Node.js child_process documentation](https://nodejs.org/api/child_process.html)
+- [node-glob: Windows paths with forward slashes](https://github.com/isaacs/node-glob/issues/419)
+- [Git Bash path conversion pitfalls](https://www.pascallandau.com/blog/setting-up-git-bash-mingw-msys2-on-windows/)
+
+### Claude Code Plugin System
+- [Claude Code subagent documentation](https://code.claude.com/docs/en/sub-agents)
+- [Plugin bash hooks fail on Windows (claude-code #18527)](https://github.com/anthropics/claude-code/issues/18527)
+- [CLAUDE_PLUGIN_ROOT backslashes stripped (claude-code #22449)](https://github.com/anthropics/claude-code/issues/22449)
+- [Task tool subagent rate limit bug (claude-code #27053)](https://github.com/anthropics/claude-code/issues/27053)
+- [Context management with subagents](https://www.richsnapp.com/article/2025/10-05-context-management-with-subagents-in-claude-code)
+- [Claude Code context buffer analysis](https://claudefa.st/blog/guide/mechanics/context-buffer-management)
 
 ### RLM Limitations
 - [RLM paper: arxiv.org/abs/2512.24601](https://arxiv.org/abs/2512.24601)
 - [Prime Intellect: RLM paradigm of 2026](https://www.primeintellect.ai/blog/rlm)
-- [RLM synthesis (project research)](D:/projects/github/LayZeeDK/lz-nx-ai-plugins/research/rlm/SYNTHESIS.md)
 
-### Cross-Platform
-- [Node.js help: UTF-8 encoding in child processes](https://github.com/nodejs/help/issues/3781)
-- [Node.js child_process documentation](https://nodejs.org/api/child_process.html)
-- [Fixing Claude Code's PowerShell problem with hooks](https://blog.netnerds.net/2026/02/claude-code-powershell-hooks/)
+### Reference Implementations
+- [Hampton-io/RLM vm-sandbox.ts](D:/projects/github/hampton-io/RLM/src/sandbox/vm-sandbox.ts)
+- [Hampton-io/RLM security tests](D:/projects/github/hampton-io/RLM/tests/sandbox-security.test.ts)
+- [code-rabi/rllm sandbox.ts](D:/projects/github/code-rabi/rllm/src/sandbox.ts)
+
+### Nx CLI
+- [Nx daemon OOM (#26786)](https://github.com/nrwl/nx/issues/26786)
+- [Nx tasks hanging (#28487)](https://github.com/nrwl/nx/issues/28487)
