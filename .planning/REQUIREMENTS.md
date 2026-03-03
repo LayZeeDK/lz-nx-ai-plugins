@@ -83,27 +83,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | - | Pending |
-| FOUND-02 | - | Pending |
-| FOUND-03 | - | Pending |
-| REPL-01 | - | Pending |
-| REPL-02 | - | Pending |
-| REPL-03 | - | Pending |
-| REPL-04 | - | Pending |
-| AGNT-01 | - | Pending |
-| AGNT-02 | - | Pending |
-| SKIL-01 | - | Pending |
-| CMD-01 | - | Pending |
-| CMD-02 | - | Pending |
-| CMD-03 | - | Pending |
-| PLUG-01 | - | Pending |
-| PLUG-02 | - | Pending |
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| REPL-01 | Phase 2 | Pending |
+| REPL-02 | Phase 2 | Pending |
+| REPL-03 | Phase 2 | Pending |
+| REPL-04 | Phase 4 | Pending |
+| AGNT-01 | Phase 4 | Pending |
+| AGNT-02 | Phase 4 | Pending |
+| SKIL-01 | Phase 5 | Pending |
+| CMD-01 | Phase 3 | Pending |
+| CMD-02 | Phase 3 | Pending |
+| CMD-03 | Phase 3 | Pending |
+| PLUG-01 | Phase 1 | Pending |
+| PLUG-02 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after initial definition*
+*Last updated: 2026-03-03 after roadmap creation (traceability mapped)*
