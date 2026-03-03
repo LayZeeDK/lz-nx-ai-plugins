@@ -1,0 +1,25 @@
+{
+  "name": "lz-nx-ai-plugins",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "scripts": {},
+  "devDependencies": {
+    "@nx/eslint": "^22.5.1",
+    "@nx/js": "22.5.1",
+    "@nx/node": "^22.5.1",
+    "@nx/vite": "^22.5.1",
+    "@nx/vitest": "^22.5.1",
+    "@nx/web": "22.5.1",
+    "@vitest/ui": "^4.0.0",
+    "eslint": "~8.57.0",
+    "jiti": "2.4.2",
+    "nx": "22.5.1",
+    "prettier": "^3.0.0",
+    "tslib": "^2.3.0",
+    "typescript": "~5.9.2",
+    "vite": "^7.0.0",
+    "vitest": "^4.0.0"
+  },
+  "dependencies": {}
+}
