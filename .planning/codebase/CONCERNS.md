@@ -72,6 +72,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
   2. Set `codeGeneration: { strings: false, wasm: false }` on every `vm.createContext()` call.
   3. Create a test suite of known escape payloads that must fail. Run on every change to the sandbox file.
   4. If the plugin is ever extended to run user-supplied code (not LLM-generated), upgrade to `isolated-vm` immediately.
+- Future mitigation: `@anthropic-ai/sandbox-runtime` (SRT) provides OS-level sandboxing via macOS sandbox-exec and Linux bubblewrap -- kernel-enforced filesystem and network restrictions that make VM escapes harmless even if they succeed. SRT is used by Claude Code itself. **Deferred until Windows support is added** (currently macOS and Linux only). Repo: `https://github.com/anthropic-experimental/sandbox-runtime`. When available on Windows, SRT would wrap the Node.js process running `repl-sandbox.mjs`, adding defense-in-depth: VM scope isolation (fast, in-process) + OS kernel isolation (escape-proof). SRT also mitigates API key exfiltration via proxy-based network filtering with domain allowlists.
 
 **`ANTHROPIC_API_KEY` Exposure in Child Processes:**
 - Risk: The planned `llm_query()` implementation (Option A in `.planning/research/ARCHITECTURE.md`) calls a Node.js script via `child_process.execSync` that invokes the Anthropic SDK. The `ANTHROPIC_API_KEY` must be available in the process environment. Child process environment inheritance could expose the key via process listings or error output.

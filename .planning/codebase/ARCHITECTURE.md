@@ -156,6 +156,7 @@
 - Location: `plugins/lz-nx.rlm/agents/repl-executor.md` (planned)
 - Triggers: Spawned by `explore` skill (and future skills) as a Claude Code subagent
 - Responsibilities: Drive RLM fill/solve execution loop on Sonnet; isolate intermediate exploration from parent conversation
+- Nesting constraint: Claude Code enforces a single-level agent hierarchy. Subagents cannot spawn other subagents (the Task tool is not exposed to them), and teammates cannot create their own teams. The `repl-executor` agent therefore cannot delegate sub-exploration to nested agents. The `claude -p` Bash workaround exists but is unsupported -- it loses visibility, token accounting, and structured result passing. Design implication: all agent coordination must happen at the top level (main conversation or team lead), not within `repl-executor`. If deeper decomposition is needed, the main skill should spawn multiple flat subagents rather than nesting them.
 
 ## Error Handling
 
