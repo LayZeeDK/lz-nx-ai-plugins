@@ -8,6 +8,17 @@ A Claude Code plugin that applies the Recursive Language Model (RLM) paradigm to
 
 Claude can navigate and understand a large Nx workspace without burning context on intermediate exploration results. The conversation stays clean; the REPL is the scratch space that gets discarded.
 
+## Current Milestone: v0.0.1 RLM Foundation and Explore Skill
+
+**Goal:** Deliver the complete RLM-powered explore workflow -- from workspace indexing through the REPL sandbox and agent integration to the explore skill that proves token savings.
+
+**Target features:**
+- Plugin shell with workspace indexer, path resolver, and Nx runner
+- Isolated JavaScript REPL with workspace-aware globals and handle-based result storage
+- Zero-LLM-token deterministic commands (deps, find, alias)
+- Agent-driven RLM fill/solve execution loop (repl-executor + haiku-searcher)
+- Explore skill as the primary integration test for the RLM approach
+
 ## Requirements
 
 ### Validated
@@ -158,4 +169,4 @@ Low-risk components: workspace indexer (wraps known Nx CLI calls), path resolver
 | Defer token benchmarking | Validate savings manually first; benchmarking infrastructure is overhead before core works | -- Pending |
 
 ---
-*Last updated: 2026-03-03 after initialization (risk profile added)*
+*Last updated: 2026-03-03 after milestone v0.0.1 started*

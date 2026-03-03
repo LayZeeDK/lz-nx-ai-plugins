@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 1 of 5 (Plugin Shell and Foundation)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-03-03 -- Roadmap created
+Phase: Not started (defining requirements)
+Plan: --
+Status: Defining requirements
+Last activity: 2026-03-03 -- Milestone v0.0.1 started
 
 Progress: [..........] 0%
 
