@@ -128,6 +128,14 @@ Built from: `nx show projects --json`, `nx graph --print`, `tsconfig.base.json`,
 | Mechanical search sub-calls | Haiku | Bounded, mechanical tasks |
 | Commands (deps, find, alias) | None (Node.js) | Deterministic scripts |
 
+### Risk Profile
+
+The REPL sandbox, execution loop, and handle-based result storage are the highest-risk components. They are based on patterns from only 2 existing Node.js implementations (Hampton-io/RLM and code-rabi/rllm), and the RLM research explicitly flags "brittleness in answer termination" and "the training gap" (current models aren't trained to use RLM scaffolding optimally) as open problems.
+
+These components should be built and validated in early phases — before the skills and commands that depend on them. The explore skill is the primary integration test: if the REPL-powered explore skill does not reduce tokens vs. a standard Explore agent, the foundation needs rework before building more on top.
+
+Low-risk components: workspace indexer (wraps known Nx CLI calls), path resolver (reads tsconfig.json), deterministic commands (deps, find, alias), and the plugin shell itself (standard Claude Code plugin conventions).
+
 ## Constraints
 
 - **Cross-platform**: Must work on macOS, Linux, and Windows (Git Bash). Use Node.js scripts for all operations.
@@ -150,4 +158,4 @@ Built from: `nx show projects --json`, `nx graph --print`, `tsconfig.base.json`,
 | Defer token benchmarking | Validate savings manually first; benchmarking infrastructure is overhead before core works | -- Pending |
 
 ---
-*Last updated: 2026-03-03 after initialization*
+*Last updated: 2026-03-03 after initialization (risk profile added)*
