@@ -30,9 +30,9 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### Commands
 
-- [ ] **CMD-01**: `/lz-nx.rlm:deps` command prints a dependency tree for a given Nx project using the workspace index (zero LLM tokens)
-- [ ] **CMD-02**: `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index and filesystem glob (zero LLM tokens)
-- [ ] **CMD-03**: `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally -- path to alias and alias to path (zero LLM tokens)
+- [x] **CMD-01**: `/lz-nx.rlm:deps` command prints a dependency tree for a given Nx project using the workspace index (zero LLM tokens)
+- [x] **CMD-02**: `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index and filesystem glob (zero LLM tokens)
+- [x] **CMD-03**: `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally -- path to alias and alias to path (zero LLM tokens)
 
 ### Plugin Shell
 
@@ -97,9 +97,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REPL-04 | Phase 2 | Pending |
 | AGNT-01 | Phase 3 | Pending |
 | SKIL-01 | Phase 3 | Pending |
-| CMD-01 | Phase 1 | Pending |
-| CMD-02 | Phase 1 | Pending |
-| CMD-03 | Phase 1 | Pending |
+| CMD-01 | Phase 1 | Complete |
+| CMD-02 | Phase 1 | Complete |
+| CMD-03 | Phase 1 | Complete |
 | PLUG-01 | Phase 1 | Complete |
 | PLUG-02 | Phase 1 | Complete |
 

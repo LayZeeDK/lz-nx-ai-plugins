@@ -12,7 +12,7 @@ This roadmap delivers the complete RLM-powered explore workflow for Nx workspace
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation + Commands** - Plugin shell, workspace indexer, path resolver, Nx runner, and three deterministic commands delivering immediate user value
+- [x] **Phase 1: Foundation + Commands** - Plugin shell, workspace indexer, path resolver, Nx runner, and three deterministic commands delivering immediate user value
 - [ ] **Phase 2: REPL Core** - Isolated JavaScript sandbox with workspace-aware globals, smart truncation, guardrails config, and the fill/solve execution loop
 - [ ] **Phase 3: Agent + Explore** - repl-executor subagent driving the REPL loop and the explore skill validating the RLM token-savings thesis
 
@@ -32,8 +32,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md -- Plugin shell, command markdown, Nx-runner, test infrastructure
-- [ ] 01-02-PLAN.md -- Workspace indexer, index-loader, path resolver
-- [ ] 01-03-PLAN.md -- Three deterministic commands (deps, find, alias)
+- [x] 01-02-PLAN.md -- Workspace indexer, index-loader, path resolver
+- [x] 01-03-PLAN.md -- Three deterministic commands (deps, find, alias)
 
 ### Phase 2: REPL Core
 **Goal**: The REPL sandbox can execute JavaScript code in an isolated VM context with workspace-aware globals, persist variables across turns, and enforce guardrails -- testable without any LLM by passing code via stdin
@@ -70,6 +70,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Commands | 1/3 | In Progress | - |
+| 1. Foundation + Commands | 3/3 | Complete | 2026-03-04 |
 | 2. REPL Core | 0/0 | Not started | - |
 | 3. Agent + Explore | 0/0 | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-03-04T23:42:57.180Z"
-last_activity: 2026-03-04 - Completed 01-01-PLAN.md (Plugin shell, Nx-runner, test infrastructure)
+status: completed
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-03-04T23:52:10.486Z"
+last_activity: 2026-03-04 - Completed 01-03-PLAN.md (Deterministic commands - deps, find, alias)
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 67
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 1 of 3 (Foundation + Commands)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-03-04 - Completed 01-02-PLAN.md (Workspace indexer, index-loader, path resolver)
+Plan: 3 of 3 in current phase (PHASE COMPLETE)
+Status: Phase 1 Complete
+Last activity: 2026-03-04 - Completed 01-03-PLAN.md (Deterministic commands - deps, find, alias)
 
-Progress: [███████░░░] 67%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 3
 - Average duration: 6min
-- Total execution time: 12min
+- Total execution time: 18min
 
 **By Phase:**
 
@@ -45,9 +45,10 @@ Progress: [███████░░░] 67%
 |-------|------|----------|-------|-------|
 | 01 | P01 | 5min | 2 | 10 |
 | 01 | P02 | 7min | 2 | 7 |
+| 01 | P03 | 6min | 3 | 7 |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 7min
+- Last 5 plans: 5min, 7min, 6min
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Exact prefix matching for allowlist instead of regex normalization -- simpler and correct
 - [Phase 01]: Split workspace-indexer tests into 3 files due to vi.mock hoisting -- pure function tests separated from I/O-mocked tests
 - [Phase 01]: vi.hoisted() + createRequire() as standard patterns for Vitest 4.x mock management in .mjs test files
+- [Phase 01]: Testable command pattern: export pure {output, exitCode} function separate from process.argv entry point
+- [Phase 01]: Simple * wildcard in project-filter per RESEARCH.md -- no full glob library needed
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04T23:42:57.178Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-03-04T23:52:10.483Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
