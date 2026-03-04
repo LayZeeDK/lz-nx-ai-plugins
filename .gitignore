@@ -22,6 +22,8 @@ npm-debug.log
 
 # AI and MCP servers
 .playwright-mcp/
+# .planning/ symlink for Typora
+/planning
 tmpclaude-*-cwd/
 !tmpclaude--cwd/
 nul
