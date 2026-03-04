@@ -1,0 +1,95 @@
+{
+  "graph": {
+    "nodes": {
+      "my-app": {
+        "name": "my-app",
+        "type": "app",
+        "data": {
+          "root": "apps/my-app",
+          "sourceRoot": "apps/my-app/src",
+          "tags": ["type:app"],
+          "targets": {
+            "build": {
+              "executor": "@nx/webpack:webpack",
+              "options": {}
+            },
+            "serve": {
+              "executor": "@nx/webpack:dev-server",
+              "options": {}
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "options": {}
+            }
+          }
+        }
+      },
+      "shared-utils": {
+        "name": "shared-utils",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared-utils",
+          "sourceRoot": "libs/shared-utils/src",
+          "tags": ["type:util"],
+          "targets": {
+            "build": {
+              "executor": "@nx/js:tsc",
+              "options": {}
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "options": {}
+            }
+          }
+        }
+      },
+      "feature-auth": {
+        "name": "feature-auth",
+        "type": "lib",
+        "data": {
+          "root": "libs/feature-auth",
+          "sourceRoot": "libs/feature-auth/src",
+          "tags": ["scope:auth"],
+          "targets": {
+            "build": {
+              "executor": "@nx/js:tsc",
+              "options": {}
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "options": {}
+            }
+          }
+        }
+      },
+      "my-app-e2e": {
+        "name": "my-app-e2e",
+        "type": "e2e",
+        "data": {
+          "root": "apps/my-app-e2e",
+          "sourceRoot": "apps/my-app-e2e/src",
+          "tags": [],
+          "targets": {
+            "e2e": {
+              "executor": "@nx/cypress:cypress",
+              "options": {}
+            }
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "my-app": [
+        { "source": "my-app", "target": "shared-utils", "type": "static" },
+        { "source": "my-app", "target": "feature-auth", "type": "static" }
+      ],
+      "shared-utils": [],
+      "feature-auth": [
+        { "source": "feature-auth", "target": "shared-utils", "type": "static" }
+      ],
+      "my-app-e2e": [
+        { "source": "my-app-e2e", "target": "my-app", "type": "implicit" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "lz-nx.rlm",
+  "version": "0.0.1",
+  "description": "RLM-powered Nx workspace navigation -- deterministic commands and REPL-driven exploration for large monorepos",
+  "author": {
+    "name": "Lars Gyrup Brink Nielsen"
+  },
+  "repository": "https://github.com/LayZeeDK/lz-nx-ai-plugins",
+  "license": "MIT",
+  "keywords": ["nx", "monorepo", "rlm", "workspace", "navigation"]
+}

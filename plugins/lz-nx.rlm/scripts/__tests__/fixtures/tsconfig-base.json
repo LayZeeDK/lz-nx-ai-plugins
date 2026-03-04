@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@myorg/shared-utils": ["libs/shared-utils/src/index.ts"],
+      "@myorg/feature-auth": ["libs/feature-auth/src/index.ts"],
+      "@myorg/my-app/*": ["apps/my-app/src/*"]
+    }
+  }
+}
