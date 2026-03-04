@@ -176,7 +176,7 @@
 
 **Validation:** Nx-runner allowlist enforces read-only Nx CLI commands; REPL sandbox restricts globals (no `process`, `require`, `child_process` directly); `codeGeneration: { strings: false, wasm: false }` blocks `eval()` in sandbox
 
-**Authentication:** None for v0.0.1; `llm_query()` (if implemented via direct API call in Phase 4) requires `ANTHROPIC_API_KEY` from environment; the Claude Code plugin system handles model routing via native subagent declarations
+**Authentication:** None required. The plugin targets Claude Code flat-rate subscriptions (Team, Max) exclusively — all LLM calls route through native subagent declarations, not direct API calls. No `ANTHROPIC_API_KEY` is needed.
 
 **Model Routing:**
 | Operation | Model | Config |
