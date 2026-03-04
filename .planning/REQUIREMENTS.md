@@ -9,8 +9,8 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### Foundation
 
-- [ ] **FOUND-01**: Workspace indexer builds a JSON index from Nx CLI output (primarily `nx graph --print` which returns all project nodes, metadata, and dependency edges in one call, plus `tsconfig.base.json` for path aliases)
-- [ ] **FOUND-02**: Path resolver translates between file paths and tsconfig path aliases bidirectionally
+- [x] **FOUND-01**: Workspace indexer builds a JSON index from Nx CLI output (primarily `nx graph --print` which returns all project nodes, metadata, and dependency edges in one call, plus `tsconfig.base.json` for path aliases)
+- [x] **FOUND-02**: Path resolver translates between file paths and tsconfig path aliases bidirectionally
 - [x] **FOUND-03**: Nx-runner wraps Nx CLI with command allowlisting (read-only operations only), timeout enforcement, output caching, mandatory env vars (`NX_TUI=false`, `NX_INTERACTIVE=false`, `NX_NO_CLOUD=true`), stdout-based error detection (Nx writes errors to stdout, not stderr), and `maxBuffer: 10MB` for large workspaces
 
 ### REPL Engine
@@ -88,8 +88,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
+| FOUND-01 | Phase 1 | Complete |
+| FOUND-02 | Phase 1 | Complete |
 | FOUND-03 | Phase 1 | Complete |
 | REPL-01 | Phase 2 | Pending |
 | REPL-02 | Phase 2 | Pending |

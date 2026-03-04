@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-04T23:32:25.554Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-04T23:42:57.180Z"
 last_activity: 2026-03-04 - Completed 01-01-PLAN.md (Plugin shell, Nx-runner, test infrastructure)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,28 +26,29 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 1 of 3 (Foundation + Commands)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-04 - Completed 01-01-PLAN.md (Plugin shell, Nx-runner, test infrastructure)
+Last activity: 2026-03-04 - Completed 01-02-PLAN.md (Workspace indexer, index-loader, path resolver)
 
-Progress: [###.......] 33%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 5min
-- Total execution time: 5min
+- Total plans completed: 2
+- Average duration: 6min
+- Total execution time: 12min
 
 **By Phase:**
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 01 | P01 | 5min | 2 | 10 |
+| 01 | P02 | 7min | 2 | 7 |
 
 **Recent Trend:**
-- Last 5 plans: 5min
-- Trend: First plan
+- Last 5 plans: 5min, 7min
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase quick]: No transformers.js tasks for v0.0.1 -- zero-dependency goal and native module constraint take precedence; embeddings (semantic search) is a candidate for v0.0.2+
 - [Phase quick]: Local text generation cannot replace llm_query() -- quality gap vs. Haiku is categorical; onnxruntime-node is a native module conflicting with PROJECT.md constraint
 - [Phase 01]: Exact prefix matching for allowlist instead of regex normalization -- simpler and correct
+- [Phase 01]: Split workspace-indexer tests into 3 files due to vi.mock hoisting -- pure function tests separated from I/O-mocked tests
+- [Phase 01]: vi.hoisted() + createRequire() as standard patterns for Vitest 4.x mock management in .mjs test files
 
 ### Pending Todos
 
@@ -87,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04T23:32:25.551Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-04T23:42:57.178Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
