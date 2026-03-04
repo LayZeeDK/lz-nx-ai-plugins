@@ -11,7 +11,7 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 - [ ] **FOUND-01**: Workspace indexer builds a JSON index from Nx CLI output (primarily `nx graph --print` which returns all project nodes, metadata, and dependency edges in one call, plus `tsconfig.base.json` for path aliases)
 - [ ] **FOUND-02**: Path resolver translates between file paths and tsconfig path aliases bidirectionally
-- [ ] **FOUND-03**: Nx-runner wraps Nx CLI with command allowlisting (read-only operations only), timeout enforcement, output caching, mandatory env vars (`NX_TUI=false`, `NX_INTERACTIVE=false`, `NX_NO_CLOUD=true`), stdout-based error detection (Nx writes errors to stdout, not stderr), and `maxBuffer: 10MB` for large workspaces
+- [x] **FOUND-03**: Nx-runner wraps Nx CLI with command allowlisting (read-only operations only), timeout enforcement, output caching, mandatory env vars (`NX_TUI=false`, `NX_INTERACTIVE=false`, `NX_NO_CLOUD=true`), stdout-based error detection (Nx writes errors to stdout, not stderr), and `maxBuffer: 10MB` for large workspaces
 
 ### REPL Engine
 
@@ -36,8 +36,8 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### Plugin Shell
 
-- [ ] **PLUG-01**: Plugin follows Claude Code plugin structure conventions (`.claude-plugin/plugin.json`, auto-discovered commands/agents/skills, `${CLAUDE_PLUGIN_ROOT}` for portable paths)
-- [ ] **PLUG-02**: All scripts are cross-platform Node.js (.mjs) with zero npm dependencies, working on macOS, Linux, and Windows (Git Bash)
+- [x] **PLUG-01**: Plugin follows Claude Code plugin structure conventions (`.claude-plugin/plugin.json`, auto-discovered commands/agents/skills, `${CLAUDE_PLUGIN_ROOT}` for portable paths)
+- [x] **PLUG-02**: All scripts are cross-platform Node.js (.mjs) with zero npm dependencies, working on macOS, Linux, and Windows (Git Bash)
 
 ## Later Milestone Requirements
 
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | FOUND-01 | Phase 1 | Pending |
 | FOUND-02 | Phase 1 | Pending |
-| FOUND-03 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Complete |
 | REPL-01 | Phase 2 | Pending |
 | REPL-02 | Phase 2 | Pending |
 | REPL-03 | Phase 2 | Pending |
@@ -100,8 +100,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMD-01 | Phase 1 | Pending |
 | CMD-02 | Phase 1 | Pending |
 | CMD-03 | Phase 1 | Pending |
-| PLUG-01 | Phase 1 | Pending |
-| PLUG-02 | Phase 1 | Pending |
+| PLUG-01 | Phase 1 | Complete |
+| PLUG-02 | Phase 1 | Complete |
 
 **Coverage:**
 - v0.0.1 requirements: 14 total

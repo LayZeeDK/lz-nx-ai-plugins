@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Plugin shell, command markdown, Nx-runner, test infrastructure
+- [x] 01-01-PLAN.md -- Plugin shell, command markdown, Nx-runner, test infrastructure
 - [ ] 01-02-PLAN.md -- Workspace indexer, index-loader, path resolver
 - [ ] 01-03-PLAN.md -- Three deterministic commands (deps, find, alias)
 
@@ -70,6 +70,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Commands | 0/3 | Planning complete | - |
+| 1. Foundation + Commands | 1/3 | In Progress | - |
 | 2. REPL Core | 0/0 | Not started | - |
 | 3. Agent + Explore | 0/0 | Not started | - |
