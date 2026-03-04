@@ -346,7 +346,7 @@ For the first milestone, **do not implement `llm_query()`**. The repl-executor a
 1. The core value proposition (workspace navigation without context rot) works without sub-LLM calls
 2. The agent already uses Sonnet, which is capable enough for the semantic analysis that `llm_query()` would delegate to Haiku
 3. The fill/solve loop pattern still works -- the agent writes code to search/read/filter, then reasons about results in its own context
-4. Avoids API key management complexity in v0.0.1
+4. No API key management — flat-rate subscriptions (Team, Max) only; direct API calls are out of scope
 
 **What is lost:**
 
@@ -354,9 +354,11 @@ For the first milestone, **do not implement `llm_query()`**. The repl-executor a
 2. Agent burns Sonnet tokens on tasks Haiku could handle
 3. No parallel sub-LLM processing for batch operations (pattern audits)
 
-### Future Implementation: Direct API Script (Option A, for a Later Milestone)
+### ~~Future Implementation: Direct API Script (Option A)~~ — Out of Scope
 
-When `llm_query()` is added later, implement as a script:
+> **Decision (2026-03-04):** Option A is ruled out. The plugin exclusively targets Claude Code flat-rate subscriptions (Team, Max) — no direct Anthropic API calls, no `ANTHROPIC_API_KEY`, no SDK dependency. If `llm_query()` is revisited, it must route through Claude Code's native subagent system.
+
+The original research proposed implementing `llm_query()` as a child-process script calling the Anthropic API directly:
 
 ```
 REPL code: let answer = await llm_query("Summarize this function", codeSnippet)
@@ -372,7 +374,7 @@ llm_query() inside sandbox:
   v
 REPL code receives answer as string, continues execution
 
-Requirements:
+Requirements (no longer applicable):
   - ANTHROPIC_API_KEY environment variable (Claude Code sets this)
   - @anthropic-ai/sdk as an optional dependency (or raw HTTP fetch)
   - Rate limiting and timeout in the script
@@ -385,7 +387,7 @@ The pending-query protocol (repl-executor processes `[LLM_QUERY: ...]` markers f
 1. It couples the agent's prompt engineering to a custom protocol
 2. The agent would need to parse structured markers from sandbox output, handle them, and re-invoke the sandbox with results -- adding 2-3 extra Bash calls per `llm_query()`
 3. It burns Sonnet tokens on Haiku-grade work (the agent IS the model doing the work)
-4. When `llm_query()` calls are the bottleneck in a turn, Option A (direct API call) is faster and cheaper
+4. ~~When `llm_query()` calls are the bottleneck in a turn, Option A (direct API call) is faster and cheaper~~ Option A is now out of scope (see above)
 
 ## Error Boundaries
 
@@ -752,7 +754,7 @@ The previous research suggested commands before agents (to provide immediate use
 | Nx CLI | workspace-indexer, nx-runner | Missing or incompatible version | Plugin non-functional (Nx is a hard dependency) |
 | Git | search() REPL global | Missing git binary | Falls back to Node.js built-in (fs.globSync + readFileSync + regex); other globals still work |
 | Filesystem | read() REPL global, index I/O | Permission errors, missing files | Error surfaces in SandboxResult |
-| Claude API | Subagent spawning (Agent tool) | Rate limits, network errors | Claude Code handles retries internally |
+| Claude Code subagent system | Agent tool spawning (no direct API calls) | Rate limits, network errors | Claude Code handles retries internally; flat-rate subscriptions (Team, Max) only |
 
 ## Scalability Considerations
 
