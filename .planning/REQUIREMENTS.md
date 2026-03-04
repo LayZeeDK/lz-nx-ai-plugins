@@ -75,7 +75,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | Agent teams (debug, review, refactor, migrate) | 3-10x token multiplier; requires Claude Code team features; massive complexity; unproven for RLM workflows |
 | Additional skills (analyze, test-gen, trace, patterns, search) | Each requires stable foundation; explore covers the primary use case for v0.0.1 |
 | Generic RLM engine extraction (`lz.rlm` standalone plugin) | Internal modularity supports future extraction, but no separate plugin until Nx-specific value is proven |
-| Semantic/vector search (embeddings, BM25, hybrid) | Requires embedding infrastructure beyond Claude; `git grep` + workspace index covers 95% of navigation needs |
+| Semantic/vector search (embeddings, BM25, hybrid) | Requires embedding infrastructure beyond Claude; `git grep` + workspace index covers the workspace navigation use cases (see `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`) |
 | S-expression DSL | JavaScript is natural for TS/Nx workspaces; target models (Sonnet, Haiku) generate JavaScript fluently |
 | MCP server integration | MCP adds tool definitions to system prompt consuming context tokens; skills + scripts are more efficient; Nx itself moved away from MCP |
 | Persistent cross-session memory (SQLite, knowledge graph) | The workspace index IS deterministic persistent memory, rebuilt from Nx CLI each session; git is the cross-session memory for code |

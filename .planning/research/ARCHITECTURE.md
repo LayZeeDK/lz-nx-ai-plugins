@@ -42,6 +42,7 @@
 +----------+-------------------------------------------------------+
 |  EXTERNAL LAYER                                                  |
 |  Nx CLI (child_process)  |  filesystem (fs)  |  git (git grep)   |
+|                          |  (fallback search)|                   |
 +------------------------------------------------------------------+
 ```
 
@@ -304,7 +305,8 @@ REPL code: let results = search("UserService", allPaths)
   |
   v
 search() function inside sandbox:
-  1. Calls git grep via child_process.execSync
+  1. Calls git grep via child_process.spawnSync('git', ['grep', ...], { shell: false })
+     (Node.js built-in fs.globSync + readFileSync fallback for non-git environments)
   2. Parses output: [{file, line, content}, ...]
   3. If results.length > 10:
        handle = handleStore.store(results)
@@ -739,7 +741,7 @@ The previous research suggested commands before agents (to provide immediate use
 | Sandbox -> Handle Store | In-process function call | JavaScript objects | Throws on invalid handle |
 | Sandbox -> nx-runner | In-process function call | Command string in, parsed JSON out | Throws on timeout/error |
 | Sandbox -> filesystem | In-process fs.readFileSync | File path in, string/Buffer out | Throws on missing file |
-| Sandbox -> git | child_process.execSync | Pattern string in, parsed matches out | Returns empty on no matches |
+| Sandbox -> git | child_process.spawnSync (shell: false) | Pattern string in, parsed matches out | Returns empty on no matches; Node.js built-in fallback for non-git environments |
 | Command -> workspace index | fs.readFileSync + JSON.parse | File path in, JSON object out | Error if index missing |
 | Indexer -> Nx CLI | child_process.execSync | Nx command in, JSON stdout out | Throws on timeout/failure |
 
@@ -748,7 +750,7 @@ The previous research suggested commands before agents (to provide immediate use
 | External | How Used | Failure Mode | Graceful Degradation |
 |----------|----------|--------------|----------------------|
 | Nx CLI | workspace-indexer, nx-runner | Missing or incompatible version | Plugin non-functional (Nx is a hard dependency) |
-| Git | search() REPL global | Missing git binary | search() unavailable; other globals still work |
+| Git | search() REPL global | Missing git binary | Falls back to Node.js built-in (fs.globSync + readFileSync + regex); other globals still work |
 | Filesystem | read() REPL global, index I/O | Permission errors, missing files | Error surfaces in SandboxResult |
 | Claude API | Subagent spawning (Agent tool) | Rate limits, network errors | Claude Code handles retries internally |
 

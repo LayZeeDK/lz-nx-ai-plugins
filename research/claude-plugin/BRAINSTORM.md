@@ -197,7 +197,7 @@ The REPL environment using Node.js `vm.createContext()` following the Hampton-io
 | `dependents(name)` | Get reverse dependency tree | Walks reverse adjacency list |
 | `read(path, start?, end?)` | Read file content (or slice) | `fs.readFileSync` with bounds |
 | `files(glob)` | Find files matching pattern | `fast-glob` or Node.js `fs.glob` |
-| `search(pattern, paths?)` | Search file contents (git grep wrapper) | `child_process.execSync('git grep ...')` |
+| `search(pattern, paths?)` | Search file contents (git grep primary, Node.js built-in fallback) | `child_process.spawnSync('git', ['grep', ...], { shell: false })` |
 | `nx(command)` | Run Nx CLI command, return parsed output | `execSync('npx nx ...')` + JSON parse |
 | `llm_query(prompt, model?)` | Sub-LLM call (routes to Haiku/Sonnet) | Claude API via subagent |
 | `llm_batch(prompts, model?)` | Parallel sub-LLM calls | Concurrent subagents |
@@ -614,7 +614,7 @@ Strategy hints for Connect ng-app-monolith (Nx 19.8, Angular 18):
 - Tests use @testing-library/angular, Jest, SIFERS pattern
 - 537 projects, ~1,700 components -- always use workspace index first
 - Never attempt to read more than 3-5 files per REPL iteration
-- Prefer git grep scoped to specific project roots over global search
+- Prefer git grep (via spawnSync, shell: false) scoped to specific project roots over global search
 ```
 
 ---

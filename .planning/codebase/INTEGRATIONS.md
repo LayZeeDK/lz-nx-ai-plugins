@@ -92,9 +92,10 @@
 - Caching: Results cached in-memory with 5-minute TTL
 
 **Tool:** git (`git grep`)
-- Invoked from the REPL `search()` global via `child_process.execSync`
+- Invoked from the REPL `search()` global via `child_process.spawnSync` with `shell: false` (avoids MSYS2 path munging on Windows and cmd.exe shell issues)
 - Used for file content search scoped to Nx project source roots
 - Assumed present in environment (Claude Code itself requires Git)
+- Fallback: Node.js built-in `fs.globSync` + `readFileSync` + regex for non-git environments (see `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`)
 
 ## Webhooks & Callbacks
 

@@ -492,6 +492,8 @@ const output = execSync('npx nx graph --print');
 
 **Confidence:** HIGH -- well-documented MSYS2 behavior, confirmed by the project's own CLAUDE.md warning about path issues.
 
+**Confirmed mitigation:** The cross-platform search tool analysis (`.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`) recommends `spawnSync('git', ['grep', ...], { shell: false })` as the primary invocation pattern for `search()`, which avoids MSYS2 path conversion entirely. The `MSYS_NO_PATHCONV` env var approach is documented as a secondary fallback.
+
 **Sources:**
 - [MSYS2 Filesystem Paths documentation](https://www.msys2.org/docs/filesystem-paths/)
 - [MSYS_NO_PATHCONV behavior](https://gist.github.com/borekb/cb1536a3685ca6fc0ad9a028e6a959e3)
@@ -562,6 +564,8 @@ execSync("NX_DAEMON=false npx nx show projects --json");
 **Phase relevance:** Workspace indexer and Nx runner (Phase 1). Every `execSync` call must be audited for shell assumptions.
 
 **Confidence:** HIGH -- standard Node.js documentation; the distinction between Bash and cmd.exe is well-known.
+
+**Confirmed mitigation:** The cross-platform search tool analysis (`.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`) recommends `spawnSync` with `shell: false` and argument arrays for all `git grep` invocations in `search()`, which avoids cmd.exe entirely. Environment variables are passed via the `env` option.
 
 **Sources:**
 - [Node.js child_process documentation: shell option](https://nodejs.org/api/child_process.html)

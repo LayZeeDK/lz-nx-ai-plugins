@@ -40,7 +40,7 @@ Brainstorm proposals for a Recursive Language Model (RLM) Claude Code plugin tar
 | `/rlm:test-gen` | "Write tests for X" | Sonnet root + Haiku per-test |
 | `/rlm:trace` | Cross-boundary data flow tracing | Sonnet root + Haiku verification |
 | `/rlm:patterns` | Pattern audit across 1,700 components | Haiku batch scan |
-| `smart-search` | Auto-invoked on search intent | Haiku classifier + git grep |
+| `smart-search` | Auto-invoked on search intent | Haiku classifier + git grep (spawnSync, shell: false) |
 
 ### Commands (deterministic, zero LLM tokens)
 

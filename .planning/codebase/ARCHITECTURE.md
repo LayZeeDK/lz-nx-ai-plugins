@@ -47,7 +47,7 @@
 **External:**
 - Nx CLI (`nx show projects --json`, `nx graph --print`, `nx show project <name>`)
 - Filesystem (file reading, glob matching)
-- Git (`git grep` for `search()` REPL global)
+- Git (`git grep` via `spawnSync` with `shell: false` for `search()` REPL global; Node.js built-in fallback for non-git environments)
 
 ## Data Flow
 
@@ -186,7 +186,7 @@
 | Main conversation | User's choice | Plugin does not override |
 | Foundation scripts | None (Node.js) | Pure data transformation |
 
-**Cross-platform:** All scripts use `.mjs` (ESM), Node.js built-in modules only, `node:path` for path manipulation, `child_process.execSync` for CLI calls -- no shell-specific syntax, runs identically on macOS, Linux, and Windows (Git Bash)
+**Cross-platform:** All scripts use `.mjs` (ESM), Node.js built-in modules only, `node:path` for path manipulation, `child_process.spawnSync` with `shell: false` for git commands (avoids MSYS2 path munging and cmd.exe issues), `child_process.execSync` for Nx CLI calls -- no shell-specific syntax, runs identically on macOS, Linux, and Windows (Git Bash)
 
 ---
 

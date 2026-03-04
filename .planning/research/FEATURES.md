@@ -96,7 +96,7 @@ Identical contract to `deps()` but traverses the reverse adjacency list (who dep
 | Input | `pattern: string` -- regex or literal string | |
 | Input (optional) | `paths: string[]` -- restrict to these directories | |
 | Return | `Array<{ file: string, line: number, match: string }>` | |
-| Async | No | `child_process.execSync('git grep -n ...')` |
+| Async | No | `child_process.spawnSync('git', ['grep', '-n', ...], { shell: false })` (Node.js built-in fallback for non-git environments) |
 | Error | Returns empty array on invalid pattern or no matches | |
 | Limit | Cap at 100 results | |
 
@@ -451,7 +451,7 @@ Features that seem valuable but create problems. Documenting these prevents scop
 | **Hooks in v0.0.1** | Automate workspace indexing, intercept searches, cache results. | Hooks add invisible behavior that is hard to debug. v0.0.1 should prove value through explicit skill invocation before adding automation. | Defer to a later milestone. Users manually invoke `/explore`, `/deps`, `/find`. |
 | **Separate handle-store.mjs** | BRAINSTORM.md proposes a dedicated handle store script. | Over-engineering. The VM context's `globalThis` IS the handle store (hampton-io pattern). Smart `print()` truncation IS the handle UX. No separate Map needed. | Implement smart truncation in `print()` and `const/let -> globalThis` transform in `repl-sandbox.mjs`. No separate script. |
 | **S-expression DSL** | Matryoshka uses S-expressions. Reduced entropy for smaller models. | JavaScript is natural for TS/Nx workspaces. Claude (Sonnet/Opus) generates JavaScript fluently. | Use JavaScript REPL. Decision already made in PROJECT.md. |
-| **Semantic/vector search** | Zilliz claude-context claims ~40% token reduction via semantic search. | Requires external embedding model, vector database, and index build time. `git grep` + workspace index covers 95% of navigation needs. | Use `git grep` via the REPL's `search()` global. |
+| **Semantic/vector search** | Zilliz claude-context claims ~40% token reduction via semantic search. | Requires external embedding model, vector database, and index build time. `git grep` + workspace index covers the workspace navigation use cases. | Use `git grep` via `spawnSync` with `shell: false` in the REPL's `search()` global (Node.js built-in fallback for non-git environments). See `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`. |
 | **Token benchmarking in v0.0.1** | Validates that RLM actually reduces tokens. | Premature optimization measurement. Building benchmarking infrastructure before the core REPL loop works is overhead. | Defer to a later milestone. Validate savings manually first. |
 
 ## Feature Dependencies

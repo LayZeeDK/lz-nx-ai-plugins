@@ -111,7 +111,7 @@ Node.js `vm.createContext()` with controlled globals:
 | `dependents(name)` | Get reverse dependency tree |
 | `read(path, start?, end?)` | Read file content (or slice) |
 | `files(glob)` | Find files matching pattern |
-| `search(pattern, paths?)` | Search file contents (git grep wrapper) |
+| `search(pattern, paths?)` | Search file contents (git grep primary, Node.js built-in fallback) |
 | `nx(command)` | Run allowlisted Nx CLI command, return parsed output |
 | `llm_query(prompt, model?)` | Sub-LLM call (routes to Haiku by default) |
 | `FINAL(answer)` | Mark final answer (string) |

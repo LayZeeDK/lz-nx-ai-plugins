@@ -54,11 +54,11 @@ All P0 features must ship together as v0.0.1 -- they form a single dependency ch
 - Impact analysis skill (`/impact`)
 
 **Defer (later milestones):**
-- Angular-specific component registries -- framework lock-in risk; `search()` covers 95% of navigation needs
+- Angular-specific component registries -- framework lock-in risk; `search()` covers the workspace navigation use cases
 - Agent teams / parallel sub-LLM processing
 - Token benchmarking and `/status` command
 - MCP server integration -- explicitly anti-feature; Nx themselves deleted MCP tools in favor of skills (documented in their blog)
-- Semantic/vector search -- requires external embedding model and vector database; `git grep` + workspace index covers the use cases
+- Semantic/vector search -- requires external embedding model and vector database; `git grep` (via `spawnSync` with `shell: false`) + workspace index covers the use cases; Node.js built-in fallback for non-git environments (see `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`)
 - Persistent cross-session memory -- the workspace index IS the persistent memory (rebuilt deterministically from Nx CLI)
 - S-expression DSL -- JavaScript is more natural for Nx/TS workspaces; Claude generates it fluently
 
@@ -104,7 +104,7 @@ The component dependency graph is a strict linear chain that dictates phase orde
 **Addresses (from FEATURES.md):** Workspace indexer, path resolver, Nx CLI wrapper, RLM configuration, deterministic commands -- all P0, all LOW-MEDIUM implementation complexity.
 
 **Avoids (from PITFALLS.md):**
-- Pitfall 7: Git Bash MSYS2 path munging -- use `spawnSync` with `shell: false` and argument arrays for `git grep`
+- Pitfall 7: Git Bash MSYS2 path munging -- use `spawnSync` with `shell: false` and argument arrays for `git grep` (confirmed by cross-platform search analysis in `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`)
 - Pitfall 8: `cmd.exe` default shell -- set env vars via the `env` option, never shell syntax
 - Pitfall 9: `fs.glob` backslash paths -- normalize immediately with `.replace(/\\/g, '/')`
 - Pitfall 13: Nx output `\r\n` line endings -- strip `\r` from all `execSync` output

@@ -194,7 +194,7 @@ it('reads workspace index from disk', async (t) => {
 ```
 
 **What to mock:**
-- `node:child_process` `execSync` calls (Nx CLI, git grep) -- too slow and
+- `node:child_process` `execSync`/`spawnSync` calls (Nx CLI via `execSync`, git grep via `spawnSync` with `shell: false`) -- too slow and
   require real workspaces in unit tests
 - `node:fs` `readFileSync`/`writeFileSync` -- when testing logic, not I/O
 - Time-based functions (`Date.now`) -- for consistent timestamp assertions

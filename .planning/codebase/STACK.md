@@ -59,13 +59,13 @@
 The `lz-nx.rlm` plugin ships with no npm dependencies. All functionality uses Node.js built-in modules only:
 - `node:vm` - REPL sandbox isolation (`vm.createContext()`, `vm.Script`)
 - `node:fs` / `node:fs/promises` - File reading (`read()` global) and glob-based file search (`files()` global)
-- `node:child_process` - Nx CLI execution (`nx-runner.mjs`) and `git grep` wrapper (`search()` global)
+- `node:child_process` - Nx CLI execution (`nx-runner.mjs`) and `git grep` via `spawnSync` with `shell: false` (`search()` global)
 - `node:path` - Cross-platform path manipulation
 - `node:perf_hooks` - Execution timing
 - `node:test` + `node:assert` - Unit testing
 
 **External binaries (assumed present in environment):**
-- `git` - Required by `search()` REPL global (`git grep` wrapper)
+- `git` - Required by `search()` REPL global (`git grep` primary; Node.js built-in fallback for non-git environments)
 - `nx` (via `npx nx`) - Required by `nx-runner.mjs` in the workspace being analyzed
 
 ## Configuration
@@ -92,7 +92,7 @@ The `lz-nx.rlm` plugin ships with no npm dependencies. All functionality uses No
 
 **Development:**
 - Node.js 24.x LTS (FNM-managed on development machine)
-- Git (required for `git grep` in search functionality)
+- Git (required for `git grep` in search functionality; Node.js built-in fallback for non-git environments)
 - Cross-platform: macOS, Linux, Windows (Git Bash); all scripts use Node.js for cross-platform operations, no shell-specific commands
 - Windows-specific: Git Bash for Bash tool; PowerShell for `claude` CLI; cp1252 encoding limitation requires no Unicode/emoji in scripts
 
@@ -100,7 +100,7 @@ The `lz-nx.rlm` plugin ships with no npm dependencies. All functionality uses No
 - Any Nx workspace with Node.js >= 22.17.0 installed
 - Nx >= 19.8 in the workspace being analyzed (stable CLI API: `show projects --json`, `graph --print`, `show project <name>`)
 - Claude Code >= January 2026 (unified skills/commands, `agent` hook type, background subagents, subagent `memory` field)
-- Git >= 2.x (for `git grep`)
+- Git >= 2.x (for `git grep`; Node.js built-in fallback available for non-git environments)
 - No native module compilation required; no `node_modules` install step in the plugin itself
 
 ## Model Routing
