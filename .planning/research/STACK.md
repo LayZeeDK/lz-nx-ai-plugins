@@ -163,7 +163,7 @@ const transformedCode = code.replace(/\b(const|let)\s+(\w+)\s*=/g, 'globalThis.$
 
 **Our approach: simple regex with documented limitations.**
 
-For v1, use the same simple regex as hampton-io but document the limitations. The LLM rarely generates destructuring in REPL exploration code (it prefers simple assignments), and for-loop variables escaping to global scope is harmless in a single-session REPL.
+For v0.0.1, use the same simple regex as hampton-io but document the limitations. The LLM rarely generates destructuring in REPL exploration code (it prefers simple assignments), and for-loop variables escaping to global scope is harmless in a single-session REPL.
 
 ```javascript
 /**
@@ -176,7 +176,7 @@ For v1, use the same simple regex as hampton-io but document the limitations. Th
  * - Transformations inside string literals or comments are incorrectly applied
  * - For-loop variables are incorrectly promoted to globalThis
  *
- * These limitations are acceptable for v1 because:
+ * These limitations are acceptable for v0.0.1 because:
  * 1. LLM-generated REPL code predominantly uses simple assignments
  * 2. Destructuring failures produce visible errors the LLM can fix
  * 3. For v2, consider an AST-based approach (acorn/esprima)
@@ -832,7 +832,7 @@ console.log('\n[SUCCESS] All smoke tests passed.');
 |----------|-------------|-------------|---------|
 | `vm.createContext` mode | Standard (contextified) | `DONT_CONTEXTIFY` | We need mutable globalThis for variable persistence |
 | Microtask handling | `Promise.race` timeout | `microtaskMode: 'afterEvaluate'` | Known deadlock with async/await ([nodejs/node#55546](https://github.com/nodejs/node/issues/55546)) |
-| `const/let` transformation | Simple regex | AST parser (acorn) | Over-engineering for v1; LLM code rarely uses destructuring |
+| `const/let` transformation | Simple regex | AST parser (acorn) | Over-engineering for v0.0.1; LLM code rarely uses destructuring |
 | Cross-realm error check | `Error.isError()` | Duck typing (`err.message && err.stack`) | `Error.isError` is reliable, duck typing is fragile |
 | Nx CLI invocation | `execSync` | `execFileSync` | Windows `.cmd` files require shell; `execSync` is simpler |
 | Nx CLI invocation | `execSync` | `spawn` (async) | Synchronous is simpler for one-shot commands; REPL is already async at a higher level |

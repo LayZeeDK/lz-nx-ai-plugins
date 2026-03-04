@@ -63,7 +63,7 @@ const fn = (let_me_explain) => let_me_explain + 1;
 
 **Prevention:**
 1. **Use an AST-based transformation, not regex.** Parse the code with a lightweight parser (e.g., `acorn` or `meriyah` -- both zero-dependency ESM parsers) and selectively rewrite only top-level `VariableDeclaration` nodes of kind `const`/`let` to assignment expressions on `globalThis`. Leave `for` loop initializers, destructuring patterns, and nested scopes untouched.
-2. **If regex must be used for v1**, use a multi-pass approach that handles each case:
+2. **If regex must be used for v0.0.1**, use a multi-pass approach that handles each case:
    ```javascript
    // Step 1: Protect for-loop declarations (replace temporarily)
    // Step 2: Handle simple `const/let name =` only (not destructuring)
@@ -612,7 +612,7 @@ execSync("NX_DAEMON=false npx nx show projects --json");
 
 **What goes wrong:** The handle-based result storage keeps large results in a `Map` (`$res1`, `$res2`, ...). Over a 20-iteration REPL session where each iteration may produce a multi-KB result, the handle store can accumulate 1-5 MB of data that is never garbage collected. In edge cases (e.g., reading many files), this grows to tens of MB.
 
-**Why it happens:** The handle store is designed to prevent large results from entering the LLM context (the core token-saving mechanism). But there is no eviction policy -- once a handle is created, it lives until the REPL session ends. The Matryoshka implementation uses SQLite for handle storage with explicit TTL, but our v1 uses an in-memory Map for simplicity.
+**Why it happens:** The handle store is designed to prevent large results from entering the LLM context (the core token-saving mechanism). But there is no eviction policy -- once a handle is created, it lives until the REPL session ends. The Matryoshka implementation uses SQLite for handle storage with explicit TTL, but our v0.0.1 uses an in-memory Map for simplicity.
 
 **Concrete growth scenario:**
 
@@ -699,11 +699,11 @@ Each REPL session creates one VM context. With our plugin, a user might run 5-10
    }
    ```
 3. **Run the VM in a Worker Thread for hard cleanup:** `worker.terminate()` destroys the entire V8 isolate, guaranteeing no leaks. This is the recommended approach for production.
-4. **Do not worry about this for v1.** The leak is small enough per session that it will not cause problems in a plugin context (short-lived sessions, user restarts Claude Code periodically). Add Worker Thread isolation in a later milestone if profiling shows issues.
+4. **Do not worry about this for v0.0.1.** The leak is small enough per session that it will not cause problems in a plugin context (short-lived sessions, user restarts Claude Code periodically). Add Worker Thread isolation in a later milestone if profiling shows issues.
 
 **Detection:** Heap snapshot before and after 10 REPL sessions. Verify delta is under 50 MB.
 
-**Phase relevance:** Optimization (not v1). Document the known leak and plan for Worker Thread isolation later.
+**Phase relevance:** Optimization (not v0.0.1). Document the known leak and plan for Worker Thread isolation later.
 
 **Confidence:** MEDIUM -- documented in Node.js issue tracker but severity is low for our use case.
 

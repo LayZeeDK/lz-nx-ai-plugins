@@ -12,7 +12,7 @@
 
 **Anthropic Claude API (direct, optional):**
 - Service: Anthropic Claude API
-- What it is used for: `llm_query()` REPL global -- sub-LLM calls for mechanical search tasks (Option A implementation; may be deferred to v1.1)
+- What it is used for: `llm_query()` REPL global -- sub-LLM calls for mechanical search tasks (Option A implementation; may be deferred to a later milestone)
 - SDK/Client: Direct HTTP call or Anthropic SDK; invoked from `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs` via `child_process.execSync` to a thin wrapper script
 - Auth: `ANTHROPIC_API_KEY` environment variable
 - Model: Haiku 4.5 (default for sub-calls); configurable
@@ -53,7 +53,7 @@
 
 **Auth Provider:**
 - None (no user authentication)
-- The only auth-adjacent concern is the `ANTHROPIC_API_KEY` environment variable for direct Claude API calls via `llm_query()` (optional v1.1 feature)
+- The only auth-adjacent concern is the `ANTHROPIC_API_KEY` environment variable for direct Claude API calls via `llm_query()` (optional later milestone feature)
 
 ## Monitoring & Observability
 
@@ -106,14 +106,14 @@
 
 ## Plugin System Hooks (Claude Code Native)
 
-The plugin uses Claude Code's native hook system for automated behaviors (all deferred to v1.x, not implemented in v1.0):
+The plugin uses Claude Code's native hook system for automated behaviors (all deferred to a later milestone, not implemented in v0.0.1):
 
 | Hook | Event | Purpose | Status |
 |------|-------|---------|--------|
-| SessionStart | Session initialization | Auto-rebuild workspace index when stale | Deferred (v1.x) |
-| PreCompact | Context compaction | Preserve workspace context before auto-compaction | Deferred (v1.x) |
-| PreToolUse | Tool intercept | Route index-answerable queries through REPL | Deferred (v1.x) |
-| PostToolUse | After tool execution | Cache repeated search results | Deferred (v1.x) |
+| SessionStart | Session initialization | Auto-rebuild workspace index when stale | Deferred (later milestone) |
+| PreCompact | Context compaction | Preserve workspace context before auto-compaction | Deferred (later milestone) |
+| PreToolUse | Tool intercept | Route index-answerable queries through REPL | Deferred (later milestone) |
+| PostToolUse | After tool execution | Cache repeated search results | Deferred (later milestone) |
 
 Hook scripts would live at `plugins/lz-nx.rlm/hooks/scripts/` with configuration in `plugins/lz-nx.rlm/hooks/hooks.json`.
 Hook input arrives as JSON on stdin; output is JSON on stdout with optional `additionalContext` or `decision: "block"`.
@@ -121,8 +121,8 @@ Hook input arrives as JSON on stdin; output is JSON on stdout with optional `add
 ## Environment Configuration
 
 **Required env vars:**
-- None strictly required for v1.0 (all features work without env vars except `llm_query()`)
-- `ANTHROPIC_API_KEY` - Required only for the `llm_query()` direct-API-call implementation (Option A, planned for v1.1)
+- None strictly required for v0.0.1 (all features work without env vars except `llm_query()`)
+- `ANTHROPIC_API_KEY` - Required only for the `llm_query()` direct-API-call implementation (Option A, planned for a later milestone)
 
 **Secrets location:**
 - No secrets stored in repository

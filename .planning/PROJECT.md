@@ -35,16 +35,16 @@ Claude can navigate and understand a large Nx workspace without burning context 
 - [ ] nx-runner wraps Nx CLI with command allowlisting (read-only operations only), output caching, mandatory env vars (`NX_TUI=false`, `NX_INTERACTIVE=false`, `NX_NO_CLOUD=true`), and stdout-based error detection (Nx writes errors to stdout, not stderr)
 - [ ] `/lz-nx.rlm:explore` skill navigates the codebase via the REPL fill/solve loop, returning only distilled answers to the conversation
 - [ ] `repl-executor` agent drives the RLM execution loop (fill phase -> solve phase -> FINAL answer)
-- [ ] `haiku-searcher` agent handles mechanical search tasks as the `llm_query()` target for REPL sub-calls (deferred to v0.1 -- subagent nesting constraint)
+- [ ] `haiku-searcher` agent handles mechanical search tasks as the `llm_query()` target for REPL sub-calls (deferred to a later milestone -- subagent nesting constraint)
 - [ ] `/lz-nx.rlm:deps` command prints a dependency tree for a given Nx project (zero LLM tokens)
 - [ ] `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index (zero LLM tokens)
 - [ ] `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally (zero LLM tokens)
 
 ### Out of Scope
 
-- Angular-specific registries (component selector, store, service mappings) -- deferred to later milestone; v1 is generic Nx JS/TS
+- Angular-specific registries (component selector, store, service mappings) -- deferred to later milestone; v0.0.1 is generic Nx JS/TS
 - Runtime ESM CDN imports in sandbox (esm.sh, skypack, jspm, import maps) -- vm contexts are bare; CDN imports break security model, add network dependency, and require vm.SourceTextModule with custom linker; use host-side imports exposed as controlled globals instead
-- Hooks (SessionStart, PreToolUse, PostToolUse, PreCompact) -- deferred; v1 has no automated behaviors
+- Hooks (SessionStart, PreToolUse, PostToolUse, PreCompact) -- deferred; v0.0.1 has no automated behaviors
 - Token benchmarking and `/lz-nx.rlm:status` command -- deferred; validate token savings manually first
 - haiku-classifier agent (task complexity routing) -- deferred; users choose explore vs. commands manually
 - Cache manager for search results -- deferred; optimization for later
@@ -153,9 +153,9 @@ Low-risk components: workspace indexer (wraps known Nx CLI calls), path resolver
 - **Cross-platform**: Must work on macOS, Linux, and Windows (Git Bash). Use Node.js scripts for all operations.
 - **No Anthropic API dependency**: Plugin must never call the Anthropic API directly. All LLM operations go through Claude Code's native capabilities (Task tool, subagents). Only support Claude Code flat-rate subscriptions (Team). This rules out direct API key usage for `llm_query()` or any other feature.
 - **Node.js LTS**: Only dependency is Node.js LTS (no native modules, no Python, no Rust)
-- **No Angular dependency**: V1 is generic Nx JS/TS. No `@angular/*` imports or Angular-specific scanning.
+- **No Angular dependency**: v0.0.1 is generic Nx JS/TS. No `@angular/*` imports or Angular-specific scanning.
 - **REPL language**: JavaScript only (Node.js VM). No S-expression DSL.
-- **Index format**: JSON file. No SQLite for v1.
+- **Index format**: JSON file. No SQLite for v0.0.1.
 - **Plugin conventions**: Follow Claude Code plugin structure per `plugin-dev` plugin guidelines. Use `${CLAUDE_PLUGIN_ROOT}` for all intra-plugin paths.
 - **No emojis in scripts**: Windows cp1252 compatibility. Use ASCII replacements.
 
@@ -166,8 +166,8 @@ Low-risk components: workspace indexer (wraps known Nx CLI calls), path resolver
 | One plugin (not split generic + Nx) | Generic RLM engine has limited standalone user-facing value; Nx provides the structured map that makes RLM navigation powerful | -- Pending |
 | Generic Nx JS/TS (not Angular-specific) | Broader audience, cleaner architecture; Angular intelligence as a future milestone | -- Pending |
 | JavaScript REPL (not S-expression DSL) | Natural for TS workspace, proven in Hampton-io/RLM and code-rabi/rllm | -- Pending |
-| JSON workspace index (not SQLite) | Simplest v1; loads directly as REPL variable; SQLite can be added later | -- Pending |
-| No hooks in v1 | Hooks add complexity; skills and commands prove value first | -- Pending |
+| JSON workspace index (not SQLite) | Simplest v0.0.1; loads directly as REPL variable; SQLite can be added later | -- Pending |
+| No hooks in v0.0.1 | Hooks add complexity; skills and commands prove value first | -- Pending |
 | Defer token benchmarking | Validate savings manually first; benchmarking infrastructure is overhead before core works | -- Pending |
 | `nx graph --print` as primary index source (not per-project calls) | Single call returns all project nodes + dependency edges, eliminating N+1 `nx show project` calls (~18-27 min savings on 537 projects). `tsconfig.base.json` still needed for path aliases. | -- Pending |
 | No runtime ESM CDN imports in sandbox | vm contexts have no module system (no `import()`, no `require()`) unless explicitly injected. ESM CDNs (esm.sh, skypack, jspm) would require `vm.SourceTextModule` with a custom linker, turning the synchronous sandbox into async and network-dependent. Import maps (`@node-loader/import-maps`) operate at the Node.js process level and don't penetrate vm boundaries. CDN imports would also break the controlled-globals security model (LLM code could import arbitrary packages) and make execution non-deterministic. If npm functionality is needed, import in the host process and expose as a controlled vm global. | -- Pending |

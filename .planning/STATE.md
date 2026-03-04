@@ -44,7 +44,7 @@ Recent decisions affecting current work:
 
 - [Roadmap]: 3-phase structure derived from research -- Foundation+Commands, REPL Core, Agent+Explore
 - [Roadmap]: Deterministic commands (deps, find, alias) moved to Phase 1 for immediate user value
-- [Roadmap]: AGNT-02 (haiku-searcher) deferred to v0.1 -- not in this milestone
+- [Roadmap]: AGNT-02 (haiku-searcher) deferred to a later milestone -- not in this milestone
 
 ### Pending Todos
 

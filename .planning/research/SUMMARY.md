@@ -9,7 +9,7 @@
 
 This plugin implements the Recursive Language Model (RLM) paradigm for Nx monorepo navigation inside Claude Code. RLM externalizes context into a persistent JavaScript REPL sandbox, letting the AI iteratively execute code against a workspace graph index rather than loading entire codebases into its context window. Four reference implementations (hampton-io/RLM, code-rabi/rllm, yogthos/Matryoshka, and the original Python RLM) confirm the pattern is viable and well-understood at the source-code level. The stack is deliberately minimal: Node.js 24.1+ only, zero npm dependencies, `node:vm` for sandboxing, and the Nx CLI as the single external dependency. The core innovation is treating the Nx project graph as a structured navigable object rather than flat text, which no existing RLM plugin does.
 
-The recommended approach builds in three sequential phases: Foundation Scripts (workspace indexer, path resolver, Nx CLI wrapper, deterministic commands), REPL Core (VM sandbox with workspace-aware globals), and Agent Integration (the repl-executor subagent driving the fill/solve loop). This order follows the strict dependency chain: the workspace index must exist before the REPL sandbox can be initialized, and the sandbox must work before agent integration can be validated. The `llm_query()` sub-LLM call feature is explicitly deferred to v0.1 because Claude Code's subagent nesting constraint (a subagent cannot spawn another subagent) makes it non-trivial to implement, and the core token-saving hypothesis can be validated without it.
+The recommended approach builds in three sequential phases: Foundation Scripts (workspace indexer, path resolver, Nx CLI wrapper, deterministic commands), REPL Core (VM sandbox with workspace-aware globals), and Agent Integration (the repl-executor subagent driving the fill/solve loop). This order follows the strict dependency chain: the workspace index must exist before the REPL sandbox can be initialized, and the sandbox must work before agent integration can be validated. The `llm_query()` sub-LLM call feature is explicitly deferred to a later milestone because Claude Code's subagent nesting constraint (a subagent cannot spawn another subagent) makes it non-trivial to implement, and the core token-saving hypothesis can be validated without it.
 
 The primary risk is the VM sandbox implementation, which has four critical pitfalls that can each cause complete failure: the naive `const/let -> globalThis` regex transformation that breaks destructuring and for-loops; async IIFE timeout escape combined with the `microtaskMode: 'afterEvaluate'` deadlock bug (nodejs/node#55546, open in Node.js 22-25+); prototype chain escape through injected objects; and the four-mode `FINAL()` termination brittleness in the execution loop. All four are well-understood with proven mitigations from the reference implementations. The mitigation pattern throughout is to follow hampton-io/RLM closely for the sandbox implementation and apply the `Promise.race` timeout pattern instead of relying on the broken `microtaskMode`.
 
@@ -46,14 +46,14 @@ All P0 features must ship together as v0.0.1 -- they form a single dependency ch
 - repl-executor agent -- Sonnet subagent driving the REPL loop in isolated context
 - Deterministic commands -- `/deps`, `/find`, `/alias` (zero LLM tokens)
 
-**Should have (competitive -- v0.1):**
+**Should have (competitive -- later milestone):**
 - `llm_query()` via direct Anthropic API script -- deferred due to subagent nesting constraint; implement as a Node.js script calling the Anthropic API directly (ANTHROPIC_API_KEY is available from Claude Code)
 - haiku-searcher agent -- cost optimization target for `llm_query()`
 - Strategy hints injection -- workspace-specific REPL tips; shown by Prime Intellect research to significantly improve model behavior
 - SessionStart hook -- auto-index rebuild on workspace change
 - Impact analysis skill (`/impact`)
 
-**Defer (v0.2+):**
+**Defer (later milestones):**
 - Angular-specific component registries -- framework lock-in risk; `search()` covers 95% of navigation needs
 - Agent teams / parallel sub-LLM processing
 - Token benchmarking and `/status` command
@@ -81,7 +81,7 @@ The handle store is not a separate component. It is the combination of `globalTh
 
 ### Critical Pitfalls
 
-1. **`const/let -> globalThis` regex breaks destructuring and for-loops** -- The simple regex `\b(const|let)\s+(\w+)\s*=/g` produces `SyntaxError` on `const { a, b } = obj`, `const [x, y] = arr`, `for (const [k, v] of map)`, and silently loses variables in multi-declarations. The LLM wastes 2-5 iterations debugging phantom syntax errors it did not create. Prevention: use AST-based transformation (acorn/meriyah) for v1 if LLM-generated code shows destructuring patterns; or document the limitation and add a REPL system prompt hint instructing the LLM to use simple assignments. Test against 20+ LLM-generated code samples before shipping.
+1. **`const/let -> globalThis` regex breaks destructuring and for-loops** -- The simple regex `\b(const|let)\s+(\w+)\s*=/g` produces `SyntaxError` on `const { a, b } = obj`, `const [x, y] = arr`, `for (const [k, v] of map)`, and silently loses variables in multi-declarations. The LLM wastes 2-5 iterations debugging phantom syntax errors it did not create. Prevention: use AST-based transformation (acorn/meriyah) for v0.0.1 if LLM-generated code shows destructuring patterns; or document the limitation and add a REPL system prompt hint instructing the LLM to use simple assignments. Test against 20+ LLM-generated code samples before shipping.
 
 2. **Async IIFE timeout escape + `microtaskMode: 'afterEvaluate'` deadlock** -- `vm.runInContext({ timeout })` only applies to synchronous execution; the async IIFE returns a Promise immediately and the timeout no longer applies. `microtaskMode: 'afterEvaluate'` appears to be the fix but causes an unresolved deadlock with `async/await` (nodejs/node#55546, open, affects Node.js 22-25+). Prevention: use `Promise.race([resultPromise, timeoutPromise])` in the host for async timeout. Apply `vm.Script` timeout only for the synchronous phase (tight infinite loops). Never use `microtaskMode: 'afterEvaluate'`.
 
@@ -89,7 +89,7 @@ The handle store is not a separate component. It is the combination of `globalTh
 
 4. **`FINAL()` termination brittleness with four failure modes** -- The LLM can: (a) call `FINAL()` inside a dead code branch, (b) call it prematurely before any workspace exploration, (c) generate repeated identical code blocks in a stuck loop, (d) produce `FINAL("[object Object]")` via implicit string coercion. Prevention: implement the full four-layer guard stack (maxIterations=20, maxTimeout=120s, maxErrors=3, stale-loop detection with 3-iteration window), apply the Object.prototype.toString patch, require `codeExecutedCount >= 2` before accepting FINAL, inject mid-loop hints at iteration 10.
 
-5. **`llm_query()` cannot directly spawn Claude subagents from Node.js scripts** -- The repl-executor is already a subagent; Claude Code does not support nested subagent spawning. Prevention: defer `llm_query()` to v0.1. For v0.1, implement via a Node.js script that calls the Anthropic API directly using `ANTHROPIC_API_KEY` (available from Claude Code). The core RLM value proposition validates with Sonnet-only reasoning and deterministic globals.
+5. **`llm_query()` cannot directly spawn Claude subagents from Node.js scripts** -- The repl-executor is already a subagent; Claude Code does not support nested subagent spawning. Prevention: defer `llm_query()` to a later milestone. For that milestone, implement via a Node.js script that calls the Anthropic API directly using `ANTHROPIC_API_KEY` (available from Claude Code). The core RLM value proposition validates with Sonnet-only reasoning and deterministic globals.
 
 ## Implications for Roadmap
 
@@ -149,7 +149,7 @@ The component dependency graph is a strict linear chain that dictates phase orde
 - Strict dependency order (config -> runner -> indexer -> sandbox -> agent -> skill) makes parallelization impossible without the foundation in place.
 - Deterministic commands moved from Phase 4 to Phase 1: they depend only on the workspace index (which Phase 1 builds), deliver immediate user value, and validate the index format from a different angle than the REPL.
 - Agent integration (Phase 3) is the highest-risk integration and reaches it as early as possible, after the sandbox is validated in isolation.
-- v0.1 features (`llm_query()`, haiku-searcher, hooks, strategy hints) form a natural second milestone after v0.0.1 validation.
+- Later milestone features (`llm_query()`, haiku-searcher, hooks, strategy hints) form a natural second milestone after v0.0.1 validation.
 
 ### Research Flags
 
@@ -175,7 +175,7 @@ Phases with standard patterns (can skip research-phase):
 
 - **`const/let` transformation approach:** Simple regex vs. AST parser decision is documented but not resolved. Resolution needed before Phase 2 implementation. Run empirical corpus test during Phase 2 planning.
 - **REPL system prompt calibration:** Exact wording for handle stub explanations, strategy hints, and termination instructions requires empirical validation with real Sonnet behavior on real Nx workspace queries. Plan iterative refinement during Phase 3.
-- **`llm_query()` API key accessibility:** When implemented in v0.1, the assumption is `ANTHROPIC_API_KEY` is available in the Node.js script environment from Claude Code. Verify this assumption before v0.1 planning begins.
+- **`llm_query()` API key accessibility:** When implemented in a later milestone, the assumption is `ANTHROPIC_API_KEY` is available in the Node.js script environment from Claude Code. Verify this assumption before that milestone's planning begins.
 - **Nx daemon behavior on 537-project workspace:** The incremental indexing approach mitigates the documented OOM risk, but empirical testing on the actual target workspace is needed during Phase 1.
 - **Subagent auto-compaction empirical behavior:** The auto-compaction threshold and what is lost during compaction needs empirical testing with real REPL sessions during Phase 3.
 

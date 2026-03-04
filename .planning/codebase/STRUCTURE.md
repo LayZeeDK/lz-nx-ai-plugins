@@ -70,7 +70,7 @@ plugins/
     │   ├── deps.md            # /lz-nx.rlm:deps -- dependency tree (zero LLM tokens)
     │   ├── find.md            # /lz-nx.rlm:find -- project-scoped file search (zero LLM tokens)
     │   └── alias.md           # /lz-nx.rlm:alias -- tsconfig path alias resolution (zero LLM tokens)
-    ├── hooks/                 # Deferred to v1.x (not in v1 scope)
+    ├── hooks/                 # Deferred to a later milestone (not in v0.0.1 scope)
     │   ├── hooks.json
     │   └── scripts/
     ├── scripts/               # Node.js foundation scripts (zero npm dependencies)
@@ -196,7 +196,7 @@ plugins/
 - Location: `research/<topic>/` for external source notes, `.planning/research/` for synthesized planning docs
 - Note: Research documents are reference material; do not create them during implementation phases
 
-**Hook script (v1.x, deferred):**
+**Hook script (later milestone, deferred):**
 - Location: `plugins/lz-nx.rlm/hooks/scripts/<hook-name>.mjs`
 - Config: `plugins/lz-nx.rlm/hooks/hooks.json` (use `${CLAUDE_PLUGIN_ROOT}` for portable paths)
 

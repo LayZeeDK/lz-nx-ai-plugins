@@ -39,7 +39,7 @@ Requirements for initial milestone. Each maps to roadmap phases.
 - [ ] **PLUG-01**: Plugin follows Claude Code plugin structure conventions (`.claude-plugin/plugin.json`, auto-discovered commands/agents/skills, `${CLAUDE_PLUGIN_ROOT}` for portable paths)
 - [ ] **PLUG-02**: All scripts are cross-platform Node.js (.mjs) with zero npm dependencies, working on macOS, Linux, and Windows (Git Bash)
 
-## v0.1 Requirements
+## Later Milestone Requirements
 
 Deferred to next milestone. Tracked but not in current roadmap.
 
@@ -71,9 +71,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | Feature | Reason |
 |---------|--------|
 | Direct Anthropic API calls | Plugin only supports Claude Code flat-rate subscriptions (Team); all LLM operations go through Claude Code's native Task tool and subagent system |
-| Angular-specific registries (component, store, service, route maps) | Locks v1 to one framework; regex scanning for decorators is brittle across Angular versions; generic Nx plugin serves broader audience first |
+| Angular-specific registries (component, store, service, route maps) | Locks v0.0.1 to one framework; regex scanning for decorators is brittle across Angular versions; generic Nx plugin serves broader audience first |
 | Agent teams (debug, review, refactor, migrate) | 3-10x token multiplier; requires Claude Code team features; massive complexity; unproven for RLM workflows |
-| Additional skills (analyze, test-gen, trace, patterns, search) | Each requires stable foundation; explore covers the primary use case for v1 |
+| Additional skills (analyze, test-gen, trace, patterns, search) | Each requires stable foundation; explore covers the primary use case for v0.0.1 |
 | Generic RLM engine extraction (`lz.rlm` standalone plugin) | Internal modularity supports future extraction, but no separate plugin until Nx-specific value is proven |
 | Semantic/vector search (embeddings, BM25, hybrid) | Requires embedding infrastructure beyond Claude; `git grep` + workspace index covers 95% of navigation needs |
 | S-expression DSL | JavaScript is natural for TS/Nx workspaces; target models (Sonnet, Haiku) generate JavaScript fluently |

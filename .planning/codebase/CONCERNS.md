@@ -81,7 +81,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 - Recommendations:
   1. Pass the API key via stdin to the child script, not environment variables or CLI arguments.
   2. Ensure child process stderr is captured and sanitized before logging -- error stack traces can include environment variable values.
-  3. Consider deferring `llm_query()` to v1.1 (Option C in ARCHITECTURE.md) to avoid API key management complexity in v1.
+  3. Consider deferring `llm_query()` to a later milestone (Option C in ARCHITECTURE.md) to avoid API key management complexity in v0.0.1.
 
 **Nx CLI Command Allowlist Not Yet Implemented:**
 - Risk: The planned `nx-runner.mjs` uses an allowlist of read-only Nx commands. If the allowlist validation is missing, incomplete, or bypassed via argument injection, the REPL's `nx()` global could execute destructive commands (`nx run`, `nx generate`, `nx migrate`).
@@ -119,7 +119,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 **Handle Store Memory Accumulation:**
 - Problem: The planned handle store (in-memory `Map`) accumulates large result sets across REPL iterations with no eviction. A 20-iteration session producing 537-entry result sets per iteration holds ~100MB of Map entries with no cleanup.
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/handle-store.mjs`.
-- Cause: Generation-based cleanup or LRU eviction not planned for v1.
+- Cause: Generation-based cleanup or LRU eviction not planned for v0.0.1.
 - Improvement path:
   1. Track iteration number per handle entry.
   2. Evict handles from iterations older than 5 iterations ago.
@@ -211,9 +211,9 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 - Fix: Create minimal plugin scaffold via `plugin-dev` (documented in `AGENTS.md`) before implementing any feature phases.
 
 **No `llm_query()` Prototype:**
-- Problem: The core RLM mechanism -- `llm_query()` spawning sub-LLM calls from within the REPL sandbox -- has no validated implementation path in the Claude Code plugin architecture. The architecture documents three options (direct API call, pending-query protocol, deferred to v1.1) but the mechanism is unproven.
+- Problem: The core RLM mechanism -- `llm_query()` spawning sub-LLM calls from within the REPL sandbox -- has no validated implementation path in the Claude Code plugin architecture. The architecture documents three options (direct API call, pending-query protocol, deferred to a later milestone) but the mechanism is unproven.
 - Blocks: Without a working `llm_query()` proof-of-concept, the plugin may degrade from "true RLM" to "REPL with workspace navigation" at integration time.
-- Fix: Prototype the Task-based delegation pattern (or direct API call pattern) in Phase 1 before building the full execution loop. If unfeasible, commit to Option C (no sub-calls in v1) early to avoid mid-development architecture pivots.
+- Fix: Prototype the Task-based delegation pattern (or direct API call pattern) in Phase 1 before building the full execution loop. If unfeasible, commit to Option C (no sub-calls in v0.0.1) early to avoid mid-development architecture pivots.
 
 **No CI Pipeline:**
 - Problem: No GitHub Actions, CI configuration, or automated test execution exists.

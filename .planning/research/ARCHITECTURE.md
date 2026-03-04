@@ -243,7 +243,7 @@ Data formats:
 
 ## REPL Sandbox Communication Protocol
 
-### Per-Invocation Model (Recommended for v1)
+### Per-Invocation Model (Recommended for v0.0.1)
 
 Each REPL turn is a separate `node` process invocation. This is simpler than a persistent process and avoids IPC complexity.
 
@@ -335,7 +335,7 @@ Handle operations (all server-side, return stubs or new handles):
 
 Claude Code subagents cannot spawn other subagents. The repl-executor is already a subagent. Therefore `llm_query()` inside the REPL cannot use the Agent tool to spawn a haiku-searcher.
 
-### Recommended Solution: Deferred to v1.1 (Option C)
+### Recommended Solution: Deferred to a Later Milestone (Option C)
 
 For the first milestone, **do not implement `llm_query()`**. The repl-executor agent handles all reasoning itself between REPL turns. The REPL provides only deterministic operations.
 
@@ -344,7 +344,7 @@ For the first milestone, **do not implement `llm_query()`**. The repl-executor a
 1. The core value proposition (workspace navigation without context rot) works without sub-LLM calls
 2. The agent already uses Sonnet, which is capable enough for the semantic analysis that `llm_query()` would delegate to Haiku
 3. The fill/solve loop pattern still works -- the agent writes code to search/read/filter, then reasons about results in its own context
-4. Avoids API key management complexity in v1
+4. Avoids API key management complexity in v0.0.1
 
 **What is lost:**
 
@@ -352,7 +352,7 @@ For the first milestone, **do not implement `llm_query()`**. The repl-executor a
 2. Agent burns Sonnet tokens on tasks Haiku could handle
 3. No parallel sub-LLM processing for batch operations (pattern audits)
 
-### Future Implementation: Direct API Script (Option A, for v1.1+)
+### Future Implementation: Direct API Script (Option A, for a Later Milestone)
 
 When `llm_query()` is added later, implement as a script:
 
@@ -516,7 +516,7 @@ Alternative (stronger enforcement):
   A wrapper script could enforce wall clock:
     timeout 120 node scripts/repl-sandbox.mjs ...
   But this kills the process abruptly, losing session state.
-  Prefer the soft guardrail in v1.
+  Prefer the soft guardrail in v0.0.1.
 ```
 
 ### Error Boundary Summary Table

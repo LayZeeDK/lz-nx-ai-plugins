@@ -123,7 +123,7 @@ Identical contract to `deps()` but traverses the reverse adjacency list (who dep
 | Property | Type | Notes |
 |----------|------|-------|
 | Input | `prompt: string` -- the question for the sub-LLM | |
-| Input (optional) | `model: string` -- ignored in v1 (always routes to haiku-searcher agent) | |
+| Input (optional) | `model: string` -- ignored in v0.0.1 (always routes to haiku-searcher agent) | |
 | Return | `Promise<string>` -- the sub-LLM's response | |
 | Async | **YES** -- must be awaited | |
 | Error | Returns `"[ERROR] LLM query failed: <message>"` string (does not throw) | |
@@ -137,7 +137,7 @@ Claude Code does not support spawning a subagent from within a subagent. The `re
 
 The three viable approaches, ranked by complexity:
 
-**Option A: Direct Bash tool call (RECOMMENDED for v1)**
+**Option A: Direct Bash tool call (RECOMMENDED for v0.0.1)**
 The `repl-executor` agent has access to the Bash tool. `llm_query()` invokes `claude` CLI or a Node.js script that makes a direct API call to Claude (Haiku) via the Anthropic SDK. This bypasses the subagent system entirely.
 
 ```
@@ -158,8 +158,8 @@ The `repl-executor` agent generates a `tool_use` block (Bash call to a script) t
 
 Pros: Uses the agent's existing tool permissions. Cons: Breaks the REPL execution flow -- the `llm_query()` call cannot be synchronously resolved within the VM sandbox.
 
-**Option C: Defer llm_query() to v1.1**
-Ship v1 without `llm_query()`. The REPL has all deterministic globals (`deps`, `read`, `search`, `files`, `nx`). The root Sonnet model does all reasoning within the REPL loop. Sub-LLM delegation is a v1.1 feature once the foundation proves value.
+**Option C: Defer llm_query() to a later milestone**
+Ship v0.0.1 without `llm_query()`. The REPL has all deterministic globals (`deps`, `read`, `search`, `files`, `nx`). The root Sonnet model does all reasoning within the REPL loop. Sub-LLM delegation is a later milestone feature once the foundation proves value.
 
 Pros: Simplest. Cons: Loses the Haiku cost optimization (all reasoning is Sonnet tokens).
 
@@ -423,7 +423,7 @@ Features users expect from any RLM-powered codebase navigation tool. Missing the
 | **Deterministic commands** (deps, find, alias) | Zero-LLM-token operations for common queries. Users want instant answers for "what depends on X", "where is file Y", "what alias maps to Z". | LOW | Node.js scripts wrapping workspace index and `tsconfig.base.json`. Three commands: `/deps`, `/find`, `/alias`. |
 | **Nx CLI wrapper** (allowlisted read-only commands) | The REPL needs safe access to Nx CLI for `nx show`, `nx graph`. Must allowlist read-only commands and block mutations. | LOW | Allowlist: `show`, `graph`, `list`, `report`, `affected --print`. Block: `run`, `build`, `generate`, `migrate`. Timeout: 30s. Cache expensive operations. |
 | **RLM configuration/guardrails** | Without guardrails, RLM loops can run indefinitely. Only rand/rlm-claude-code implements explicit budget controls among existing plugins. | LOW | `maxIterations` (20), `maxDepth` (2), `maxTimeout` (120s), `maxErrors` (3). JSON config file. |
-| **Explore skill** (RLM-powered codebase Q&A) | The primary user-facing capability. "Where is X?", "How does Y work?", "What depends on Z?" -- answered via the REPL fill/solve loop. | HIGH | Loads workspace index into REPL, root LLM (Sonnet) navigates with deterministic globals. Sub-LLM calls deferred to v1.1. |
+| **Explore skill** (RLM-powered codebase Q&A) | The primary user-facing capability. "Where is X?", "How does Y work?", "What depends on Z?" -- answered via the REPL fill/solve loop. | HIGH | Loads workspace index into REPL, root LLM (Sonnet) navigates with deterministic globals. Sub-LLM calls deferred to a later milestone. |
 
 ## Differentiators (Competitive Advantage)
 
@@ -444,15 +444,15 @@ Features that seem valuable but create problems. Documenting these prevents scop
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **llm_query() in v0.0.1** | Sub-LLM calls are core to the RLM paradigm. Hampton-io and official RLM implement them. | Requires solving async VM boundary (complex PendingQuery system), API key management, and cannot use subagent nesting in Claude Code. The `repl-executor` is already a subagent. | Defer to v0.1. V0.0.1 validates the REPL approach with Sonnet-only reasoning + deterministic globals. If Sonnet can navigate the workspace without sub-calls, the architecture is sound. |
+| **llm_query() in v0.0.1** | Sub-LLM calls are core to the RLM paradigm. Hampton-io and official RLM implement them. | Requires solving async VM boundary (complex PendingQuery system), API key management, and cannot use subagent nesting in Claude Code. The `repl-executor` is already a subagent. | Defer to a later milestone. v0.0.1 validates the REPL approach with Sonnet-only reasoning + deterministic globals. If Sonnet can navigate the workspace without sub-calls, the architecture is sound. |
 | **Persistent cross-session memory** | 3 of 8 existing RLM plugins implement this. Seems natural. | Massive complexity (SQLite, graph schemas, lifecycle management). The workspace index already provides structural memory deterministically. Git is the cross-session memory for code. | The workspace index IS the persistent memory -- rebuilt from Nx CLI output each session. |
-| **Angular-specific registries** | The target workspace has 1,700 Angular components. Registries enable instant lookups. | Locks v1 to Angular, limiting the plugin to one framework. | Defer to v2 milestone. V1 uses `search()` and `files()` for framework-agnostic patterns. |
+| **Angular-specific registries** | The target workspace has 1,700 Angular components. Registries enable instant lookups. | Locks v0.0.1 to Angular, limiting the plugin to one framework. | Defer to a later milestone. v0.0.1 uses `search()` and `files()` for framework-agnostic patterns. |
 | **MCP server integration** | 4 of 8 existing RLM plugins use MCP. | MCP adds tool definitions to the system prompt (consuming context tokens). Nx's own blog explains why they deleted most MCP tools in favor of skills. | Use skills and Node.js scripts. The REPL sandbox provides richer interaction than MCP tool calls. |
-| **Hooks in v0.0.1** | Automate workspace indexing, intercept searches, cache results. | Hooks add invisible behavior that is hard to debug. V1 should prove value through explicit skill invocation before adding automation. | Defer to v0.1. Users manually invoke `/explore`, `/deps`, `/find`. |
+| **Hooks in v0.0.1** | Automate workspace indexing, intercept searches, cache results. | Hooks add invisible behavior that is hard to debug. v0.0.1 should prove value through explicit skill invocation before adding automation. | Defer to a later milestone. Users manually invoke `/explore`, `/deps`, `/find`. |
 | **Separate handle-store.mjs** | BRAINSTORM.md proposes a dedicated handle store script. | Over-engineering. The VM context's `globalThis` IS the handle store (hampton-io pattern). Smart `print()` truncation IS the handle UX. No separate Map needed. | Implement smart truncation in `print()` and `const/let -> globalThis` transform in `repl-sandbox.mjs`. No separate script. |
 | **S-expression DSL** | Matryoshka uses S-expressions. Reduced entropy for smaller models. | JavaScript is natural for TS/Nx workspaces. Claude (Sonnet/Opus) generates JavaScript fluently. | Use JavaScript REPL. Decision already made in PROJECT.md. |
 | **Semantic/vector search** | Zilliz claude-context claims ~40% token reduction via semantic search. | Requires external embedding model, vector database, and index build time. `git grep` + workspace index covers 95% of navigation needs. | Use `git grep` via the REPL's `search()` global. |
-| **Token benchmarking in v0.0.1** | Validates that RLM actually reduces tokens. | Premature optimization measurement. Building benchmarking infrastructure before the core REPL loop works is overhead. | Defer to v0.1. Validate savings manually first. |
+| **Token benchmarking in v0.0.1** | Validates that RLM actually reduces tokens. | Premature optimization measurement. Building benchmarking infrastructure before the core REPL loop works is overhead. | Defer to a later milestone. Validate savings manually first. |
 
 ## Feature Dependencies
 
@@ -483,7 +483,7 @@ Features that seem valuable but create problems. Documenting these prevents scop
 [Progressive Disclosure]
     +--enhances--> [Workspace Index] (selective loading)
 
-[llm_query()] -- DEFERRED to v0.1
+[llm_query()] -- DEFERRED to a later milestone
     +--enhances--> [Execution Loop] (sub-LLM delegation)
 ```
 
@@ -518,7 +518,7 @@ Minimum viable product -- what is needed to validate that RLM navigation actuall
 - Hooks -- deferred, prove value through explicit invocation first
 - Token benchmarking -- deferred, validate manually
 
-### Add After Validation (v0.1)
+### Add After Validation (Later Milestone)
 
 - [ ] **llm_query()** via direct Anthropic API call (Option A from architecture analysis)
 - [ ] **haiku-searcher agent** as the `llm_query()` target
@@ -527,7 +527,7 @@ Minimum viable product -- what is needed to validate that RLM navigation actuall
 - [ ] **Strategy hints injection**
 - [ ] **Impact analysis skill** (`/impact`)
 
-### Future Consideration (v0.2+)
+### Future Consideration (Later Milestones)
 
 - [ ] **Angular-specific registries**
 - [ ] **Agent teams**
@@ -561,7 +561,7 @@ Minimum viable product -- what is needed to validate that RLM navigation actuall
 
 **Priority key:**
 - P0: Must have for v0.0.1 -- validates the core RLM hypothesis
-- P1: Should have for v0.1 -- adds sub-LLM delegation
+- P1: Should have for a later milestone -- adds sub-LLM delegation
 - P2: Nice to have -- automation and measurement
 - P3: Future milestone
 
