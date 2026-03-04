@@ -72,7 +72,7 @@ The `lz-nx.rlm` plugin ships with no npm dependencies. All functionality uses No
 
 **Environment:**
 - No `.env` files in this repository
-- `ANTHROPIC_API_KEY` - Required for direct Claude API calls from the `llm_query()` REPL global (Option A implementation); read from environment at runtime
+- No API keys required — all LLM operations route through Claude Code's native subagent system under flat-rate subscriptions (Team, Max)
 - RLM guardrails: `.claude/rlm-config.json` per workspace (optional override); defaults in `plugins/lz-nx.rlm/scripts/rlm-config.mjs`
   - `maxIterations`: 20
   - `maxDepth`: 1

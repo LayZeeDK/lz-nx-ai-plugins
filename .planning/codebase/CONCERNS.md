@@ -74,14 +74,9 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
   4. If the plugin is ever extended to run user-supplied code (not LLM-generated), upgrade to `isolated-vm` immediately.
 - Future mitigation: `@anthropic-ai/sandbox-runtime` (SRT) provides OS-level sandboxing via macOS sandbox-exec and Linux bubblewrap -- kernel-enforced filesystem and network restrictions that make VM escapes harmless even if they succeed. SRT is used by Claude Code itself. **Deferred until Windows support is added** (currently macOS and Linux only). Repo: `https://github.com/anthropic-experimental/sandbox-runtime`. When available on Windows, SRT would wrap the Node.js process running `repl-sandbox.mjs`, adding defense-in-depth: VM scope isolation (fast, in-process) + OS kernel isolation (escape-proof). SRT also mitigates API key exfiltration via proxy-based network filtering with domain allowlists.
 
-**`ANTHROPIC_API_KEY` Exposure in Child Processes:**
-- Risk: The planned `llm_query()` implementation (Option A in `.planning/research/ARCHITECTURE.md`) calls a Node.js script via `child_process.execSync` that invokes the Anthropic SDK. The `ANTHROPIC_API_KEY` must be available in the process environment. Child process environment inheritance could expose the key via process listings or error output.
-- Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/` scripts.
-- Current mitigation: None planned explicitly.
-- Recommendations:
-  1. Pass the API key via stdin to the child script, not environment variables or CLI arguments.
-  2. Ensure child process stderr is captured and sanitized before logging -- error stack traces can include environment variable values.
-  3. Consider deferring `llm_query()` to a later milestone (Option C in ARCHITECTURE.md) to avoid API key management complexity in v0.0.1.
+**~~`ANTHROPIC_API_KEY` Exposure in Child Processes~~ (Eliminated):**
+- Original risk: Direct Anthropic API calls from child processes could leak the API key via environment inheritance or error output.
+- Resolution: The plugin exclusively targets Claude Code flat-rate subscriptions (Team, Max). All LLM calls route through native subagent declarations — no `ANTHROPIC_API_KEY` is needed. This concern is eliminated by design.
 
 **Nx CLI Command Allowlist Not Yet Implemented:**
 - Risk: The planned `nx-runner.mjs` uses an allowlist of read-only Nx commands. If the allowlist validation is missing, incomplete, or bypassed via argument injection, the REPL's `nx()` global could execute destructive commands (`nx run`, `nx generate`, `nx migrate`).
@@ -211,9 +206,9 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 - Fix: Create minimal plugin scaffold via `plugin-dev` (documented in `AGENTS.md`) before implementing any feature phases.
 
 **No `llm_query()` Prototype:**
-- Problem: The core RLM mechanism -- `llm_query()` spawning sub-LLM calls from within the REPL sandbox -- has no validated implementation path in the Claude Code plugin architecture. The architecture documents three options (direct API call, pending-query protocol, deferred to a later milestone) but the mechanism is unproven.
+- Problem: The core RLM mechanism -- `llm_query()` spawning sub-LLM calls from within the REPL sandbox -- has no validated implementation path in the Claude Code plugin architecture. The plugin targets flat-rate subscriptions (Team, Max) exclusively, so all LLM calls must route through Claude Code's native subagent system (no direct Anthropic API calls).
 - Blocks: Without a working `llm_query()` proof-of-concept, the plugin may degrade from "true RLM" to "REPL with workspace navigation" at integration time.
-- Fix: Prototype the Task-based delegation pattern (or direct API call pattern) in Phase 1 before building the full execution loop. If unfeasible, commit to Option C (no sub-calls in v0.0.1) early to avoid mid-development architecture pivots.
+- Fix: Prototype the Task-based subagent delegation pattern in Phase 1 before building the full execution loop. If unfeasible, defer sub-calls to a later milestone to avoid mid-development architecture pivots.
 
 **No CI Pipeline:**
 - Problem: No GitHub Actions, CI configuration, or automated test execution exists.

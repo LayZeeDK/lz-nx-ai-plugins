@@ -10,12 +10,8 @@
 - Integration: Plugin manifest at `plugins/lz-nx.rlm/.claude-plugin/plugin.json`; skills auto-invoked by context; agents spawned via Claude Code's subagent system
 - No API key needed for plugin system itself
 
-**Anthropic Claude API (direct, optional):**
-- Service: Anthropic Claude API
-- What it is used for: `llm_query()` REPL global -- sub-LLM calls for mechanical search tasks (Option A implementation; may be deferred to a later milestone)
-- SDK/Client: Direct HTTP call or Anthropic SDK; invoked from `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs` via `child_process.execSync` to a thin wrapper script
-- Auth: `ANTHROPIC_API_KEY` environment variable
-- Model: Haiku 4.5 (default for sub-calls); configurable
+**~~Anthropic Claude API (direct)~~ (Eliminated):**
+- The plugin exclusively targets Claude Code flat-rate subscriptions (Team, Max). All LLM calls — including `llm_query()` sub-calls — route through Claude Code's native subagent declarations. No direct Anthropic API dependency or SDK usage.
 
 **Nx Claude Plugins Marketplace:**
 - Service: GitHub repository `nrwl/nx-ai-agents-config`
@@ -52,8 +48,8 @@
 ## Authentication & Identity
 
 **Auth Provider:**
-- None (no user authentication)
-- The only auth-adjacent concern is the `ANTHROPIC_API_KEY` environment variable for direct Claude API calls via `llm_query()` (optional later milestone feature)
+- None (no user authentication, no API keys required)
+- All LLM operations route through Claude Code's native subagent system under flat-rate subscriptions (Team, Max)
 
 ## Monitoring & Observability
 
@@ -122,13 +118,12 @@ Hook input arrives as JSON on stdin; output is JSON on stdout with optional `add
 ## Environment Configuration
 
 **Required env vars:**
-- None strictly required for v0.0.1 (all features work without env vars except `llm_query()`)
-- `ANTHROPIC_API_KEY` - Required only for the `llm_query()` direct-API-call implementation (Option A, planned for a later milestone)
+- None. All LLM operations use Claude Code's native subagent system (flat-rate subscriptions). No API keys needed.
 
 **Secrets location:**
 - No secrets stored in repository
 - `.env` files are gitignored
-- API keys are read from process environment at runtime only
+- No API keys required at runtime
 
 ---
 
