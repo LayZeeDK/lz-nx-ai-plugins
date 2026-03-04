@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Depends on**: Nothing (first phase)
 **Requirements**: PLUG-01, PLUG-02, FOUND-01, FOUND-02, FOUND-03
 **Success Criteria** (what must be TRUE):
-  1. Running `nx show projects --json` in any Nx workspace and feeding its output to the workspace indexer produces a valid JSON index file containing project names, source roots, dependency edges, and path aliases
+  1. Running `nx graph --print` in any Nx workspace and feeding its output to the workspace indexer produces a valid JSON index file containing project names, source roots, dependency edges, and path aliases
   2. The path resolver correctly translates a tsconfig path alias to its filesystem path and vice versa using the workspace index
   3. The nx-runner executes allowlisted read-only Nx commands and rejects disallowed commands (build, serve, deploy, etc.)
   4. The plugin is auto-discovered by Claude Code when installed via `/plugin install` and its commands/agents/skills appear in the plugin manifest
