@@ -73,7 +73,7 @@ Follows the Matryoshka convention established in architecture research.
 **Linting:**
 - Tool: ESLint 9.x (Nx-managed, `@nx/eslint` plugin)
 - Config: `eslint.config.mjs` per project (flat config format)
-- Run via Nx: `pnpm nx lint <project>`
+- Run via Nx: `npm exec nx lint <project>`
 
 **TypeScript strict mode (for type checking):**
 

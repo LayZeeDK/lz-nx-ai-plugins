@@ -35,7 +35,7 @@ node --test plugins/lz-nx.rlm/scripts/workspace-indexer.test.mjs
 node --test --experimental-test-coverage plugins/lz-nx.rlm/scripts/**/*.test.mjs
 
 # Run via Nx (once Nx projects are configured)
-pnpm nx test lz-nx.rlm
+npm exec nx test lz-nx.rlm
 ```
 
 ### Context 2: Nx-Managed Library Projects (Vitest)
@@ -51,16 +51,16 @@ scaffolded with `@nx/js` or `@nx/node`.
 **Run Commands:**
 ```bash
 # Run tests for a specific Nx project
-pnpm nx test <project-name>
+npm exec nx test <project-name>
 
 # Run all affected tests
-pnpm nx affected --target=test
+npm exec nx -- affected --target=test
 
 # Run with coverage
-pnpm nx test <project-name> --coverage
+npm exec nx -- test <project-name> --coverage
 
 # Run in watch mode
-pnpm nx test <project-name> --watch
+npm exec nx -- test <project-name> --watch
 ```
 
 **For the `lz-nx.rlm` plugin specifically, use `node:test`** (not Vitest) because
@@ -256,7 +256,7 @@ Per `.planning/research/STACK.md`, coverage is opt-in during development.
 node --test --experimental-test-coverage plugins/lz-nx.rlm/scripts/**/*.test.mjs
 
 # Nx coverage (for Vitest projects)
-pnpm nx test <project-name> --coverage
+npm exec nx -- test <project-name> --coverage
 ```
 
 **Coverage priorities** (by component risk level, from `.planning/research/PITFALLS.md`):
