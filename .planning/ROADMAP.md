@@ -28,11 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Running `/lz-nx.rlm:find <pattern> --project <name>` returns file paths scoped to specific Nx projects
   4. Running `/lz-nx.rlm:alias <path-or-alias>` resolves a tsconfig path alias to a file path and vice versa
   5. All scripts work on macOS, Linux, and Windows (Git Bash) with zero npm dependencies
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- Plugin shell, command markdown, Nx-runner, test infrastructure
+- [ ] 01-02-PLAN.md -- Workspace indexer, index-loader, path resolver
+- [ ] 01-03-PLAN.md -- Three deterministic commands (deps, find, alias)
 
 ### Phase 2: REPL Core
 **Goal**: The REPL sandbox can execute JavaScript code in an isolated VM context with workspace-aware globals, persist variables across turns, and enforce guardrails -- testable without any LLM by passing code via stdin
@@ -69,6 +70,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Commands | 0/0 | Not started | - |
+| 1. Foundation + Commands | 0/3 | Planning complete | - |
 | 2. REPL Core | 0/0 | Not started | - |
 | 3. Agent + Explore | 0/0 | Not started | - |
