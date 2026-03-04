@@ -92,27 +92,27 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Performance Bottlenecks
 
 **`nx show project <name>` Called Per-Project at Scale:**
-- Problem: Building a complete workspace index with per-project target availability requires calling `nx show project <name> --json` for each project. On a 537-project workspace, sequential calls take 537-1,611 seconds (9-27 minutes).
+- Problem: Building a complete workspace index with per-project target availability requires calling `nx show project <name> --json` for each project. On a 537-project workspace, sequential calls will be prohibitively slow (no benchmark exists yet — measure before optimizing).
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/workspace-indexer.mjs`.
 - Cause: `nx show projects --json` returns only project names. `nx graph --print` provides dependency edges but not target configuration. Getting targets requires per-project queries.
 - Improvement path:
   1. Read `project.json` files directly from disk instead of calling `nx show project` per project.
   2. Use the cached project graph at `.nx/workspace-data/project-graph.json` which includes node configuration.
   3. Build target information lazily: only resolve targets when the user queries a specific project.
-  4. Fallback benchmark target: full index build must complete in under 30 seconds for 537 projects.
+  4. Benchmark on the target workspace and set a concrete performance budget based on measured results.
 
 **Nx Daemon OOM on Full Project Graph:**
-- Problem: `nx graph --print` forces full project graph computation. On 537-project workspaces, this can consume 38+ GB of memory and crash with OOM. Zombie daemon process then blocks all subsequent Nx commands until `nx reset`.
+- Problem: `nx graph --print` forces full project graph computation. On large workspaces this risks high memory consumption and potential OOM (no profiling data exists yet — measure on the target workspace). A crashed daemon process blocks subsequent Nx commands until `nx reset`.
 - Files: No implementation yet. Will affect workspace indexing scripts and SessionStart hook.
-- Cause: Nx daemon maintains an in-memory project graph. JSON serialization of the full graph for 537 projects can exceed Node.js default `maxBuffer` (200 KB for `execSync`), silently truncating output.
+- Cause: Nx daemon maintains an in-memory project graph. JSON serialization of the full graph for hundreds of projects can exceed Node.js default `maxBuffer` (1 MiB for `execSync`), causing a `RangeError` and lost output.
 - Improvement path:
   1. Never call `nx graph --print` in a SessionStart hook. Use the cached `.nx/workspace-data/project-graph.json` when available.
-  2. Set explicit `maxBuffer: 10 * 1024 * 1024` (10 MB) on all `execSync` calls to Nx.
-  3. Implement tiered indexing: Tier 1 (fast, <5s) from `nx show projects --json`, Tier 2 (<30s) from cached graph file, Tier 3 (slow) from full CLI calls.
+  2. Set explicit `maxBuffer: 10 * 1024 * 1024` (10 MiB) on all `execSync` calls to Nx.
+  3. Implement tiered indexing: Tier 1 (fast) from `nx show projects --json`, Tier 2 from cached graph file, Tier 3 (slow) from full CLI calls. Benchmark each tier on the target workspace.
   4. Use `NX_DAEMON=false` for indexing operations to avoid daemon state issues.
 
 **Handle Store Memory Accumulation:**
-- Problem: The planned handle store (in-memory `Map`) accumulates large result sets across REPL iterations with no eviction. A 20-iteration session producing 537-entry result sets per iteration holds ~100MB of Map entries with no cleanup.
+- Problem: The planned handle store (in-memory `Map`) accumulates large result sets across REPL iterations with no eviction. Over a long session, unbounded accumulation will increase memory usage (actual footprint depends on entry sizes — measure once implemented).
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/handle-store.mjs`.
 - Cause: Generation-based cleanup or LRU eviction not planned for v0.0.1.
 - Improvement path:
@@ -121,13 +121,14 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
   3. Alternatively, cap the handle store at 50 entries total using LRU eviction.
 
 **Hook Execution Timeout on SessionStart:**
-- Problem: Claude Code hooks have a 60-second timeout. If SessionStart runs workspace indexing (which can take 30+ seconds on first run), the hook silently fails. The plugin starts with no workspace index, and all REPL operations that depend on it fail silently.
+- Problem: Claude Code hooks have a 10-minute default timeout (increased from 60s in v2.1.50). If SessionStart runs workspace indexing that exceeds this timeout, the hook fails. The plugin starts with no workspace index, and all REPL operations that depend on it fail silently.
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/hooks.json` SessionStart configuration.
-- Cause: First-run Nx daemon startup on large workspaces is slow. Combined with file scanning for component/store/service registries, total time can exceed the hook timeout.
+- Cause: First-run Nx daemon startup on large workspaces is slow. Combined with file scanning for component/store/service registries, total time may be significant (no measurements exist yet).
 - Improvement path:
   1. Make SessionStart check only whether a cached index exists and is fresh (compare mtimes).
   2. Trigger full indexing asynchronously (background task) if the cache is stale.
-  3. Never block on full indexing in a hook -- load Tier 1 (project names, ~5s) synchronously and complete Tier 2-3 in background.
+  3. Never block on full indexing in a hook — load project names synchronously and complete detailed indexing in background.
+  4. Set an explicit `timeout` in `hooks.json` to document the expected execution budget.
 
 ---
 
@@ -153,7 +154,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 
 **`execSync` with Default `maxBuffer` Truncates Large Nx Output:**
 - Files: Will affect `plugins/<plugin-name>/hooks/scripts/workspace-indexer.mjs` when created.
-- Why fragile: `child_process.execSync` has a default `maxBuffer` of 200 KB. `nx graph --print` on a 537-project workspace produces output well over 1 MB. Truncated output produces invalid JSON that `JSON.parse()` throws on without a clear error indicating truncation.
+- Why fragile: `child_process.execSync` has a default `maxBuffer` of 1 MiB (`1024 * 1024`). `nx graph --print` on a large workspace may produce output exceeding this limit (actual size depends on project count and configuration — measure on the target workspace). Truncated output produces invalid JSON that `JSON.parse()` throws on without a clear error indicating truncation.
 - Safe modification: Always pass `{ maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' }` to every `execSync` call. Add a post-parse validation step that checks the JSON structure is complete.
 - Test coverage: Zero.
 
@@ -169,8 +170,8 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 
 **Workspace Index Size at 537+ Projects:**
 - Current capacity: Not yet built.
-- Limit: Workspace index JSON estimated at 50-100 KB for 537 projects. Loading this as a REPL variable via `globalThis.workspace = require(...)` is feasible. However, if full project configurations (targets, dependencies, tags) are included, the index may grow to 500 KB+, which approaches the practical limit for in-memory REPL variables that the LLM must reference.
-- Scaling path: Use handle-based result storage for project lists. Expose `workspace.projectCount` and `workspace.domains` as scalar values, not the full project map. Return project details on demand via `projects.get('name')` rather than dumping all 537 entries.
+- Limit: Workspace index size depends on what per-project data is included (names only vs. full target/dependency/tag configuration). Measure the actual JSON size on the target workspace before choosing an indexing strategy. Large indexes should not be loaded wholesale as REPL variables that the LLM must fit in context.
+- Scaling path: Use handle-based result storage for project lists. Expose `workspace.projectCount` and `workspace.domains` as scalar values, not the full project map. Return project details on demand via `projects.get('name')` rather than dumping all entries.
 
 **REPL Output Truncation at 2 KB:**
 - Current capacity: Not yet implemented.
