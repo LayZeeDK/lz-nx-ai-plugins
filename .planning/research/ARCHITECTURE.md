@@ -100,13 +100,13 @@ Size impact: Consumed as agent context tokens (~15-25K tokens for 537 projects)
 
 ### Step 4: Agent generates REPL code and invokes sandbox
 
-```
+````
 Agent generates JavaScript in a ```repl fenced block:
 
-  ```repl
-  let libs = Object.keys(workspace.projects)
-    .filter(name => name.includes('user'))
-  print(libs)
+```repl
+let libs = Object.keys(workspace.projects)
+  .filter(name => name.includes('user'))
+print(libs)
 ```
 
 Agent invokes via Bash tool:
@@ -122,7 +122,7 @@ Data crossing boundary (Agent -> Script):
 Data crossing boundary (Script -> Agent):
   OUT: SandboxResult as JSON on stdout
   Format: JSON object (see schema below)
-```
+````
 
 ### Step 5: SandboxResult schema
 
@@ -188,21 +188,21 @@ State persistence between iterations:
 
 ### Step 8: FINAL answer detection
 
-```
+````
 The LLM calls FINAL("answer string") inside REPL code:
 
-  ```repl
-  let answer = `UserService is defined in:
-  - libs/connect/shared/users/data-access/src/lib/user.service.ts
-  It is provided in root and used by 12 projects.`
-  FINAL(answer)
+```repl
+let answer = `UserService is defined in:
+- libs/connect/shared/users/data-access/src/lib/user.service.ts
+It is provided in root and used by 12 projects.`
+FINAL(answer)
 ```
 
 Sandbox sets result.final to the answer string.
 Agent sees result.final != null and returns it.
 
 Data format: Plain text string (the distilled answer)
-```
+````
 
 ### Step 9: Agent returns to main conversation
 
