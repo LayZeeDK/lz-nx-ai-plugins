@@ -177,6 +177,32 @@ print("✅ Build successful!")
 print("[SUCCESS] Build successful!")
 ```
 
+## Content Search
+
+Plugins are developed across macOS, Linux, and Windows. The right search tool depends on the contributor's platform.
+
+| Tool | macOS / Linux | Windows x64 | Windows arm64 | Notes |
+|------|:---:|:---:|:---:|-------|
+| Grep tool (built-in) | works | works | broken | arm64-win32 vendored `rg.exe` has an argv[0] bug ([#27988](https://github.com/anthropics/claude-code/issues/27988)); x64 build is unaffected |
+| `git grep` (via Bash) | works | works | works | Searches tracked files only; natively compiled on all platforms |
+| `rg` (via Bash) | works | works | works (slow) | Native on x64; Chocolatey x86_64 build runs under QEMU on arm64 (~2.5x slower than `git grep`) |
+| `grep` (via Bash) | works | works (slow) | works (slow) | Git Bash MSYS2 `grep -r` is slow and can produce incomplete results on Windows |
+
+### Recommendations
+
+- **Primary: `git grep`** — fastest on every platform, searches the git index directly, skips `.gitignore`d files automatically. Use for day-to-day content search.
+  ```bash
+  git grep -n "pattern"                             # tracked files, with line numbers
+  git grep -l "pattern" -- "plugins/"               # files-with-matches in a subtree
+  git grep -n -e "pattern1" --or -e "pattern2"      # multiple patterns (OR)
+  ```
+- **Fallback: `rg` or Grep tool** — needed when searching untracked or git-ignored files (`node_modules/`, `dist/`, build output) or using advanced features (PCRE2, `--type`, `--json`). On macOS/Linux the Grep tool and `rg` are interchangeable; on Windows arm64 only `rg` via Bash works (see table above).
+  ```bash
+  rg "pattern" path/to/search                       # recursive, respects .gitignore
+  rg --no-ignore "pattern" node_modules/             # include git-ignored files
+  ```
+- **Limitation**: `git grep` only searches files tracked by git. It will **not** find matches in `.gitignore`d paths or untracked files. Fall back to `rg` for those.
+
 ## Testing Changes
 
 After modifying plugin files, verify:
