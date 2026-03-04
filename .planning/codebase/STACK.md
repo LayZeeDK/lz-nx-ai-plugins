@@ -38,7 +38,7 @@
 - No build step - Plugin scripts run directly as `.mjs` files via `node scripts/foo.mjs`
 - Vite 7.x (`@nx/vite`) - Available for Nx projects in the monorepo, not used by the plugin itself
 - Prettier 3.x - Code formatting with `singleQuote: true`
-- ESLint 8.57.x (`@nx/eslint`) - Linting via flat config (`.eslintrc.json` or `eslint.config.mjs` per project)
+- ESLint 9.x (`@nx/eslint`) - Linting via flat config (`eslint.config.mjs` per project)
 - jiti 2.4.2 - TypeScript config loader for Nx tooling
 
 ## Key Dependencies

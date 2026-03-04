@@ -71,8 +71,8 @@ Follows the Matryoshka convention established in architecture research.
 - Prettier handles indentation, line length, and all other formatting automatically
 
 **Linting:**
-- Tool: ESLint 8.x (Nx-managed, `@nx/eslint` plugin)
-- Config: `eslint.config.mjs` per project (flat config format, not `.eslintrc.json`)
+- Tool: ESLint 9.x (Nx-managed, `@nx/eslint` plugin)
+- Config: `eslint.config.mjs` per project (flat config format)
 - Run via Nx: `pnpm nx lint <project>`
 
 **TypeScript strict mode (for type checking):**
