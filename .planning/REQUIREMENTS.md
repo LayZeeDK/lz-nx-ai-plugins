@@ -88,26 +88,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | TBD | Pending |
-| FOUND-02 | TBD | Pending |
-| FOUND-03 | TBD | Pending |
-| REPL-01 | TBD | Pending |
-| REPL-02 | TBD | Pending |
-| REPL-03 | TBD | Pending |
-| REPL-04 | TBD | Pending |
-| AGNT-01 | TBD | Pending |
-| SKIL-01 | TBD | Pending |
-| CMD-01 | TBD | Pending |
-| CMD-02 | TBD | Pending |
-| CMD-03 | TBD | Pending |
-| PLUG-01 | TBD | Pending |
-| PLUG-02 | TBD | Pending |
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| REPL-01 | Phase 2 | Pending |
+| REPL-02 | Phase 2 | Pending |
+| REPL-03 | Phase 2 | Pending |
+| REPL-04 | Phase 2 | Pending |
+| AGNT-01 | Phase 3 | Pending |
+| SKIL-01 | Phase 3 | Pending |
+| CMD-01 | Phase 1 | Pending |
+| CMD-02 | Phase 1 | Pending |
+| CMD-03 | Phase 1 | Pending |
+| PLUG-01 | Phase 1 | Pending |
+| PLUG-02 | Phase 1 | Pending |
 
 **Coverage:**
 - v0.0.1 requirements: 14 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 14
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-04 after research (AGNT-02 deferred, no-Anthropic-API constraint, REPL-02/04 refined)*
+*Last updated: 2026-03-04 -- Roadmap v2 (3-phase structure replacing stale 5-phase)*
