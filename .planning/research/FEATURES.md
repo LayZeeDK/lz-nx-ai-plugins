@@ -356,7 +356,7 @@ The LLM responds with reasoning text but no code blocks, endlessly. No code mean
 - **Official RLM:** Relies on `max_iterations` as the hard stop, then calls `_default_answer()` which asks the LLM for a final answer in one more call.
 
 **Prevention for our plugin:**
-1. If no code block extracted from the response, append a prompt: `"Write code in a \`\`\`repl block to explore the workspace. Available: deps(), search(), read(), files(), projects."`
+1. If no code block extracted from the response, append a prompt: `` "Write code in a ```repl block to explore the workspace. Available: deps(), search(), read(), files(), projects." ``
 2. Track consecutive no-code turns. After 3, auto-request: `"You have not written code in 3 turns. Provide your best answer now using FINAL() in a code block, or write code to continue exploring."`
 3. Hard cap at `maxIterations` (20). On expiry, make one final LLM call requesting just the answer.
 
