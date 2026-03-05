@@ -15,9 +15,9 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### REPL Engine
 
-- [ ] **REPL-01**: REPL sandbox executes JavaScript in an isolated Node.js VM context with workspace-aware globals (`workspace`, `projects`, `deps()`, `dependents()`, `read()`, `files()`, `search()`, `nx()`, `print()`, `SHOW_VARS()`, `FINAL()`, `FINAL_VAR()`)
-- [ ] **REPL-02**: Smart result truncation via `globalThis` persistence and `print()` truncation keeps large results navigable without flooding context -- the LLM sees compact stubs while full data remains accessible in session state
-- [ ] **REPL-03**: RLM configuration controls guardrails via JSON config: `maxIterations` (default 20), `maxDepth` (default 2), `maxTimeout` (default 120s), `maxConsecutiveErrors` (default 3)
+- [x] **REPL-01**: REPL sandbox executes JavaScript in an isolated Node.js VM context with workspace-aware globals (`workspace`, `projects`, `deps()`, `dependents()`, `read()`, `files()`, `search()`, `nx()`, `print()`, `SHOW_VARS()`, `FINAL()`, `FINAL_VAR()`)
+- [x] **REPL-02**: Smart result truncation via `globalThis` persistence and `print()` truncation keeps large results navigable without flooding context -- the LLM sees compact stubs while full data remains accessible in session state
+- [x] **REPL-03**: RLM configuration controls guardrails via JSON config: `maxIterations` (default 20), `maxDepth` (default 2), `maxTimeout` (default 120s), `maxConsecutiveErrors` (default 3)
 - [ ] **REPL-04**: Execution loop implements the fill/solve cycle with four-layer termination guards (maxIterations, maxTimeout, maxErrors, stale-loop detection) -- LLM generates code, sandbox executes, results appended, loop continues until `FINAL()` or guardrail limit reached
 
 ### Agents
@@ -101,9 +101,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-01    | Phase 1   | Complete |
 | FOUND-02    | Phase 1   | Complete |
 | FOUND-03    | Phase 1   | Complete |
-| REPL-01     | Phase 2   | Pending  |
-| REPL-02     | Phase 2   | Pending  |
-| REPL-03     | Phase 2   | Pending  |
+| REPL-01     | Phase 2   | Complete |
+| REPL-02     | Phase 2   | Complete |
+| REPL-03     | Phase 2   | Complete |
 | REPL-04     | Phase 2   | Pending  |
 | AGNT-01     | Phase 3   | Pending  |
 | SKIL-01     | Phase 3   | Pending  |

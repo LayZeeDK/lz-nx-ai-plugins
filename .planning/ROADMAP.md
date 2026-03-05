@@ -72,7 +72,7 @@ Plans:
 
 Plans:
 
-- [ ] 02-01-PLAN.md -- Code transform, print capture, config loader, session state (foundation utilities)
+- [x] 02-01-PLAN.md -- Code transform, print capture, config loader, session state (foundation utilities)
 - [ ] 02-02-PLAN.md -- REPL globals factory and sandbox execution engine (VM integration)
 
 ### Phase 3: Agent + Explore
@@ -100,5 +100,5 @@ Phases execute in numeric order: 1 -> 1.1 -> 2 -> 3
 | ------------------------------ | -------------- | ----------- | ---------- |
 | 1. Foundation + Commands       | 3/3            | Complete    | 2026-03-04 |
 | 1.1 Nx Project Setup + Linting | 1/1            | Complete    | 2026-03-05 |
-| 2. REPL Core                   | 0/2            | Planned     | -          |
+| 2. REPL Core                   | 1/2            | In Progress | -          |
 | 3. Agent + Explore             | 0/0            | Not started | -          |
