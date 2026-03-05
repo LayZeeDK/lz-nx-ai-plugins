@@ -13,6 +13,7 @@ This roadmap delivers the complete RLM-powered explore workflow for Nx workspace
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation + Commands** - Plugin shell, workspace indexer, path resolver, Nx runner, and three deterministic commands delivering immediate user value
+- [ ] **Phase 1.1: Nx Project Setup + Linting** *(INSERTED)* - Nx project definitions for plugin scripts and tests, inferred typecheck and lint targets with recommended ESLint rules
 - [ ] **Phase 2: REPL Core** - Isolated JavaScript sandbox with workspace-aware globals, smart truncation, guardrails config, and the fill/solve execution loop
 - [ ] **Phase 3: Agent + Explore** - repl-executor subagent driving the REPL loop and the explore skill validating the RLM token-savings thesis
 
@@ -34,6 +35,20 @@ Plans:
 - [x] 01-01-PLAN.md -- Plugin shell, command markdown, Nx-runner, test infrastructure
 - [x] 01-02-PLAN.md -- Workspace indexer, index-loader, path resolver
 - [x] 01-03-PLAN.md -- Three deterministic commands (deps, find, alias)
+
+### Phase 1.1: Nx Project Setup + Linting *(INSERTED)*
+**Goal**: Plugin scripts and tests are discoverable Nx projects with inferred typecheck and lint targets, using recommended Nx ESLint rules -- all existing code passes both targets
+**Depends on**: Phase 1
+**Requirements**: DX-01, DX-02, DX-03
+**Success Criteria** (what must be TRUE):
+  1. `nx show projects` lists both `lz-nx-rlm` (plugin scripts) and `lz-nx-rlm-test` (tests)
+  2. `nx typecheck lz-nx-rlm` runs TypeScript type checking against plugin scripts with no errors
+  3. `nx lint lz-nx-rlm` and `nx lint lz-nx-rlm-test` both pass using recommended Nx ESLint rules
+  4. `nx run-many -t lint` and `nx run-many -t typecheck` pass across all projects
+**Plans**: 1 plan
+
+Plans:
+- [ ] 01.1-01-PLAN.md -- Nx project definitions, tsconfig, ESLint flat config, lint + typecheck targets
 
 ### Phase 2: REPL Core
 **Goal**: The REPL sandbox can execute JavaScript code in an isolated VM context with workspace-aware globals, persist variables across turns, and enforce guardrails -- testable without any LLM by passing code via stdin
@@ -66,10 +81,11 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3
+Phases execute in numeric order: 1 -> 1.1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Commands | 3/3 | Complete | 2026-03-04 |
+| 1.1 Nx Project Setup + Linting | 0/1 | Not started | - |
 | 2. REPL Core | 0/2 | Planned | - |
 | 3. Agent + Explore | 0/0 | Not started | - |

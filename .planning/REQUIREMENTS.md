@@ -34,6 +34,12 @@ Requirements for initial milestone. Each maps to roadmap phases.
 - [x] **CMD-02**: `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index and git grep (deterministic -- no LLM calls in scripts)
 - [x] **CMD-03**: `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally -- path to alias and alias to path (deterministic -- no LLM calls in scripts)
 
+### Developer Experience
+
+- [ ] **DX-01**: Plugin scripts directory (`plugins/lz-nx.rlm/`) is an Nx project (`lz-nx-rlm`) with an inferred `typecheck` target via `@nx/js/typescript` plugin
+- [ ] **DX-02**: Both the plugin scripts project (`lz-nx-rlm`) and the test project (`lz-nx-rlm-test`) have inferred `lint` targets via `@nx/eslint/plugin` using recommended Nx ESLint rules
+- [ ] **DX-03**: ESLint flat config (`eslint.config.mjs`) uses default recommended Nx ESLint plugin rules; all existing Phase 1 code passes lint and typecheck with no suppression comments
+
 ### Plugin Shell
 
 - [x] **PLUG-01**: Plugin follows Claude Code plugin structure conventions (`.claude-plugin/plugin.json`, auto-discovered commands/agents/skills, `${CLAUDE_PLUGIN_ROOT}` for portable paths)
@@ -104,12 +110,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMD-01 | Phase 1 | Complete |
 | CMD-02 | Phase 1 | Complete |
 | CMD-03 | Phase 1 | Complete |
+| DX-01 | Phase 1.1 | Pending |
+| DX-02 | Phase 1.1 | Pending |
+| DX-03 | Phase 1.1 | Pending |
 | PLUG-01 | Phase 1 | Complete |
 | PLUG-02 | Phase 1 | Complete |
 
 **Coverage:**
-- v0.0.1 requirements: 14 total
-- Mapped to phases: 14
+- v0.0.1 requirements: 17 total
+- Mapped to phases: 17
 - Unmapped: 0
 
 ---
