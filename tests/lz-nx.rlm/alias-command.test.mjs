@@ -52,7 +52,7 @@ describe('alias-command > runAlias', () => {
   let runAlias;
 
   beforeEach(async () => {
-    const mod = await import('../alias-command.mjs');
+    const mod = await import('#rlm/alias-command.mjs');
     runAlias = mod.runAlias;
   });
 

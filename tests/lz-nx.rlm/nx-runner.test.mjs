@@ -6,7 +6,7 @@ vi.mock('node:child_process', () => ({
 }));
 
 const { execSync } = await import('node:child_process');
-const { runNx, runNxGraph } = await import('../nx-runner.mjs');
+const { runNx, runNxGraph } = await import('#rlm/nx-runner.mjs');
 
 describe('nx-runner', () => {
   beforeEach(() => {
@@ -279,7 +279,7 @@ describe('output-format', () => {
   let stdoutSpy, stderrSpy;
 
   beforeEach(async () => {
-    const mod = await import('../shared/output-format.mjs');
+    const mod = await import('#rlm/shared/output-format.mjs');
     info = mod.info;
     warn = mod.warn;
     error = mod.error;

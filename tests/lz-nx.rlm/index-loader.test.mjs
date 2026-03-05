@@ -24,7 +24,7 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 // Mock workspace-indexer (index-loader imports buildIndex from it)
-vi.mock('../workspace-indexer.mjs', () => ({
+vi.mock('#rlm/workspace-indexer.mjs', () => ({
   buildIndex: mockBuildIndex,
   transformGraphToIndex: vi.fn(),
   readPathAliases: vi.fn(),
@@ -37,7 +37,7 @@ describe('index-loader', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mod = await import('../shared/index-loader.mjs');
+    const mod = await import('#rlm/shared/index-loader.mjs');
     loadIndex = mod.loadIndex;
   });
 

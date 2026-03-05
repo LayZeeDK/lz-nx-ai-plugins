@@ -13,7 +13,7 @@ describe('workspace-indexer > transformGraphToIndex', () => {
 
   beforeEach(async () => {
     // Import the real module -- transformGraphToIndex is a pure function
-    const mod = await import('../workspace-indexer.mjs');
+    const mod = await import('#rlm/workspace-indexer.mjs');
     transformGraphToIndex = mod.transformGraphToIndex;
   });
 

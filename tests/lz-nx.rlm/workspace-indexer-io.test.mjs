@@ -36,12 +36,12 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 // Mock nx-runner
-vi.mock('../nx-runner.mjs', () => ({
+vi.mock('#rlm/nx-runner.mjs', () => ({
   runNxGraph: mockRunNxGraph,
 }));
 
 // Mock output-format to suppress output during tests
-vi.mock('../shared/output-format.mjs', () => ({
+vi.mock('#rlm/shared/output-format.mjs', () => ({
   info: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
@@ -55,7 +55,7 @@ describe('workspace-indexer > readPathAliases', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mod = await import('../workspace-indexer.mjs');
+    const mod = await import('#rlm/workspace-indexer.mjs');
     readPathAliases = mod.readPathAliases;
   });
 
@@ -151,7 +151,7 @@ describe('workspace-indexer > buildIndex', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mod = await import('../workspace-indexer.mjs');
+    const mod = await import('#rlm/workspace-indexer.mjs');
     buildIndex = mod.buildIndex;
   });
 

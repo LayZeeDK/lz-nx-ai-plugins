@@ -69,7 +69,7 @@ describe('find-command > runFind', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mod = await import('../find-command.mjs');
+    const mod = await import('#rlm/find-command.mjs');
     runFind = mod.runFind;
   });
 

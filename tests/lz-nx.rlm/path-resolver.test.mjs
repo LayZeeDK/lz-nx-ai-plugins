@@ -11,7 +11,7 @@ describe('path-resolver > resolveAlias', () => {
   let resolveAlias;
 
   beforeEach(async () => {
-    const mod = await import('../path-resolver.mjs');
+    const mod = await import('#rlm/path-resolver.mjs');
     resolveAlias = mod.resolveAlias;
   });
 

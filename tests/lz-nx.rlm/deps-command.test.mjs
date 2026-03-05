@@ -92,7 +92,7 @@ describe('project-filter > filterProjects', () => {
   let filterProjects;
 
   beforeEach(async () => {
-    const mod = await import('../shared/project-filter.mjs');
+    const mod = await import('#rlm/shared/project-filter.mjs');
     filterProjects = mod.filterProjects;
   });
 
@@ -133,7 +133,7 @@ describe('deps-command > renderDepsTree', () => {
   let renderDepsTree;
 
   beforeEach(async () => {
-    const mod = await import('../deps-command.mjs');
+    const mod = await import('#rlm/deps-command.mjs');
     renderDepsTree = mod.renderDepsTree;
   });
 
