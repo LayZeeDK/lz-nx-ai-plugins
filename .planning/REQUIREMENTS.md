@@ -36,9 +36,9 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### Developer Experience
 
-- [ ] **DX-01**: Plugin scripts directory (`plugins/lz-nx.rlm/`) is an Nx project (`lz-nx-rlm`) with an inferred `typecheck` target via `@nx/js/typescript` plugin
-- [ ] **DX-02**: Both the plugin scripts project (`lz-nx-rlm`) and the test project (`lz-nx-rlm-test`) have inferred `lint` targets via `@nx/eslint/plugin` using recommended Nx ESLint rules
-- [ ] **DX-03**: ESLint flat config (`eslint.config.mjs`) uses default recommended Nx ESLint plugin rules; all existing Phase 1 code passes lint and typecheck with no suppression comments
+- [x] **DX-01**: Plugin scripts directory (`plugins/lz-nx.rlm/`) is an Nx project (`lz-nx-rlm`) with an inferred `typecheck` target via `@nx/js/typescript` plugin
+- [x] **DX-02**: Both the plugin scripts project (`lz-nx-rlm`) and the test project (`lz-nx-rlm-test`) have inferred `lint` targets via `@nx/eslint/plugin` using recommended Nx ESLint rules
+- [x] **DX-03**: ESLint flat config (`eslint.config.mjs`) uses default recommended Nx ESLint plugin rules; all existing Phase 1 code passes lint and typecheck with no suppression comments
 
 ### Plugin Shell
 
@@ -78,49 +78,51 @@ Deferred to next milestone. Tracked but not in current roadmap.
 
 Explicitly excluded. Documented to prevent scope creep.
 
-| Feature | Reason |
-|---------|--------|
-| Direct Anthropic API calls | Plugin only supports Claude Code flat-rate subscriptions (Team); all LLM operations go through Claude Code's native Task tool and subagent system |
-| Angular-specific registries (component, store, service, route maps) | Locks v0.0.1 to one framework; regex scanning for decorators is brittle across Angular versions; generic Nx plugin serves broader audience first |
-| Agent teams (debug, review, refactor, migrate) | 3-10x token multiplier; requires Claude Code team features; massive complexity; unproven for RLM workflows |
-| Additional skills (analyze, test-gen, trace, patterns, search) | Each requires stable foundation; explore covers the primary use case for v0.0.1 |
-| Generic RLM engine extraction (`lz.rlm` standalone plugin) | Internal modularity supports future extraction, but no separate plugin until Nx-specific value is proven |
-| Semantic/vector search (embeddings, BM25, hybrid) | Requires embedding infrastructure beyond Claude; `git grep` + workspace index covers the workspace navigation use cases (see `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`) |
-| S-expression DSL | JavaScript is natural for TS/Nx workspaces; target models (Sonnet, Haiku) generate JavaScript fluently |
-| MCP server integration | MCP adds tool definitions to system prompt consuming context tokens; skills + scripts are more efficient; Nx itself moved away from MCP |
-| Persistent cross-session memory (SQLite, knowledge graph) | The workspace index IS deterministic persistent memory, rebuilt from Nx CLI each session; git is the cross-session memory for code |
+| Feature                                                                 | Reason                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct Anthropic API calls                                              | Plugin only supports Claude Code flat-rate subscriptions (Team); all LLM operations go through Claude Code's native Task tool and subagent system                                                                                                         |
+| Angular-specific registries (component, store, service, route maps)     | Locks v0.0.1 to one framework; regex scanning for decorators is brittle across Angular versions; generic Nx plugin serves broader audience first                                                                                                          |
+| Agent teams (debug, review, refactor, migrate)                          | 3-10x token multiplier; requires Claude Code team features; massive complexity; unproven for RLM workflows                                                                                                                                                |
+| Additional skills (analyze, test-gen, trace, patterns, search)          | Each requires stable foundation; explore covers the primary use case for v0.0.1                                                                                                                                                                           |
+| Generic RLM engine extraction (`lz.rlm` standalone plugin)              | Internal modularity supports future extraction, but no separate plugin until Nx-specific value is proven                                                                                                                                                  |
+| Semantic/vector search (embeddings, BM25, hybrid)                       | Requires embedding infrastructure beyond Claude; `git grep` + workspace index covers the workspace navigation use cases (see `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`)                                                    |
+| S-expression DSL                                                        | JavaScript is natural for TS/Nx workspaces; target models (Sonnet, Haiku) generate JavaScript fluently                                                                                                                                                    |
+| MCP server integration                                                  | MCP adds tool definitions to system prompt consuming context tokens; skills + scripts are more efficient; Nx itself moved away from MCP                                                                                                                   |
+| Persistent cross-session memory (SQLite, knowledge graph)               | The workspace index IS deterministic persistent memory, rebuilt from Nx CLI each session; git is the cross-session memory for code                                                                                                                        |
 | Runtime ESM CDN imports in sandbox (esm.sh, skypack, jspm, import maps) | vm contexts have no module system; CDN imports break controlled-globals security model, add network dependency, require vm.SourceTextModule with custom linker; if npm functionality is needed, import in host process and expose as controlled vm global |
-| Hooks in v0.0.1 | Hooks add invisible behavior that is hard to debug; v0.0.1 proves value through explicit skill/command invocation first |
+| Hooks in v0.0.1                                                         | Hooks add invisible behavior that is hard to debug; v0.0.1 proves value through explicit skill/command invocation first                                                                                                                                   |
 
 ## Traceability
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| FOUND-01 | Phase 1 | Complete |
-| FOUND-02 | Phase 1 | Complete |
-| FOUND-03 | Phase 1 | Complete |
-| REPL-01 | Phase 2 | Pending |
-| REPL-02 | Phase 2 | Pending |
-| REPL-03 | Phase 2 | Pending |
-| REPL-04 | Phase 2 | Pending |
-| AGNT-01 | Phase 3 | Pending |
-| SKIL-01 | Phase 3 | Pending |
-| CMD-01 | Phase 1 | Complete |
-| CMD-02 | Phase 1 | Complete |
-| CMD-03 | Phase 1 | Complete |
-| DX-01 | Phase 1.1 | Pending |
-| DX-02 | Phase 1.1 | Pending |
-| DX-03 | Phase 1.1 | Pending |
-| PLUG-01 | Phase 1 | Complete |
-| PLUG-02 | Phase 1 | Complete |
+| Requirement | Phase     | Status   |
+| ----------- | --------- | -------- |
+| FOUND-01    | Phase 1   | Complete |
+| FOUND-02    | Phase 1   | Complete |
+| FOUND-03    | Phase 1   | Complete |
+| REPL-01     | Phase 2   | Pending  |
+| REPL-02     | Phase 2   | Pending  |
+| REPL-03     | Phase 2   | Pending  |
+| REPL-04     | Phase 2   | Pending  |
+| AGNT-01     | Phase 3   | Pending  |
+| SKIL-01     | Phase 3   | Pending  |
+| CMD-01      | Phase 1   | Complete |
+| CMD-02      | Phase 1   | Complete |
+| CMD-03      | Phase 1   | Complete |
+| DX-01       | Phase 1.1 | Complete |
+| DX-02       | Phase 1.1 | Complete |
+| DX-03       | Phase 1.1 | Complete |
+| PLUG-01     | Phase 1   | Complete |
+| PLUG-02     | Phase 1   | Complete |
 
 **Coverage:**
+
 - v0.0.1 requirements: 17 total
 - Mapped to phases: 17
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-03-03*
-*Last updated: 2026-03-04 -- Roadmap v2 (3-phase structure replacing stale 5-phase)*
+
+_Requirements defined: 2026-03-03_
+_Last updated: 2026-03-05 -- DX-01, DX-02, DX-03 marked complete (Phase 1.1 plan 01)_
