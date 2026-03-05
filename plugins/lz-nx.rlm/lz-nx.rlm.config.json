@@ -1,0 +1,8 @@
+{
+  "maxIterations": 20,
+  "maxTimeout": 120,
+  "maxConsecutiveErrors": 3,
+  "maxStaleOutputs": 3,
+  "maxNoCodeTurns": 3,
+  "maxDepth": 2
+}
