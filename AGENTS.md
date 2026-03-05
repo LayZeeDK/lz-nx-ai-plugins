@@ -79,6 +79,19 @@ For agents, use the array format: `tools: ["Bash", "Read", "Edit"]`
 
 **File Type Awareness**: Handle different file types appropriately (source code, config files, lock files, etc.).
 
+### Plugin Distribution
+
+Plugins are installed by cloning the entire repo. There is no `.npmignore` or `plugin.json` `exclude` field, so everything inside `plugins/<name>/` ships to end users.
+
+**Rules:**
+- Test files, test fixtures, and test runner configs (`vitest.config.*`, `jest.config.*`) MUST NOT live inside `plugins/<name>/`
+- Place them under `tests/<plugin-name>/` at the repo root
+- Source modules stay in `plugins/<name>/scripts/`
+- Each test directory needs a `project.json` with a `-test` suffixed project name for Nx discovery (e.g., `lz-nx-rlm-test`)
+- Use Vite `resolve.alias` in `vitest.config.mjs` to map `#rlm` (or similar) to the plugin's scripts directory
+
+**Package manager:** This workspace uses `npm` (per `package-lock.json`) — always use `npm exec nx` not `pnpm nx`.
+
 ## Hooks
 
 ### Environment Variables
