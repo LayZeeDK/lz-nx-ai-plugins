@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "test": "nx run-many --targets test"
+  },
   "devDependencies": {
     "@nx/eslint": "22.5.1",
     "@nx/js": "22.5.1",
