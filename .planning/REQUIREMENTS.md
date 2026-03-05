@@ -30,9 +30,9 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### Commands
 
-- [x] **CMD-01**: `/lz-nx.rlm:deps` command prints a dependency tree for a given Nx project using the workspace index (zero LLM tokens)
-- [x] **CMD-02**: `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index and filesystem glob (zero LLM tokens)
-- [x] **CMD-03**: `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally -- path to alias and alias to path (zero LLM tokens)
+- [x] **CMD-01**: `/lz-nx.rlm:deps` command prints a dependency tree for a given Nx project using the workspace index (deterministic -- no LLM calls in scripts, though Claude Code still processes the invocation)
+- [x] **CMD-02**: `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index and git grep (deterministic -- no LLM calls in scripts)
+- [x] **CMD-03**: `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally -- path to alias and alias to path (deterministic -- no LLM calls in scripts)
 
 ### Plugin Shell
 
@@ -63,6 +63,10 @@ Deferred to next milestone. Tracked but not in current roadmap.
 
 - **OBSV-01**: Token benchmarking tracks per-query token usage vs. baseline Explore agent
 - **OBSV-02**: `/lz-nx.rlm:status` command shows workspace index health, cache stats, and session token usage
+
+### CLI
+
+- **CLI-01**: Standalone CLI entry point (`bin/lz-nx.mjs`) wraps deps, find, and alias commands for consumers outside Claude Code -- scripts already export core functions and have `process.argv` entry points, so this is a thin dispatch layer
 
 ## Out of Scope
 
