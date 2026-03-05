@@ -1,19 +1,20 @@
-import { resolve } from 'node:path';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { defineConfig } from 'vitest/config';
 
-const scriptsDir = resolve(
-  import.meta.dirname,
-  '../../plugins/lz-nx.rlm/scripts',
-);
-
 export default defineConfig({
+  root: import.meta.dirname,
+  cacheDir: '../../node_modules/.vite/tests/lz-nx.rlm',
+  plugins: [nxViteTsPaths()],
   test: {
-    include: ['**/*.test.ts'],
-    root: import.meta.dirname,
-  },
-  resolve: {
-    alias: {
-      '#rlm': scriptsDir,
+    name: 'lz-nx-rlm-test',
+    watch: false,
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    reporters: ['default'],
+    coverage: {
+      reportsDirectory: '../../coverage/tests/lz-nx.rlm',
+      provider: 'v8',
     },
   },
 });

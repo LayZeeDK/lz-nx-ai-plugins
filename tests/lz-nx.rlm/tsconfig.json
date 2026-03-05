@@ -1,20 +1,17 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../out-tsc/tests/lz-nx.rlm",
-    "types": ["vitest/globals", "node"],
-    "allowJs": true,
-    "checkJs": true,
-    "composite": false,
-    "declaration": false,
-    "declarationMap": false,
-    "emitDeclarationOnly": false,
-    "noEmit": true,
-    "noUnusedLocals": false,
-    "paths": {
-      "#rlm/*": ["../../plugins/lz-nx.rlm/scripts/*"]
-    }
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["**/*.ts", "../../plugins/lz-nx.rlm/scripts/**/*.mjs"],
-  "exclude": ["node_modules"]
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
 }

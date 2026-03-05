@@ -1,4 +1,9 @@
 {
   "name": "lz-nx-rlm-test",
-  "tags": ["type:test"]
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tests/lz-nx.rlm/src",
+  "projectType": "library",
+  "tags": ["type:test"],
+  "// targets": "to see all targets run: nx show project lz-nx-rlm-test --web",
+  "targets": {}
 }
