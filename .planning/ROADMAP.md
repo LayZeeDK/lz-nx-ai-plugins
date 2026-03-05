@@ -44,11 +44,11 @@ Plans:
   2. Variables assigned in one REPL turn persist and are accessible in subsequent turns within the same session
   3. Large results from workspace queries are truncated in print output but remain fully accessible via globalThis variables in the session
   4. The execution loop terminates reliably via FINAL(), maxIterations, maxTimeout, maxConsecutiveErrors, or stale-loop detection -- never hangs
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Code transform, print capture, config loader, session state (foundation utilities)
+- [ ] 02-02-PLAN.md -- REPL globals factory and sandbox execution engine (VM integration)
 
 ### Phase 3: Agent + Explore
 **Goal**: Users can ask natural language questions about their Nx workspace via the explore skill, and receive distilled answers without intermediate exploration results polluting the conversation context
@@ -71,5 +71,5 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Commands | 3/3 | Complete | 2026-03-04 |
-| 2. REPL Core | 0/0 | Not started | - |
+| 2. REPL Core | 0/2 | Planned | - |
 | 3. Agent + Explore | 0/0 | Not started | - |
