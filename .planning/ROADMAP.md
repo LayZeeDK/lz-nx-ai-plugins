@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation + Commands** - Plugin shell, workspace indexer, path resolver, Nx runner, and three deterministic commands delivering immediate user value
 - [ ] **Phase 1.1: Nx Project Setup + Linting** _(INSERTED)_ - Nx project definitions for plugin scripts and tests, inferred typecheck and lint targets with recommended ESLint rules
-- [ ] **Phase 2: REPL Core** - Isolated JavaScript sandbox with workspace-aware globals, smart truncation, guardrails config, and the fill/solve execution loop
+- [x] **Phase 2: REPL Core** - Isolated JavaScript sandbox with workspace-aware globals, smart truncation, guardrails config, and the fill/solve execution loop
 - [ ] **Phase 3: Agent + Explore** - repl-executor subagent driving the REPL loop and the explore skill validating the RLM token-savings thesis
 
 ## Phase Details
@@ -73,7 +73,7 @@ Plans:
 Plans:
 
 - [x] 02-01-PLAN.md -- Code transform, print capture, config loader, session state (foundation utilities)
-- [ ] 02-02-PLAN.md -- REPL globals factory and sandbox execution engine (VM integration)
+- [x] 02-02-PLAN.md -- REPL globals factory and sandbox execution engine (VM integration)
 
 ### Phase 3: Agent + Explore
 
@@ -100,5 +100,5 @@ Phases execute in numeric order: 1 -> 1.1 -> 2 -> 3
 | ------------------------------ | -------------- | ----------- | ---------- |
 | 1. Foundation + Commands       | 3/3            | Complete    | 2026-03-04 |
 | 1.1 Nx Project Setup + Linting | 1/1            | Complete    | 2026-03-05 |
-| 2. REPL Core                   | 1/2            | In Progress | -          |
+| 2. REPL Core                   | 2/2            | Complete    | 2026-03-05 |
 | 3. Agent + Explore             | 0/0            | Not started | -          |
