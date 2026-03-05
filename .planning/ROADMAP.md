@@ -48,7 +48,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01.1-01-PLAN.md -- Nx project definitions, tsconfig, ESLint flat config, lint + typecheck targets
+- [ ] 01.1-01-PLAN.md -- Project infrastructure, ESLint flat config, tsconfig, test .mjs-to-.ts conversion, type/lint fixes
 
 ### Phase 2: REPL Core
 **Goal**: The REPL sandbox can execute JavaScript code in an isolated VM context with workspace-aware globals, persist variables across turns, and enforce guardrails -- testable without any LLM by passing code via stdin
