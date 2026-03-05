@@ -57,7 +57,7 @@ export function transformGraphToIndex(graphOutput, pathAliases) {
       targets: extractTargetSummary(node.data.targets),
     };
 
-    dependencies[name] = (graph.dependencies[name] || []).map(dep => ({
+    dependencies[name] = (graph.dependencies[name] || []).map((dep) => ({
       target: dep.target,
       type: dep.type,
     }));

@@ -7,12 +7,13 @@ const graphFixture = require('./fixtures/graph-output.json');
 const tsconfigFixture = require('./fixtures/tsconfig-base.json');
 
 // Hoist mock references so they're accessible inside vi.mock factories
-const { mockReadFileSync, mockWriteFileSync, mockMkdirSync, mockStatSync } = vi.hoisted(() => ({
-  mockReadFileSync: vi.fn(),
-  mockWriteFileSync: vi.fn(),
-  mockMkdirSync: vi.fn(),
-  mockStatSync: vi.fn(),
-}));
+const { mockReadFileSync, mockWriteFileSync, mockMkdirSync, mockStatSync } =
+  vi.hoisted(() => ({
+    mockReadFileSync: vi.fn(),
+    mockWriteFileSync: vi.fn(),
+    mockMkdirSync: vi.fn(),
+    mockStatSync: vi.fn(),
+  }));
 
 const { mockRunNxGraph } = vi.hoisted(() => ({
   mockRunNxGraph: vi.fn(),
@@ -64,8 +65,12 @@ describe('workspace-indexer > readPathAliases', () => {
 
     const aliases = readPathAliases('/fake/workspace');
 
-    expect(aliases['@myorg/shared-utils']).toEqual(['libs/shared-utils/src/index.ts']);
-    expect(aliases['@myorg/feature-auth']).toEqual(['libs/feature-auth/src/index.ts']);
+    expect(aliases['@myorg/shared-utils']).toEqual([
+      'libs/shared-utils/src/index.ts',
+    ]);
+    expect(aliases['@myorg/feature-auth']).toEqual([
+      'libs/feature-auth/src/index.ts',
+    ]);
   });
 
   it('ignores wildcard patterns (entries containing "*")', () => {
@@ -85,7 +90,10 @@ describe('workspace-indexer > readPathAliases', () => {
     };
 
     mockReadFileSync.mockImplementation((filePath) => {
-      if (typeof filePath === 'string' && filePath.includes('tsconfig.base.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('tsconfig.base.json')
+      ) {
         const err = new Error('ENOENT');
         err.code = 'ENOENT';
         throw err;
@@ -140,7 +148,9 @@ describe('workspace-indexer > readPathAliases', () => {
 
     expect(Array.isArray(aliases['@myorg/shared-utils'])).toBe(true);
     expect(aliases['@myorg/shared-utils']).toHaveLength(1);
-    expect(aliases['@myorg/shared-utils']).toEqual(['libs/shared-utils/src/index.ts']);
+    expect(aliases['@myorg/shared-utils']).toEqual([
+      'libs/shared-utils/src/index.ts',
+    ]);
   });
 });
 
@@ -170,12 +180,12 @@ describe('workspace-indexer > buildIndex', () => {
     expect(mockRunNxGraph).toHaveBeenCalled();
     expect(mockMkdirSync).toHaveBeenCalledWith(
       expect.stringContaining('lz-nx.rlm'),
-      { recursive: true }
+      { recursive: true },
     );
     expect(mockWriteFileSync).toHaveBeenCalledWith(
       expect.stringContaining('workspace-index.json'),
       expect.any(String),
-      'utf8'
+      'utf8',
     );
     expect(result.projects).toBeDefined();
     expect(result.meta.projectCount).toBe(4);

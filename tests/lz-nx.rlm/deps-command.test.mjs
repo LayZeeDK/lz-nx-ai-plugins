@@ -11,7 +11,11 @@ const fixtureIndex = {
       sourceRoot: 'apps/my-app/src',
       type: 'app',
       tags: ['type:app'],
-      targets: { build: '@nx/webpack:webpack', serve: '@nx/webpack:dev-server', test: '@nx/jest:jest' },
+      targets: {
+        build: '@nx/webpack:webpack',
+        serve: '@nx/webpack:dev-server',
+        test: '@nx/jest:jest',
+      },
     },
     'shared-utils': {
       root: 'libs/shared-utils',
@@ -41,12 +45,8 @@ const fixtureIndex = {
       { target: 'feature-auth', type: 'static' },
     ],
     'shared-utils': [],
-    'feature-auth': [
-      { target: 'shared-utils', type: 'static' },
-    ],
-    'my-app-e2e': [
-      { target: 'my-app', type: 'implicit' },
-    ],
+    'feature-auth': [{ target: 'shared-utils', type: 'static' }],
+    'my-app-e2e': [{ target: 'my-app', type: 'implicit' }],
   },
   pathAliases: {
     '@myorg/shared-utils': ['libs/shared-utils/src/index.ts'],
@@ -76,9 +76,7 @@ const circularIndex = {
       { target: 'shared-utils', type: 'static' },
       { target: 'circular-lib', type: 'static' },
     ],
-    'circular-lib': [
-      { target: 'feature-auth', type: 'static' },
-    ],
+    'circular-lib': [{ target: 'feature-auth', type: 'static' }],
   },
   meta: {
     builtAt: '2026-03-04T00:00:00.000Z',
@@ -155,13 +153,17 @@ describe('deps-command > renderDepsTree', () => {
     // First line is just the project name (no prefix)
     expect(lines[0]).toBe('my-app');
     // Direct children at level 1
-    const directChildren = lines.filter(l => l.startsWith('  - ') && !l.startsWith('    - '));
+    const directChildren = lines.filter(
+      (l) => l.startsWith('  - ') && !l.startsWith('    - '),
+    );
 
     expect(directChildren.length).toBeGreaterThanOrEqual(2);
   });
 
   it('--reverse flag shows who depends on shared-utils', () => {
-    const { output, exitCode } = renderDepsTree('shared-utils', fixtureIndex, { reverse: true });
+    const { output, exitCode } = renderDepsTree('shared-utils', fixtureIndex, {
+      reverse: true,
+    });
 
     expect(exitCode).toBe(0);
     expect(output).toMatch(/^shared-utils$/m);
@@ -171,7 +173,9 @@ describe('deps-command > renderDepsTree', () => {
   });
 
   it('--depth 1 limits to direct dependencies only', () => {
-    const { output, exitCode } = renderDepsTree('my-app', fixtureIndex, { depth: 1 });
+    const { output, exitCode } = renderDepsTree('my-app', fixtureIndex, {
+      depth: 1,
+    });
 
     expect(exitCode).toBe(0);
     // Direct deps shown
@@ -187,12 +191,12 @@ describe('deps-command > renderDepsTree', () => {
     // shared-utils appears first under my-app directly, then again under feature-auth
     // The second occurrence should have "^" marker
     const lines = output.split('\n');
-    const sharedLines = lines.filter(l => l.includes('shared-utils'));
+    const sharedLines = lines.filter((l) => l.includes('shared-utils'));
 
     // At least one should have ^ marker
-    expect(sharedLines.some(l => l.includes('^'))).toBe(true);
+    expect(sharedLines.some((l) => l.includes('^'))).toBe(true);
     // At least one should NOT have ^ marker (first occurrence)
-    expect(sharedLines.some(l => !l.includes('^'))).toBe(true);
+    expect(sharedLines.some((l) => !l.includes('^'))).toBe(true);
   });
 
   it('legend line at bottom: "^ = deduped, ! = circular"', () => {
@@ -205,7 +209,9 @@ describe('deps-command > renderDepsTree', () => {
     const { output } = renderDepsTree('my-app', fixtureIndex);
 
     // Expect pattern like "4 nodes (2 direct, 3 unique, 1 deduped, 0 circular)"
-    expect(output).toMatch(/\d+ nodes \(\d+ direct, \d+ unique, \d+ deduped, \d+ circular\)/);
+    expect(output).toMatch(
+      /\d+ nodes \(\d+ direct, \d+ unique, \d+ deduped, \d+ circular\)/,
+    );
   });
 
   it('nonexistent project returns error message', () => {
@@ -238,7 +244,7 @@ describe('deps-command > renderDepsTree', () => {
 
     // Circular dep between feature-auth and circular-lib should produce "!" marker
     const lines = output.split('\n');
-    const circularLines = lines.filter(l => l.includes('!'));
+    const circularLines = lines.filter((l) => l.includes('!'));
 
     expect(circularLines.length).toBeGreaterThanOrEqual(1);
   });

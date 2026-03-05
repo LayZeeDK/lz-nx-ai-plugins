@@ -73,7 +73,9 @@ describe('workspace-indexer > transformGraphToIndex', () => {
   });
 
   it('includes pathAliases in the returned index', () => {
-    const aliases = { '@myorg/shared-utils': ['libs/shared-utils/src/index.ts'] };
+    const aliases = {
+      '@myorg/shared-utils': ['libs/shared-utils/src/index.ts'],
+    };
     const index = transformGraphToIndex(graphFixture, aliases);
 
     expect(index.pathAliases).toEqual(aliases);
@@ -104,7 +106,11 @@ describe('workspace-indexer > transformGraphToIndex', () => {
           'no-tags': {
             name: 'no-tags',
             type: 'lib',
-            data: { root: 'libs/no-tags', sourceRoot: 'libs/no-tags/src', targets: {} },
+            data: {
+              root: 'libs/no-tags',
+              sourceRoot: 'libs/no-tags/src',
+              targets: {},
+            },
           },
         },
         dependencies: { 'no-tags': [] },

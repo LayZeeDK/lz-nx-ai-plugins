@@ -22,7 +22,10 @@
  * @returns {string[]} Deduplicated array of matching project names.
  */
 export function filterProjects(pattern, projectNames) {
-  const segments = pattern.split(',').map(s => s.trim()).filter(Boolean);
+  const segments = pattern
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   const matches = new Set();
 
   for (const segment of segments) {

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/tests/lz-nx.rlm",
+    "types": ["vitest/globals", "node"],
+    "paths": {
+      "#rlm/*": ["../../plugins/lz-nx.rlm/scripts/*"]
+    }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
+}

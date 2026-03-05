@@ -70,7 +70,10 @@ function parseGrepOutput(stdout) {
     // Determine separator position (: for match lines, - for context lines)
     let separatorIdx = -1;
 
-    if (secondColon !== -1 && (secondDash === -1 || secondColon <= secondDash)) {
+    if (
+      secondColon !== -1 &&
+      (secondDash === -1 || secondColon <= secondDash)
+    ) {
       separatorIdx = secondColon;
     } else if (secondDash !== -1) {
       separatorIdx = secondDash;
@@ -117,12 +120,17 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
 
     if (matchedProjects.length === 0) {
       return {
-        output: '[ERROR] Project \'' + options.project + '\' not found (' + index.meta.projectCount + ' indexed)',
+        output:
+          "[ERROR] Project '" +
+          options.project +
+          "' not found (" +
+          index.meta.projectCount +
+          ' indexed)',
         exitCode: 1,
       };
     }
 
-    sourceRoots = matchedProjects.map(name => {
+    sourceRoots = matchedProjects.map((name) => {
       const project = index.projects[name];
 
       return project.sourceRoot || project.root;
@@ -174,7 +182,7 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
 
   if (result.status === 1 || !result.stdout || result.stdout.trim() === '') {
     return {
-      output: 'No matches found for \'' + pattern + '\'',
+      output: "No matches found for '" + pattern + "'",
       exitCode: 0,
     };
   }
@@ -196,7 +204,8 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
   const groups = new Map();
 
   for (const match of displayMatches) {
-    const projectName = fileToProject(match.file, index.projects) || '(unknown)';
+    const projectName =
+      fileToProject(match.file, index.projects) || '(unknown)';
 
     if (!groups.has(projectName)) {
       groups.set(projectName, []);
@@ -211,7 +220,9 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
   for (const [projectName, projectMatches] of groups) {
     const matchWord = projectMatches.length === 1 ? 'match' : 'matches';
 
-    lines.push(projectName + ' (' + projectMatches.length + ' ' + matchWord + ')');
+    lines.push(
+      projectName + ' (' + projectMatches.length + ' ' + matchWord + ')',
+    );
 
     for (const match of projectMatches) {
       lines.push('  ' + match.raw);
@@ -221,7 +232,13 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
   }
 
   if (truncated) {
-    lines.push('[WARN] Showing ' + MAX_UNSCOPED_MATCHES + ' of ' + totalMatches + ' matches. Use --project to narrow results.');
+    lines.push(
+      '[WARN] Showing ' +
+        MAX_UNSCOPED_MATCHES +
+        ' of ' +
+        totalMatches +
+        ' matches. Use --project to narrow results.',
+    );
     lines.push('');
   }
 
@@ -230,7 +247,9 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
   const matchWord = displayCount === 1 ? 'match' : 'matches';
   const projectWord = projectCount === 1 ? 'project' : 'projects';
 
-  lines.push(displayCount + ' ' + matchWord + ' in ' + projectCount + ' ' + projectWord);
+  lines.push(
+    displayCount + ' ' + matchWord + ' in ' + projectCount + ' ' + projectWord,
+  );
 
   return {
     output: lines.join('\n'),
@@ -240,10 +259,10 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
 
 // ─── Entry point ───
 
-const isMain = process.argv[1] && (
-  process.argv[1].endsWith('find-command.mjs') ||
-  process.argv[1].endsWith('find-command')
-);
+const isMain =
+  process.argv[1] &&
+  (process.argv[1].endsWith('find-command.mjs') ||
+    process.argv[1].endsWith('find-command'));
 
 if (isMain) {
   const args = process.argv.slice(2);
@@ -282,7 +301,12 @@ if (isMain) {
       opts.context = context;
     }
 
-    const { output, exitCode } = runFind(searchPattern, index, opts, workspaceRoot);
+    const { output, exitCode } = runFind(
+      searchPattern,
+      index,
+      opts,
+      workspaceRoot,
+    );
 
     process.stdout.write(output + '\n');
     process.exit(exitCode);

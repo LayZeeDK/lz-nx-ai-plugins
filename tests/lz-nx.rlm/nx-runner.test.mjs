@@ -42,7 +42,9 @@ describe('nx-runner', () => {
       const result = runNx('dangerous-command');
 
       expect(result.data).toBeNull();
-      expect(result.error).toBe('[ERROR] Command not allowed: nx dangerous-command');
+      expect(result.error).toBe(
+        '[ERROR] Command not allowed: nx dangerous-command',
+      );
       expect(execSync).not.toHaveBeenCalled();
     });
 
@@ -161,7 +163,9 @@ describe('nx-runner', () => {
       const longError = 'E'.repeat(1000);
       const err = new Error('exec failed');
       err.stderr = longError;
-      execSync.mockImplementation(() => { throw err; });
+      execSync.mockImplementation(() => {
+        throw err;
+      });
 
       const result = runNx('show projects');
 
@@ -173,7 +177,9 @@ describe('nx-runner', () => {
       const err = new Error('exec failed');
       err.stdout = 'stdout error message';
       err.stderr = 'stderr error message';
-      execSync.mockImplementation(() => { throw err; });
+      execSync.mockImplementation(() => {
+        throw err;
+      });
 
       const result = runNx('show projects');
 
@@ -244,7 +250,9 @@ describe('nx-runner', () => {
       // Second call: nx reset succeeds
       // Third call: graph --print succeeds
       execSync
-        .mockImplementationOnce(() => { throw new Error('graph failed'); })
+        .mockImplementationOnce(() => {
+          throw new Error('graph failed');
+        })
         .mockImplementationOnce(() => '') // nx reset
         .mockReturnValueOnce(JSON.stringify(fakeGraph));
 
@@ -262,9 +270,13 @@ describe('nx-runner', () => {
 
     it('returns error if retry also fails', () => {
       execSync
-        .mockImplementationOnce(() => { throw new Error('first fail'); })
+        .mockImplementationOnce(() => {
+          throw new Error('first fail');
+        })
         .mockImplementationOnce(() => '') // nx reset
-        .mockImplementationOnce(() => { throw new Error('second fail'); });
+        .mockImplementationOnce(() => {
+          throw new Error('second fail');
+        });
 
       const result = runNxGraph();
 
@@ -285,8 +297,12 @@ describe('output-format', () => {
     error = mod.error;
     success = mod.success;
 
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -325,13 +341,16 @@ describe('output-format', () => {
     error('test');
 
     const allCalls = [
-      ...stdoutSpy.mock.calls.map(c => c[0]),
-      ...stderrSpy.mock.calls.map(c => c[0]),
+      ...stdoutSpy.mock.calls.map((c) => c[0]),
+      ...stderrSpy.mock.calls.map((c) => c[0]),
     ];
 
     for (const call of allCalls) {
       // Check no multi-byte Unicode characters (emoji range)
-      const hasEmoji = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F900}-\u{1F9FF}]|[\u{200D}]|[\u{23CF}]|[\u{23E9}-\u{23F3}]|[\u{23F8}-\u{23FA}]|[\u{2934}-\u{2935}]|[\u{25AA}-\u{25FE}]|[\u{2B05}-\u{2B07}]|[\u{2B1B}-\u{2B1C}]|[\u{3030}]|[\u{303D}]|[\u{3297}]|[\u{3299}]/u.test(call);
+      const hasEmoji =
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F900}-\u{1F9FF}]|[\u{200D}]|[\u{23CF}]|[\u{23E9}-\u{23F3}]|[\u{23F8}-\u{23FA}]|[\u{2934}-\u{2935}]|[\u{25AA}-\u{25FE}]|[\u{2B05}-\u{2B07}]|[\u{2B1B}-\u{2B1C}]|[\u{3030}]|[\u{303D}]|[\u{3297}]|[\u{3299}]/u.test(
+          call,
+        );
 
       expect(hasEmoji).toBe(false);
     }

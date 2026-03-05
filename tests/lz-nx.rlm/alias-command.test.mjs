@@ -62,7 +62,9 @@ describe('alias-command > runAlias', () => {
     const { output, exitCode } = runAlias('@myorg/shared-utils', fixtureIndex);
 
     expect(exitCode).toBe(0);
-    expect(output).toContain('@myorg/shared-utils -> libs/shared-utils/src/index.ts');
+    expect(output).toContain(
+      '@myorg/shared-utils -> libs/shared-utils/src/index.ts',
+    );
   });
 
   it('alias with multiple fallback paths shows each path on its own line', () => {
@@ -76,10 +78,15 @@ describe('alias-command > runAlias', () => {
   // ─── Exact path -> alias ───
 
   it('resolves path to alias: "libs/shared-utils/src/index.ts -> @myorg/shared-utils"', () => {
-    const { output, exitCode } = runAlias('libs/shared-utils/src/index.ts', fixtureIndex);
+    const { output, exitCode } = runAlias(
+      'libs/shared-utils/src/index.ts',
+      fixtureIndex,
+    );
 
     expect(exitCode).toBe(0);
-    expect(output).toContain('libs/shared-utils/src/index.ts -> @myorg/shared-utils');
+    expect(output).toContain(
+      'libs/shared-utils/src/index.ts -> @myorg/shared-utils',
+    );
   });
 
   // ─── Arrow direction ───
@@ -139,7 +146,9 @@ describe('alias-command > runAlias', () => {
     const manyAliases = {};
 
     for (let i = 0; i < 25; i++) {
-      manyAliases['@org/common-lib-' + i] = ['libs/common-lib-' + i + '/src/index.ts'];
+      manyAliases['@org/common-lib-' + i] = [
+        'libs/common-lib-' + i + '/src/index.ts',
+      ];
     }
 
     const bigIndex = {
@@ -149,7 +158,7 @@ describe('alias-command > runAlias', () => {
     const { output } = runAlias('common', bigIndex);
 
     // Should mention truncation
-    const arrowLines = output.split('\n').filter(l => l.includes('->'));
+    const arrowLines = output.split('\n').filter((l) => l.includes('->'));
 
     expect(arrowLines.length).toBeLessThanOrEqual(20);
     expect(output).toMatch(/20/);
@@ -189,7 +198,9 @@ describe('alias-command > runAlias', () => {
     const { output, exitCode } = runAlias(undefined, fixtureIndex);
 
     expect(exitCode).toBe(1);
-    expect(output).toContain('[ERROR] Missing required argument: <alias-or-path>');
+    expect(output).toContain(
+      '[ERROR] Missing required argument: <alias-or-path>',
+    );
   });
 
   // ─── Exit codes ───

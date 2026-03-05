@@ -1,0 +1,16 @@
+{
+  "name": "lz-nx-rlm",
+  "tags": ["type:plugin"],
+  "targets": {
+    "typecheck": {
+      "command": "tsc -p {projectRoot}/tsconfig.json --noEmit",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/scripts/**/*.mjs",
+        "{projectRoot}/tsconfig.json",
+        "{workspaceRoot}/tsconfig.base.json"
+      ],
+      "outputs": []
+    }
+  }
+}

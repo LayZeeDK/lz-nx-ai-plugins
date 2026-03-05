@@ -33,7 +33,8 @@ export function runAlias(input, index) {
   // Check for wildcard input
   if (input.includes('*')) {
     return {
-      output: '[WARN] Wildcard patterns are not resolved. Wildcard path mappings (@org/*) violate Nx module boundary rules.',
+      output:
+        '[WARN] Wildcard patterns are not resolved. Wildcard path mappings (@org/*) violate Nx module boundary rules.',
       exitCode: 0,
     };
   }
@@ -61,7 +62,9 @@ export function runAlias(input, index) {
       const firstAlias = aliasKeys[0];
       const firstPath = pathAliases[firstAlias][0];
 
-      lines.push('Hint: Try an alias (' + firstAlias + ') or path (' + firstPath + ')');
+      lines.push(
+        'Hint: Try an alias (' + firstAlias + ') or path (' + firstPath + ')',
+      );
     }
 
     return {
@@ -136,10 +139,10 @@ export function runAlias(input, index) {
 
 // ─── Entry point ───
 
-const isMain = process.argv[1] && (
-  process.argv[1].endsWith('alias-command.mjs') ||
-  process.argv[1].endsWith('alias-command')
-);
+const isMain =
+  process.argv[1] &&
+  (process.argv[1].endsWith('alias-command.mjs') ||
+    process.argv[1].endsWith('alias-command'));
 
 if (isMain) {
   const args = process.argv.slice(2);

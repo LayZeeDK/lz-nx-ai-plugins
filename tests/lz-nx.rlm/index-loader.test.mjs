@@ -45,7 +45,10 @@ describe('index-loader', () => {
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
-      if (typeof filePath === 'string' && filePath.includes('workspace-index.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('workspace-index.json')
+      ) {
         return { mtimeMs: 2000 };
       }
 
@@ -65,7 +68,10 @@ describe('index-loader', () => {
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
-      if (typeof filePath === 'string' && filePath.includes('workspace-index.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('workspace-index.json')
+      ) {
         const err = new Error('ENOENT');
         err.code = 'ENOENT';
         throw err;
@@ -86,7 +92,10 @@ describe('index-loader', () => {
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
-      if (typeof filePath === 'string' && filePath.includes('workspace-index.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('workspace-index.json')
+      ) {
         return { mtimeMs: 1000 };
       }
 
@@ -112,7 +121,10 @@ describe('index-loader', () => {
     mockStatSync.mockImplementation((filePath) => {
       statCalls.push(filePath);
 
-      if (typeof filePath === 'string' && filePath.includes('workspace-index.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('workspace-index.json')
+      ) {
         return { mtimeMs: 2000 };
       }
 
@@ -123,10 +135,11 @@ describe('index-loader', () => {
 
     loadIndex('/fake/workspace');
 
-    const watchPathCalls = statCalls.filter(p =>
-      p.includes('workspace-data') ||
-      p.includes('tsconfig.base.json') ||
-      p.includes('nx.json')
+    const watchPathCalls = statCalls.filter(
+      (p) =>
+        p.includes('workspace-data') ||
+        p.includes('tsconfig.base.json') ||
+        p.includes('nx.json'),
     );
 
     expect(watchPathCalls).toHaveLength(3);
@@ -136,7 +149,10 @@ describe('index-loader', () => {
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
-      if (typeof filePath === 'string' && filePath.includes('workspace-index.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('workspace-index.json')
+      ) {
         return { mtimeMs: 3000 };
       }
 
@@ -154,7 +170,10 @@ describe('index-loader', () => {
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
-      if (typeof filePath === 'string' && filePath.includes('workspace-index.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('workspace-index.json')
+      ) {
         return { mtimeMs: 2000 };
       }
 
@@ -176,7 +195,10 @@ describe('index-loader', () => {
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
-      if (typeof filePath === 'string' && filePath.includes('workspace-index.json')) {
+      if (
+        typeof filePath === 'string' &&
+        filePath.includes('workspace-index.json')
+      ) {
         const err = new Error('ENOENT');
         err.code = 'ENOENT';
         throw err;

@@ -45,8 +45,8 @@ const DEFAULT_TIMEOUT = 60000;
 function isAllowed(command) {
   const trimmed = command.trim();
 
-  return SAFE_PREFIXES.some(prefix =>
-    trimmed === prefix || trimmed.startsWith(prefix + ' ')
+  return SAFE_PREFIXES.some(
+    (prefix) => trimmed === prefix || trimmed.startsWith(prefix + ' '),
   );
 }
 
@@ -81,7 +81,10 @@ export function runNx(command, options = {}) {
       try {
         return { data: JSON.parse(stdout), error: null };
       } catch {
-        return { data: null, error: 'Unexpected non-JSON output: ' + stdout.slice(0, 200) };
+        return {
+          data: null,
+          error: 'Unexpected non-JSON output: ' + stdout.slice(0, 200),
+        };
       }
     }
 

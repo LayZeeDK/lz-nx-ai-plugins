@@ -60,7 +60,12 @@ export function renderDepsTree(projectName, index, options = {}) {
 
   if (!index.projects[projectName]) {
     return {
-      output: '[ERROR] Project \'' + projectName + '\' not found (' + index.meta.projectCount + ' indexed). Try: nx show projects',
+      output:
+        "[ERROR] Project '" +
+        projectName +
+        "' not found (" +
+        index.meta.projectCount +
+        ' indexed). Try: nx show projects',
       exitCode: 1,
     };
   }
@@ -75,7 +80,8 @@ export function renderDepsTree(projectName, index, options = {}) {
     const reverseDeps = buildReverseDeps(index.dependencies);
     getChildren = (name) => reverseDeps[name] || [];
   } else {
-    getChildren = (name) => (index.dependencies[name] || []).map(d => d.target);
+    getChildren = (name) =>
+      (index.dependencies[name] || []).map((d) => d.target);
   }
 
   const lines = [];
@@ -150,7 +156,18 @@ export function renderDepsTree(projectName, index, options = {}) {
 
   lines.push('');
   lines.push('^ = deduped, ! = circular');
-  lines.push(totalNodes + ' nodes (' + directCount + ' direct, ' + uniqueNames.size + ' unique, ' + dedupCount + ' deduped, ' + circularCount + ' circular)');
+  lines.push(
+    totalNodes +
+      ' nodes (' +
+      directCount +
+      ' direct, ' +
+      uniqueNames.size +
+      ' unique, ' +
+      dedupCount +
+      ' deduped, ' +
+      circularCount +
+      ' circular)',
+  );
 
   return {
     output: lines.join('\n'),
@@ -160,10 +177,10 @@ export function renderDepsTree(projectName, index, options = {}) {
 
 // ─── Entry point ───
 
-const isMain = process.argv[1] && (
-  process.argv[1].endsWith('deps-command.mjs') ||
-  process.argv[1].endsWith('deps-command')
-);
+const isMain =
+  process.argv[1] &&
+  (process.argv[1].endsWith('deps-command.mjs') ||
+    process.argv[1].endsWith('deps-command'));
 
 if (isMain) {
   const args = process.argv.slice(2);
@@ -191,7 +208,10 @@ if (isMain) {
 
   try {
     const index = loadIndex(workspaceRoot);
-    const { output, exitCode } = renderDepsTree(projectName, index, { reverse, depth });
+    const { output, exitCode } = renderDepsTree(projectName, index, {
+      reverse,
+      depth,
+    });
 
     process.stdout.write(output + '\n');
     process.exit(exitCode);

@@ -47,12 +47,8 @@ const fixtureIndex = {
       { target: 'feature-auth', type: 'static' },
     ],
     'shared-utils': [],
-    'feature-auth': [
-      { target: 'shared-utils', type: 'static' },
-    ],
-    'my-app-e2e': [
-      { target: 'my-app', type: 'implicit' },
-    ],
+    'feature-auth': [{ target: 'shared-utils', type: 'static' }],
+    'my-app-e2e': [{ target: 'my-app', type: 'implicit' }],
   },
   pathAliases: {
     '@myorg/shared-utils': ['libs/shared-utils/src/index.ts'],
@@ -76,11 +72,17 @@ describe('find-command > runFind', () => {
   it('without --project runs git grep across entire workspace', () => {
     mockSpawnSync.mockReturnValue({
       status: 0,
-      stdout: 'apps/my-app/src/main.ts:15:import { something } from \'@myorg/shared-utils\';\n',
+      stdout:
+        "apps/my-app/src/main.ts:15:import { something } from '@myorg/shared-utils';\n",
       stderr: '',
     });
 
-    const { output, exitCode } = runFind('something', fixtureIndex, {}, '/workspace');
+    const { output, exitCode } = runFind(
+      'something',
+      fixtureIndex,
+      {},
+      '/workspace',
+    );
 
     expect(exitCode).toBe(0);
     expect(mockSpawnSync).toHaveBeenCalledOnce();
@@ -95,11 +97,17 @@ describe('find-command > runFind', () => {
   it('with --project scopes git grep to project sourceRoot', () => {
     mockSpawnSync.mockReturnValue({
       status: 0,
-      stdout: 'apps/my-app/src/main.ts:15:import { something } from \'@myorg/shared-utils\';\n',
+      stdout:
+        "apps/my-app/src/main.ts:15:import { something } from '@myorg/shared-utils';\n",
       stderr: '',
     });
 
-    const { output, exitCode } = runFind('something', fixtureIndex, { project: 'my-app' }, '/workspace');
+    const { output, exitCode } = runFind(
+      'something',
+      fixtureIndex,
+      { project: 'my-app' },
+      '/workspace',
+    );
 
     expect(exitCode).toBe(0);
     const callArgs = mockSpawnSync.mock.calls[0][1];
@@ -112,11 +120,17 @@ describe('find-command > runFind', () => {
   it('with --project glob scopes to all matching project sourceRoots', () => {
     mockSpawnSync.mockReturnValue({
       status: 0,
-      stdout: 'libs/shared-utils/src/index.ts:3:export function something() {\n',
+      stdout:
+        'libs/shared-utils/src/index.ts:3:export function something() {\n',
       stderr: '',
     });
 
-    const { output, exitCode } = runFind('something', fixtureIndex, { project: 'shared-*' }, '/workspace');
+    const { output, exitCode } = runFind(
+      'something',
+      fixtureIndex,
+      { project: 'shared-*' },
+      '/workspace',
+    );
 
     expect(exitCode).toBe(0);
     const callArgs = mockSpawnSync.mock.calls[0][1];
@@ -130,7 +144,13 @@ describe('find-command > runFind', () => {
     const matchLines = [];
 
     for (let i = 0; i < 25; i++) {
-      matchLines.push('apps/my-app/src/file' + i + '.ts:' + (i + 1) + ':const pattern = "test";');
+      matchLines.push(
+        'apps/my-app/src/file' +
+          i +
+          '.ts:' +
+          (i + 1) +
+          ':const pattern = "test";',
+      );
     }
 
     mockSpawnSync.mockReturnValue({
@@ -139,7 +159,12 @@ describe('find-command > runFind', () => {
       stderr: '',
     });
 
-    const { output, exitCode } = runFind('test', fixtureIndex, {}, '/workspace');
+    const { output, exitCode } = runFind(
+      'test',
+      fixtureIndex,
+      {},
+      '/workspace',
+    );
 
     expect(exitCode).toBe(0);
     // Should truncate and show warning
@@ -152,7 +177,13 @@ describe('find-command > runFind', () => {
     const matchLines = [];
 
     for (let i = 0; i < 25; i++) {
-      matchLines.push('apps/my-app/src/file' + i + '.ts:' + (i + 1) + ':const pattern = "test";');
+      matchLines.push(
+        'apps/my-app/src/file' +
+          i +
+          '.ts:' +
+          (i + 1) +
+          ':const pattern = "test";',
+      );
     }
 
     mockSpawnSync.mockReturnValue({
@@ -161,7 +192,12 @@ describe('find-command > runFind', () => {
       stderr: '',
     });
 
-    const { output, exitCode } = runFind('test', fixtureIndex, { project: 'my-app' }, '/workspace');
+    const { output, exitCode } = runFind(
+      'test',
+      fixtureIndex,
+      { project: 'my-app' },
+      '/workspace',
+    );
 
     expect(exitCode).toBe(0);
     // Should not contain truncation warning
@@ -217,11 +253,12 @@ describe('find-command > runFind', () => {
   it('results grouped by project name with project header', () => {
     mockSpawnSync.mockReturnValue({
       status: 0,
-      stdout: [
-        'apps/my-app/src/main.ts:15:import { something } from \'@myorg/shared-utils\';',
-        'apps/my-app/src/app.ts:8:import { auth } from \'@myorg/feature-auth\';',
-        'libs/shared-utils/src/index.ts:3:export function something() {',
-      ].join('\n') + '\n',
+      stdout:
+        [
+          "apps/my-app/src/main.ts:15:import { something } from '@myorg/shared-utils';",
+          "apps/my-app/src/app.ts:8:import { auth } from '@myorg/feature-auth';",
+          'libs/shared-utils/src/index.ts:3:export function something() {',
+        ].join('\n') + '\n',
       stderr: '',
     });
 
@@ -235,7 +272,8 @@ describe('find-command > runFind', () => {
   it('each result line shows "file:line: content" format', () => {
     mockSpawnSync.mockReturnValue({
       status: 0,
-      stdout: 'apps/my-app/src/main.ts:15:import { something } from \'@myorg/shared-utils\';\n',
+      stdout:
+        "apps/my-app/src/main.ts:15:import { something } from '@myorg/shared-utils';\n",
       stderr: '',
     });
 
@@ -247,10 +285,11 @@ describe('find-command > runFind', () => {
   it('summary footer with match count and project count', () => {
     mockSpawnSync.mockReturnValue({
       status: 0,
-      stdout: [
-        'apps/my-app/src/main.ts:15:import { something }',
-        'libs/shared-utils/src/index.ts:3:export function something() {',
-      ].join('\n') + '\n',
+      stdout:
+        [
+          'apps/my-app/src/main.ts:15:import { something }',
+          'libs/shared-utils/src/index.ts:3:export function something() {',
+        ].join('\n') + '\n',
       stderr: '',
     });
 
@@ -267,21 +306,36 @@ describe('find-command > runFind', () => {
       stderr: '',
     });
 
-    const { output, exitCode } = runFind('nonexistent-xyz', fixtureIndex, {}, '/workspace');
+    const { output, exitCode } = runFind(
+      'nonexistent-xyz',
+      fixtureIndex,
+      {},
+      '/workspace',
+    );
 
     expect(exitCode).toBe(0);
     expect(output).toContain('No matches');
   });
 
   it('missing pattern argument returns error', () => {
-    const { output, exitCode } = runFind(undefined, fixtureIndex, {}, '/workspace');
+    const { output, exitCode } = runFind(
+      undefined,
+      fixtureIndex,
+      {},
+      '/workspace',
+    );
 
     expect(exitCode).toBe(1);
     expect(output).toContain('[ERROR]');
   });
 
   it('invalid --project name returns error with project count', () => {
-    const { output, exitCode } = runFind('test', fixtureIndex, { project: 'nonexistent' }, '/workspace');
+    const { output, exitCode } = runFind(
+      'test',
+      fixtureIndex,
+      { project: 'nonexistent' },
+      '/workspace',
+    );
 
     expect(exitCode).toBe(1);
     expect(output).toContain('[ERROR]');
@@ -296,7 +350,12 @@ describe('find-command > runFind', () => {
       stderr: 'fatal: bad config',
     });
 
-    const { output, exitCode } = runFind('test', fixtureIndex, {}, '/workspace');
+    const { output, exitCode } = runFind(
+      'test',
+      fixtureIndex,
+      {},
+      '/workspace',
+    );
 
     expect(exitCode).toBe(1);
     expect(output).toContain('[ERROR]');

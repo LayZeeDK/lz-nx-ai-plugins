@@ -65,11 +65,11 @@ allowed-tools: Bash(nx build :*), Bash(nx lint :*), Read
 
 Pattern examples:
 
-| Pattern | Matches |
-|---------|---------|
+| Pattern            | Matches                                                 |
+| ------------------ | ------------------------------------------------------- |
 | `Bash(nx build *)` | `nx build`, `nx build my-app`, `nx build my-app --prod` |
-| `Bash(nx *)` | All nx commands |
-| `Bash(nx run *)` | All nx run targets |
+| `Bash(nx *)`       | All nx commands                                         |
+| `Bash(nx run *)`   | All nx run targets                                      |
 
 For agents, use the array format: `tools: ["Bash", "Read", "Edit"]`
 
@@ -84,6 +84,7 @@ For agents, use the array format: `tools: ["Bash", "Read", "Edit"]`
 Plugins are installed by cloning the entire repo. There is no `.npmignore` or `plugin.json` `exclude` field, so everything inside `plugins/<name>/` ships to end users.
 
 **Rules:**
+
 - Test files, test fixtures, and test runner configs (`vitest.config.*`, `jest.config.*`) MUST NOT live inside `plugins/<name>/`
 - Place them under `tests/<plugin-name>/` at the repo root
 - Source modules stay in `plugins/<name>/scripts/`
@@ -102,9 +103,9 @@ Plugins are installed by cloning the entire repo. There is no `.npmignore` or `p
 
 Two approaches for adding information after tool execution:
 
-| Approach | Behavior |
-|----------|----------|
-| `additionalContext` | Claude "considers" it but may paraphrase |
+| Approach                          | Behavior                                        |
+| --------------------------------- | ----------------------------------------------- |
+| `additionalContext`               | Claude "considers" it but may paraphrase        |
 | `decision: "block"` with `reason` | Claude is automatically prompted and acts on it |
 
 Use `decision: "block"` when you need Claude to take specific action:
@@ -138,6 +139,7 @@ nx build my-app --output-path=dist/<TIMESTAMP> # Then use the value
 ```
 
 The `!` backtick preprocessing syntax also blocks `$()`:
+
 ```
 # This will fail with "Command contains $() command substitution"
 !`nx build my-app --output-path=dist/$(date -u +"%Y%m%d-%H%M%SZ")`
@@ -162,6 +164,7 @@ nx build my-app --output-path=dist/<TIMESTAMP>
 **Never use emojis or Unicode symbols in scripts.** Windows console uses codepage cp1252 by default, which cannot encode multi-byte UTF-8 characters.
 
 **What breaks:**
+
 - PowerShell scripts (`.ps1`): Parser confusion, `Unexpected token` errors
 - Python scripts: `UnicodeEncodeError: 'charmap' codec can't encode character`
 - Any script with redirected/piped output
@@ -171,17 +174,18 @@ nx build my-app --output-path=dist/<TIMESTAMP>
 **ASCII replacement table:**
 
 | Emoji | Replacement |
-|-------|-------------|
-| `✓` | `[OK]` |
-| `❌` | `[ERROR]` |
-| `✅` | `[SUCCESS]` |
-| `⚠️` | `[WARN]` |
-| `⏭️` | `[SKIP]` |
-| `🔧` | `[INFO]` |
-| `📁` | `[DIR]` |
-| `📄` | `[FILE]` |
+| ----- | ----------- |
+| `✓`   | `[OK]`      |
+| `❌`  | `[ERROR]`   |
+| `✅`  | `[SUCCESS]` |
+| `⚠️`  | `[WARN]`    |
+| `⏭️`  | `[SKIP]`    |
+| `🔧`  | `[INFO]`    |
+| `📁`  | `[DIR]`     |
+| `📄`  | `[FILE]`    |
 
 **Example:**
+
 ```python
 # BAD - fails on Windows
 print("✅ Build successful!")
@@ -194,12 +198,12 @@ print("[SUCCESS] Build successful!")
 
 Plugins are developed across macOS, Linux, and Windows. The right search tool depends on the contributor's platform.
 
-| Tool | macOS / Linux | Windows x64 | Windows arm64 | Notes |
-|------|:---:|:---:|:---:|-------|
-| Grep tool (built-in) | works | works | broken | arm64-win32 vendored `rg.exe` has an argv[0] bug ([#27988](https://github.com/anthropics/claude-code/issues/27988)); x64 build is unaffected |
-| `git grep` (via Bash) | works | works | works | Searches tracked files only; natively compiled on all platforms |
-| `rg` (via Bash) | works | works | works (slow) | Native on x64; Chocolatey x86_64 build runs under QEMU on arm64 (~2.5x slower than `git grep`) |
-| `grep` (via Bash) | works | works (slow) | works (slow) | Git Bash MSYS2 `grep -r` is slow and can produce incomplete results on Windows |
+| Tool                  | macOS / Linux | Windows x64  | Windows arm64 | Notes                                                                                                                                        |
+| --------------------- | :-----------: | :----------: | :-----------: | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grep tool (built-in)  |     works     |    works     |    broken     | arm64-win32 vendored `rg.exe` has an argv[0] bug ([#27988](https://github.com/anthropics/claude-code/issues/27988)); x64 build is unaffected |
+| `git grep` (via Bash) |     works     |    works     |     works     | Searches tracked files only; natively compiled on all platforms                                                                              |
+| `rg` (via Bash)       |     works     |    works     | works (slow)  | Native on x64; Chocolatey x86_64 build runs under QEMU on arm64 (~2.5x slower than `git grep`)                                               |
+| `grep` (via Bash)     |     works     | works (slow) | works (slow)  | Git Bash MSYS2 `grep -r` is slow and can produce incomplete results on Windows                                                               |
 
 ### Recommendations
 

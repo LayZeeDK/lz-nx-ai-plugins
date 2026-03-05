@@ -86,10 +86,14 @@ describe('path-resolver > resolveAlias', () => {
 
     expect(result.results.length).toBeGreaterThanOrEqual(1);
 
-    const aliasMatches = result.results.filter(r => r.direction === 'alias->path');
+    const aliasMatches = result.results.filter(
+      (r) => r.direction === 'alias->path',
+    );
 
     expect(aliasMatches.length).toBeGreaterThanOrEqual(1);
-    expect(aliasMatches.some(r => r.from === '@myorg/shared-utils')).toBe(true);
+    expect(aliasMatches.some((r) => r.from === '@myorg/shared-utils')).toBe(
+      true,
+    );
     expect(result.partial).toBe(true);
   });
 
@@ -109,7 +113,9 @@ describe('path-resolver > resolveAlias', () => {
     const manyAliases = {};
 
     for (let i = 0; i < 25; i++) {
-      manyAliases['@org/common-lib-' + i] = ['libs/common-lib-' + i + '/src/index.ts'];
+      manyAliases['@org/common-lib-' + i] = [
+        'libs/common-lib-' + i + '/src/index.ts',
+      ];
     }
 
     const result = resolveAlias('common', manyAliases);
@@ -178,7 +184,9 @@ describe('path-resolver > resolveAlias', () => {
     const result = resolveAlias('libs/shared/utils.ts', overlappingAliases);
 
     expect(result.results).toHaveLength(2);
-    expect(result.results.every(r => r.direction === 'path->alias')).toBe(true);
+    expect(result.results.every((r) => r.direction === 'path->alias')).toBe(
+      true,
+    );
     expect(result.partial).toBe(false);
   });
 });

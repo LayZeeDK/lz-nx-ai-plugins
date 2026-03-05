@@ -35,11 +35,13 @@ export function resolveAlias(input, pathAliases) {
   // Step 1: Exact alias match
   if (pathAliases[input] !== undefined) {
     return {
-      results: [{
-        from: input,
-        to: pathAliases[input],
-        direction: 'alias->path',
-      }],
+      results: [
+        {
+          from: input,
+          to: pathAliases[input],
+          direction: 'alias->path',
+        },
+      ],
       partial: false,
     };
   }
