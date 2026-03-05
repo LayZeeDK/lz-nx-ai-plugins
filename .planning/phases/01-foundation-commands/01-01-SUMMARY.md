@@ -19,7 +19,8 @@ affects: [01-02-PLAN, 01-03-PLAN]
 # Tech tracking
 tech-stack:
   added: [vitest 4.x (devDep, already in workspace)]
-  patterns: [command-allowlist, prefix-matching, retry-with-reset, ASCII-only-output]
+  patterns:
+    [command-allowlist, prefix-matching, retry-with-reset, ASCII-only-output]
 
 key-files:
   created:
@@ -36,15 +37,15 @@ key-files:
   modified: []
 
 key-decisions:
-  - "Used exact prefix matching for allowlist instead of regex normalization from research -- regex stripped meaningful command parts"
-  - "Zero npm dependencies for plugin scripts -- all node:* built-ins"
-  - "npx nx as CLI invocation method (works with npm, sufficient for v0.0.1)"
+  - 'Used exact prefix matching for allowlist instead of regex normalization from research -- regex stripped meaningful command parts'
+  - 'Zero npm dependencies for plugin scripts -- all node:* built-ins'
+  - 'npx nx as CLI invocation method (works with npm, sufficient for v0.0.1)'
 
 patterns-established:
-  - "Command allowlist: exact prefix match with SAFE_PREFIXES array"
-  - "Mandatory env vars: NX_TUI=false, NX_INTERACTIVE=false, NX_NO_CLOUD=true"
-  - "Error recovery: auto nx-reset + single retry for graph failures"
-  - "Output format: ASCII [INFO]/[WARN]/[ERROR]/[OK] tags for cp1252 compatibility"
+  - 'Command allowlist: exact prefix match with SAFE_PREFIXES array'
+  - 'Mandatory env vars: NX_TUI=false, NX_INTERACTIVE=false, NX_NO_CLOUD=true'
+  - 'Error recovery: auto nx-reset + single retry for graph failures'
+  - 'Output format: ASCII [INFO]/[WARN]/[ERROR]/[OK] tags for cp1252 compatibility'
 
 requirements-completed: [PLUG-01, PLUG-02, FOUND-03]
 
@@ -66,6 +67,7 @@ completed: 2026-03-04
 - **Files modified:** 10
 
 ## Accomplishments
+
 - Plugin directory structure at plugins/lz-nx.rlm/ with valid plugin.json manifest
 - Three command markdown files (deps, find, alias) with disable-model-invocation and allowed-tools
 - nx-runner.mjs with command allowlisting, mandatory env vars, 10MB maxBuffer, windowsHide, and graph retry logic
@@ -84,6 +86,7 @@ Each task was committed atomically:
 _Note: TDD Task 2 produced 2 commits (test + feat). No refactor needed -- code was clean._
 
 ## Files Created/Modified
+
 - `plugins/lz-nx.rlm/.claude-plugin/plugin.json` - Plugin manifest (name, version, metadata)
 - `plugins/lz-nx.rlm/commands/deps.md` - Dependency tree slash command definition
 - `plugins/lz-nx.rlm/commands/find.md` - Content search slash command definition
@@ -96,6 +99,7 @@ _Note: TDD Task 2 produced 2 commits (test + feat). No refactor needed -- code w
 - `plugins/lz-nx.rlm/scripts/__tests__/fixtures/tsconfig-base.json` - tsconfig with path aliases fixture
 
 ## Decisions Made
+
 - **Exact prefix matching over regex normalization:** The research suggested stripping flags and trailing args via regex before checking allowlist, but this stripped meaningful command parts (e.g., `graph --print` became `graph`, `show projects` became `show`). Switched to simple exact prefix + space boundary matching which is both simpler and correct.
 - **No refactor phase needed:** Both modules were clean after GREEN phase -- no code duplication, good naming, proper documentation.
 
@@ -104,6 +108,7 @@ _Note: TDD Task 2 produced 2 commits (test + feat). No refactor needed -- code w
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Fixed allowlist normalization breaking safe commands**
+
 - **Found during:** Task 2 (GREEN phase)
 - **Issue:** The regex normalization from RESEARCH.md (`command.replace(/\s+--\S+/g, '').replace(/\s+\S+$/, '')`) incorrectly stripped meaningful parts of commands. `graph --print` lost `--print` (treated as a flag), `show projects` lost `projects` (treated as trailing arg).
 - **Fix:** Replaced with exact prefix matching: `trimmed === prefix || trimmed.startsWith(prefix + ' ')`
@@ -112,6 +117,7 @@ _Note: TDD Task 2 produced 2 commits (test + feat). No refactor needed -- code w
 - **Committed in:** 28ac60f (part of GREEN phase commit)
 
 **2. [Rule 3 - Blocking] Installed npm dependencies for test infrastructure**
+
 - **Found during:** Task 2 (RED phase)
 - **Issue:** `node_modules` was missing -- vitest could not run
 - **Fix:** Ran `npm install` to install existing devDependencies from package.json
@@ -125,12 +131,15 @@ _Note: TDD Task 2 produced 2 commits (test + feat). No refactor needed -- code w
 **Impact on plan:** Both fixes necessary for correctness and task completion. No scope creep.
 
 ## Issues Encountered
+
 None beyond the auto-fixed deviations above.
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Plugin shell ready for Plans 02 and 03 to build upon
 - nx-runner.mjs ready for workspace-indexer.mjs to call `runNxGraph()`
 - output-format.mjs ready for all command scripts to use for status/error output
@@ -144,5 +153,6 @@ None - no external service configuration required.
 - 30/30 tests passing
 
 ---
-*Phase: 01-foundation-commands*
-*Completed: 2026-03-04*
+
+_Phase: 01-foundation-commands_
+_Completed: 2026-03-04_

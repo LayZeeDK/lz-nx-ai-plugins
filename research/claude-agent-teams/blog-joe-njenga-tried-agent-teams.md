@@ -5,13 +5,12 @@
 > Site: Medium
 
 ---
+
 Member-only story
 
 [
 
 ![Joe Njenga](https://miro.medium.com/v2/resize:fill:64:64/1*0Hoc7r7_ybnOvk1t8yR3_A.jpeg)
-
-
 
 ](https://medium.com/@joe.njenga?source=post_page---byline--28a6cd72adb8---------------------------------------)
 
@@ -35,6 +34,6 @@ If you’ve been using Claude Code agents, you understand the flow: one agent, o
 
 For example, if the task is to investigate a bug in my WebSocket implementation.
 
--   _One agent proposes a theory about connection timeouts._
--   _Another agent pushes back with evidence from the codebase that contradicts it._
--   _A third agent ran tests that disproved the first theory but_…
+- _One agent proposes a theory about connection timeouts._
+- _Another agent pushes back with evidence from the codebase that contradicts it._
+- _A third agent ran tests that disproved the first theory but_…

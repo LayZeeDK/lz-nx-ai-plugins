@@ -4,6 +4,7 @@
 > Site: Claude Code Docs
 
 ---
+
 Claude Code consumes tokens for each interaction. Costs vary based on codebase size, query complexity, and conversation length. The average cost is $6 per developer per day, with daily costs remaining below $12 for 90% of users. For team usage, Claude Code charges by API token consumption. On average, Claude Code costs ~$100-200/developer per month with Sonnet 4.6 though there is large variance depending on how many instances users are running and whether they’re using it in automation. This page covers how to [track your costs](https://code.claude.com/#track-your-costs), [manage costs for teams](https://code.claude.com/#managing-costs-for-teams), and [reduce token usage](https://code.claude.com/#reduce-token-usage).
 
 ## Track your costs
@@ -29,14 +30,14 @@ On Bedrock, Vertex, and Foundry, Claude Code does not send metrics from your clo
 
 When setting up Claude Code for teams, consider these Token Per Minute (TPM) and Request Per Minute (RPM) per-user recommendations based on your organization size:
 
-| Team size | TPM per user | RPM per user |
-| --- | --- | --- |
-| 1-5 users | 200k-300k | 5-7 |
-| 5-20 users | 100k-150k | 2.5-3.5 |
-| 20-50 users | 50k-75k | 1.25-1.75 |
-| 50-100 users | 25k-35k | 0.62-0.87 |
-| 100-500 users | 15k-20k | 0.37-0.47 |
-| 500+ users | 10k-15k | 0.25-0.35 |
+| Team size     | TPM per user | RPM per user |
+| ------------- | ------------ | ------------ |
+| 1-5 users     | 200k-300k    | 5-7          |
+| 5-20 users    | 100k-150k    | 2.5-3.5      |
+| 20-50 users   | 50k-75k      | 1.25-1.75    |
+| 50-100 users  | 25k-35k      | 0.62-0.87    |
+| 100-500 users | 15k-20k      | 0.37-0.47    |
+| 500+ users    | 10k-15k      | 0.25-0.35    |
 
 For example, if you have 200 users, you might request 20k TPM for each user, or 4 million total TPM (200\*20,000 = 4 million). The TPM per user decreases as team size grows because fewer users tend to use Claude Code concurrently in larger organizations. These rate limits apply at the organization level, not per individual user, which means individual users can temporarily consume more than their calculated share when others aren’t actively using the service.
 
@@ -44,11 +45,11 @@ For example, if you have 200 users, you might request 20k TPM for each user, or 
 
 [Agent teams](https://code.claude.com/docs/en/agent-teams) spawn multiple Claude Code instances, each with its own context window. Token usage scales with the number of active teammates and how long each one runs. To keep agent team costs manageable:
 
--   Use Sonnet for teammates. It balances capability and cost for coordination tasks.
--   Keep teams small. Each teammate runs its own context window, so token usage is roughly proportional to team size.
--   Keep spawn prompts focused. Teammates load CLAUDE.md, MCP servers, and skills automatically, but everything in the spawn prompt adds to their context from the start.
--   Clean up teams when work is done. Active teammates continue consuming tokens even if idle.
--   Agent teams are disabled by default. Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your [settings.json](https://code.claude.com/docs/en/settings) or environment to enable them. See [enable agent teams](https://code.claude.com/docs/en/agent-teams#enable-agent-teams).
+- Use Sonnet for teammates. It balances capability and cost for coordination tasks.
+- Keep teams small. Each teammate runs its own context window, so token usage is roughly proportional to team size.
+- Keep spawn prompts focused. Teammates load CLAUDE.md, MCP servers, and skills automatically, but everything in the spawn prompt adds to their context from the start.
+- Clean up teams when work is done. Active teammates continue consuming tokens even if idle.
+- Agent teams are disabled by default. Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your [settings.json](https://code.claude.com/docs/en/settings) or environment to enable them. See [enable agent teams](https://code.claude.com/docs/en/agent-teams#enable-agent-teams).
 
 ## Reduce token usage
 
@@ -58,8 +59,8 @@ Token costs scale with context size: the more context Claude processes, the more
 
 Use `/cost` to check your current token usage, or [configure your status line](https://code.claude.com/docs/en/statusline#context-window-usage) to display it continuously.
 
--   **Clear between tasks**: Use `/clear` to start fresh when switching to unrelated work. Stale context wastes tokens on every subsequent message. Use `/rename` before clearing so you can easily find the session later, then `/resume` to return to it.
--   **Add custom compaction instructions**: `/compact Focus on code samples and API usage` tells Claude what to preserve during summarization.
+- **Clear between tasks**: Use `/clear` to start fresh when switching to unrelated work. Stale context wastes tokens on every subsequent message. Use `/rename` before clearing so you can easily find the session later, then `/resume` to return to it.
+- **Add custom compaction instructions**: `/compact Focus on code samples and API usage` tells Claude what to preserve during summarization.
 
 You can also customize compaction behavior in your CLAUDE.md:
 
@@ -77,9 +78,9 @@ Sonnet handles most coding tasks well and costs less than Opus. Reserve Opus for
 
 Each MCP server adds tool definitions to your context, even when idle. Run `/context` to see what’s consuming space.
 
--   **Prefer CLI tools when available**: Tools like `gh`, `aws`, `gcloud`, and `sentry-cli` are more context-efficient than MCP servers because they don’t add persistent tool definitions. Claude can run CLI commands directly without the overhead.
--   **Disable unused servers**: Run `/mcp` to see configured servers and disable any you’re not actively using.
--   **Tool search is automatic**: When MCP tool descriptions exceed 10% of your context window, Claude Code automatically defers them and loads tools on-demand via [tool search](https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search). Since deferred tools only enter context when actually used, a lower threshold means fewer idle tool definitions consuming space. Set a lower threshold with `ENABLE_TOOL_SEARCH=auto:<N>` (for example, `auto:5` triggers when tools exceed 5% of your context window).
+- **Prefer CLI tools when available**: Tools like `gh`, `aws`, `gcloud`, and `sentry-cli` are more context-efficient than MCP servers because they don’t add persistent tool definitions. Claude can run CLI commands directly without the overhead.
+- **Disable unused servers**: Run `/mcp` to see configured servers and disable any you’re not actively using.
+- **Tool search is automatic**: When MCP tool descriptions exceed 10% of your context window, Claude Code automatically defers them and loads tools on-demand via [tool search](https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search). Since deferred tools only enter context when actually used, a lower threshold means fewer idle tool definitions consuming space. Set a lower threshold with `ENABLE_TOOL_SEARCH=auto:<N>` (for example, `auto:5` triggers when tools exceed 5% of your context window).
 
 ### Install code intelligence plugins for typed languages
 
@@ -89,10 +90,8 @@ Each MCP server adds tool definitions to your context, even when idle. Run `/con
 
 Custom [hooks](https://code.claude.com/docs/en/hooks) can preprocess data before Claude sees it. Instead of Claude reading a 10,000-line log file to find errors, a hook can grep for `ERROR` and return only matching lines, reducing context from tens of thousands of tokens to hundreds. A [skill](https://code.claude.com/docs/en/skills) can give Claude domain knowledge so it doesn’t have to explore. For example, a “codebase-overview” skill could describe your project’s architecture, key directories, and naming conventions. When Claude invokes the skill, it gets this context immediately instead of spending tokens reading multiple files to understand the structure. For example, this PreToolUse hook filters test output to show only failures:
 
--   settings.json
-    
--   filter-test-output.sh
-    
+- settings.json
+- filter-test-output.sh
 
 Add this to your [settings.json](https://code.claude.com/docs/en/settings#settings-files) to run the hook before every Bash command:
 
@@ -154,17 +153,17 @@ Vague requests like “improve this codebase” trigger broad scanning. Specific
 
 For longer or more complex work, these habits help avoid wasted tokens from going down the wrong path:
 
--   **Use plan mode for complex tasks**: Press Shift+Tab to enter [plan mode](https://code.claude.com/docs/en/common-workflows#use-plan-mode-for-safe-code-analysis) before implementation. Claude explores the codebase and proposes an approach for your approval, preventing expensive re-work when the initial direction is wrong.
--   **Course-correct early**: If Claude starts heading the wrong direction, press Escape to stop immediately. Use `/rewind` or double-tap Escape to restore conversation and code to a previous checkpoint.
--   **Give verification targets**: Include test cases, paste screenshots, or define expected output in your prompt. When Claude can verify its own work, it catches issues before you need to request fixes.
--   **Test incrementally**: Write one file, test it, then continue. This catches issues early when they’re cheap to fix.
+- **Use plan mode for complex tasks**: Press Shift+Tab to enter [plan mode](https://code.claude.com/docs/en/common-workflows#use-plan-mode-for-safe-code-analysis) before implementation. Claude explores the codebase and proposes an approach for your approval, preventing expensive re-work when the initial direction is wrong.
+- **Course-correct early**: If Claude starts heading the wrong direction, press Escape to stop immediately. Use `/rewind` or double-tap Escape to restore conversation and code to a previous checkpoint.
+- **Give verification targets**: Include test cases, paste screenshots, or define expected output in your prompt. When Claude can verify its own work, it catches issues before you need to request fixes.
+- **Test incrementally**: Write one file, test it, then continue. This catches issues early when they’re cheap to fix.
 
 ## Background token usage
 
 Claude Code uses tokens for some background functionality even when idle:
 
--   **Conversation summarization**: Background jobs that summarize previous conversations for the `claude --resume` feature
--   **Command processing**: Some commands like `/cost` may generate requests to check status
+- **Conversation summarization**: Background jobs that summarize previous conversations for the `claude --resume` feature
+- **Command processing**: Some commands like `/cost` may generate requests to check status
 
 These background processes consume a small amount of tokens (typically under $0.04 per session) even without active interaction.
 

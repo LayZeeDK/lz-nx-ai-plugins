@@ -5,6 +5,7 @@
 > Site: Marco Patzelt Portfolio
 
 ---
+
 ## What Are Claude Code Agent Teams?
 
 One Claude Code session is good. Five working the same codebase in parallel, messaging each other, debating hypotheses—that's a multi-agent swarm with actual coordination.
@@ -31,13 +32,13 @@ A subagent reports back to the main agent. That's it. Agent team members message
 
 This is the decision that matters. Wrong choice = wasted tokens. If you've read about the [Agent Swarm Trap](https://www.marc0.dev/en/blog/the-agent-swarm-trap-why-context-wins-over-complexity-1766752838655), you know why picking the right coordination pattern is everything.
 
-| Feature | Subagents | Agent Teams | Multi-Agent Swarm |
-| --- | --- | --- | --- |
-| **Communication** | Reports back to caller only | Teammates message each other | Broadcast / shared state |
-| **Coordination** | Main agent manages everything | Shared task list, self-coordination | Emergent (often chaotic) |
-| **Context** | Own window, results summarized | Own window, fully independent | Varies by framework |
-| **Token Cost** | Lower | ~5x per teammate | Varies wildly |
-| **Best For** | Focused tasks, only result matters | Complex work needing discussion | Research, not production |
+| Feature           | Subagents                          | Agent Teams                         | Multi-Agent Swarm        |
+| ----------------- | ---------------------------------- | ----------------------------------- | ------------------------ |
+| **Communication** | Reports back to caller only        | Teammates message each other        | Broadcast / shared state |
+| **Coordination**  | Main agent manages everything      | Shared task list, self-coordination | Emergent (often chaotic) |
+| **Context**       | Own window, results summarized     | Own window, fully independent       | Varies by framework      |
+| **Token Cost**    | Lower                              | ~5x per teammate                    | Varies wildly            |
+| **Best For**      | Focused tasks, only result matters | Complex work needing discussion     | Research, not production |
 
 **Use subagents when:** You need quick, focused workers that report back. _"Go research X and tell me what you find."_
 
@@ -45,7 +46,7 @@ This is the decision that matters. Wrong choice = wasted tokens. If you've read 
 
 **Skip the swarm fantasies:** If you're thinking about chaining 20 agents with no coordination—don't. Context > complexity. Agent Teams give you the multi-agent benefit with actual structure.
 
-## Setup: CLAUDE\_CODE\_EXPERIMENTAL\_AGENT\_TEAMS
+## Setup: CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
 
 Agent Teams are experimental. One setting to enable them.
 
@@ -84,10 +85,10 @@ Good for testing without committing.
 Once enabled, tell Claude in natural language:
 
 > I'm refactoring the auth module. Create an agent team:
-> 
-> -   One teammate on the backend JWT logic
-> -   One on the frontend session handling
-> -   One writing integration tests
+>
+> - One teammate on the backend JWT logic
+> - One on the frontend session handling
+> - One writing integration tests
 
 Claude spawns the team, creates a shared task list, and starts coordinating. No YAML configs. No boilerplate. Just describe what you need.
 
@@ -121,9 +122,9 @@ One reviewer gravitates toward one type of issue. Three catch what one misses.
 
 Create an agent team for PR #142:
 
--   **Security Reviewer**: Token handling, input validation, auth flows.
--   **Performance Reviewer**: N+1 queries, memory leaks, unnecessary renders.
--   **Test Reviewer**: Coverage gaps, edge cases, flaky test patterns.
+- **Security Reviewer**: Token handling, input validation, auth flows.
+- **Performance Reviewer**: N+1 queries, memory leaks, unnecessary renders.
+- **Test Reviewer**: Coverage gaps, edge cases, flaky test patterns.
 
 The lead synthesizes all findings into one review. Three perspectives, one output. This alone justifies learning the feature.
 
@@ -136,10 +137,10 @@ Spawn 3-5 teammates. Each investigates a different hypothesis. They message each
 Example prompt:
 
 > Production API is returning 500s intermittently. Create a debugging team:
-> 
-> -   Hypothesis 1: Database connection pool exhaustion
-> -   Hypothesis 2: Race condition in the caching layer
-> -   Hypothesis 3: Memory leak in the request handler Have them share evidence and argue which theory fits the logs.
+>
+> - Hypothesis 1: Database connection pool exhaustion
+> - Hypothesis 2: Race condition in the caching layer
+> - Hypothesis 3: Memory leak in the request handler Have them share evidence and argue which theory fits the logs.
 
 Parallel investigation with adversarial debate. Surfaces the strongest theory.
 
@@ -147,9 +148,9 @@ Parallel investigation with adversarial debate. Surfaces the strongest theory.
 
 Feature spans frontend, backend, and tests. Each teammate owns a layer. No file conflicts.
 
--   **Teammate 1**: Backend API endpoints & database schema.
--   **Teammate 2**: Frontend components & state management.
--   **Teammate 3**: E2E tests & integration tests.
+- **Teammate 1**: Backend API endpoints & database schema.
+- **Teammate 2**: Frontend components & state management.
+- **Teammate 3**: E2E tests & integration tests.
 
 They coordinate via the shared task list. Backend teammate finishes the API → test teammate picks up automatically.
 
@@ -185,9 +186,9 @@ Task status can lag. The lead might think a task is still pending when the teamm
 
 Split pane mode requires `tmux` or `iTerm2`. It does **not** work in:
 
--   VS Code integrated terminal
--   Windows Terminal
--   Ghostty
+- VS Code integrated terminal
+- Windows Terminal
+- Ghostty
 
 Use `--teammate-mode in-process` instead.
 
@@ -203,11 +204,11 @@ No built-in file locking. Two teammates writing to the same file = last write wi
 
 No sugarcoating:
 
--   **No session resumption**: `/resume` and `/rewind` don't restore teammates. Fresh sessions only.
--   **Token cost is real**: A 5-person team burns ~5x the tokens of a single session. For routine tasks, this isn't worth it.
--   **One team per session**: Clean up before starting a new team. Teammates can't spawn their own teams (no nested multi-agent chains).
--   **Split panes need tmux/iTerm2**: Not every terminal supports it.
--   **Task status can lag**: Coordination isn't instant. Complex dependency chains may need manual nudging.
+- **No session resumption**: `/resume` and `/rewind` don't restore teammates. Fresh sessions only.
+- **Token cost is real**: A 5-person team burns ~5x the tokens of a single session. For routine tasks, this isn't worth it.
+- **One team per session**: Clean up before starting a new team. Teammates can't spawn their own teams (no nested multi-agent chains).
+- **Split panes need tmux/iTerm2**: Not every terminal supports it.
+- **Task status can lag**: Coordination isn't instant. Complex dependency chains may need manual nudging.
 
 ### Cleanup
 

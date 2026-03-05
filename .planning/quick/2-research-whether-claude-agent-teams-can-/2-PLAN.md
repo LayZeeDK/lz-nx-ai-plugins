@@ -10,14 +10,14 @@ autonomous: true
 requirements: []
 must_haves:
   truths:
-    - "The analysis clearly states whether agent teams solve the subagent nesting constraint for llm_query()"
-    - "The synchronous-vs-asynchronous execution tension is analyzed with concrete implications for the REPL fill/solve loop"
-    - "At least 3 alternative approaches to llm_query() are evaluated beyond agent teams"
+    - 'The analysis clearly states whether agent teams solve the subagent nesting constraint for llm_query()'
+    - 'The synchronous-vs-asynchronous execution tension is analyzed with concrete implications for the REPL fill/solve loop'
+    - 'At least 3 alternative approaches to llm_query() are evaluated beyond agent teams'
     - "A concrete recommendation is provided for the RLM plugin's llm_query() implementation"
-    - "The impact on ROADMAP.md and PROJECT.md (haiku-searcher deferral) is assessed"
+    - 'The impact on ROADMAP.md and PROJECT.md (haiku-searcher deferral) is assessed'
   artifacts:
-    - path: "research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md"
-      provides: "Technical analysis of agent teams as solution to subagent nesting constraint"
+    - path: 'research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md'
+      provides: 'Technical analysis of agent teams as solution to subagent nesting constraint'
       min_lines: 150
   key_links: []
 ---
@@ -126,6 +126,7 @@ Write a structured markdown analysis document evaluating whether Claude Code age
    - Any implications for Phase 2 (REPL Core) -- should `llm_query()` remain as a REPL global stub, be removed, or be kept as a future extension point?
 
 **Formatting requirements:**
+
 - Use tables for comparisons where appropriate
 - Include a TL;DR summary at the top (5-6 bullet points)
 - Reference source documents with `[document-name]` citations
@@ -134,10 +135,10 @@ Write a structured markdown analysis document evaluating whether Claude Code age
 - No emojis (per AGENTS.md convention)
   </action>
   <verify>
-    <automated>test -f "research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md" && wc -l "research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md" | awk '{if ($1 >= 150) print "[OK] Analysis document exists with " $1 " lines"; else print "[ERROR] Document too short: " $1 " lines"}'</automated>
+  <automated>test -f "research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md" && wc -l "research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md" | awk '{if ($1 >= 150) print "[OK] Analysis document exists with " $1 " lines"; else print "[ERROR] Document too short: " $1 " lines"}'</automated>
   </verify>
   <done>ANALYSIS_AGENT_TEAMS_NESTING.md exists with 150+ lines, contains all 6 sections (Problem Statement, Can Agent Teams Solve This, Token Cost Tension, Alternative Approaches with 4 options, Recommendation, Impact on ROADMAP/PROJECT.md), includes a TL;DR summary, and provides a clear actionable recommendation for the llm_query() implementation approach</done>
-</task>
+  </task>
 
 </tasks>
 
@@ -155,10 +156,11 @@ Write a structured markdown analysis document evaluating whether Claude Code age
 </verification>
 
 <success_criteria>
+
 - A developer reading ANALYSIS_AGENT_TEAMS_NESTING.md can decide whether to pursue agent teams for llm_query() without further research
 - The recommendation is defensible -- it accounts for the token cost tension, the sync/async mismatch, and the v0.0.1 timeline
 - The document serves as a permanent reference that can be cited in future PROJECT.md and ROADMAP.md updates
-</success_criteria>
+  </success_criteria>
 
 <output>
 After completion, create `.planning/quick/2-research-whether-claude-agent-teams-can-/2-SUMMARY.md`

@@ -550,6 +550,7 @@ Migrate a slash command to a full skill when:
 ---
 
 **Related Documents:**
+
 - [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md) - Slash commands basics
 - [SKILL-CREATION-CHECKLIST.md](./SKILL-CREATION-CHECKLIST.md) - Checklist for building skills
 - [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md) - Multi-agent workflows

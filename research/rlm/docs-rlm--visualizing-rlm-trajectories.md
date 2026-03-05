@@ -3,6 +3,7 @@
 > Source: [https://alexzhang13.github.io/rlm/trajectories/](https://alexzhang13.github.io/rlm/trajectories/)
 
 ---
+
 ## Visualizing RLM Trajectories
 
 RLM provides built-in logging capabilities to save execution trajectories, enabling you to analyze how the LM decomposes tasks, executes code, and makes recursive calls.
@@ -34,11 +35,11 @@ result = rlm.completion("Your prompt here")
 
 Trajectories are saved as JSON-lines files in the specified log directory. Each line contains a complete snapshot of one RLM iteration, including:
 
--   **LM prompts and responses** — All prompts sent to the LM and their completions
--   **Generated code** — Python code written by the LM
--   **Code execution results** — stdout, stderr, and return values
--   **Sub-LM calls** — All `llm_query()` invocations and their results
--   **Metadata** — Timestamps, model names, token usage, execution times
+- **LM prompts and responses** — All prompts sent to the LM and their completions
+- **Generated code** — Python code written by the LM
+- **Code execution results** — stdout, stderr, and return values
+- **Sub-LM calls** — All `llm_query()` invocations and their results
+- **Metadata** — Timestamps, model names, token usage, execution times
 
 ```
 import json

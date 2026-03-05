@@ -10,7 +10,7 @@ Analysis of whether Claude Code agent teams can solve the subagent nesting const
 
 - Agent teams **flatten** the nesting constraint by making `repl-executor` and `haiku-searcher` peer teammates rather than parent-child subagents. The main session acts as team lead, orchestrating both.
 - However, agent teams introduce a **synchronous-to-asynchronous mismatch**: the REPL's `llm_query(prompt)` expects a blocking return value, but teammate messaging is asynchronous. This transforms the sequential fill/solve loop into an event-driven state machine -- a fundamental architecture change.
-- Agent teams **multiply tokens 3-10x** [SYNTHESIS, section 6.1], directly opposing the RLM plugin's core value of 2-5x token *reduction* [PROJECT.md]. An RLM explore using agent teams could net-increase tokens compared to a single Explore subagent.
+- Agent teams **multiply tokens 3-10x** [SYNTHESIS, section 6.1], directly opposing the RLM plugin's core value of 2-5x token _reduction_ [PROJECT.md]. An RLM explore using agent teams could net-increase tokens compared to a single Explore subagent.
 - **Recommendation: Ship v0.0.1 without `llm_query()` (approach 4c).** The REPL already has deterministic globals (`search()`, `files()`, `read()`, `deps()`) that handle the vast majority of workspace navigation without any LLM sub-calls. Validate the core RLM thesis first; add `llm_query()` later only if empirical evidence shows it is needed.
 - The `haiku-searcher` requirement should **remain deferred** in PROJECT.md. The "subagent nesting constraint" note should be updated to reference this analysis.
 - If `llm_query()` is eventually needed, **approach 4a** (main session drives the REPL loop directly) is the simplest path that avoids the nesting problem entirely.
@@ -86,7 +86,7 @@ In the agent team model:
 1. The **main session** creates a team and spawns both `repl-executor` and `haiku-searcher` as peer teammates [agent-teams.md, Architecture section].
 2. Communication happens via **SendMessage** instead of subagent spawning. When `repl-executor` needs a search, it messages `haiku-searcher` directly through the mailbox system [agent-teams.md, Context and communication section].
 3. Neither teammate needs to spawn the other -- they are **siblings**, not parent-child. The team lead (main session) orchestrates both.
-4. The "no nested teams" constraint [agent-teams.md, line 338] prevents *teammates* from spawning their own teams, but this is irrelevant here because neither teammate needs to create a team. They only need to exchange messages.
+4. The "no nested teams" constraint [agent-teams.md, line 338] prevents _teammates_ from spawning their own teams, but this is irrelevant here because neither teammate needs to create a team. They only need to exchange messages.
 
 This architecture technically eliminates the nesting constraint. Both agents exist at depth 1 from the main session and communicate laterally.
 
@@ -101,8 +101,8 @@ The REPL fill/solve loop is **synchronous**. The execution model looks like this
 ```javascript
 // Inside repl-executor's fill/solve loop
 for (let i = 0; i < maxIterations; i++) {
-  const code = await llm.generateCode(messages);      // LLM generates REPL code
-  const result = sandbox.execute(code);                // Runs in VM -- may call llm_query()
+  const code = await llm.generateCode(messages); // LLM generates REPL code
+  const result = sandbox.execute(code); // Runs in VM -- may call llm_query()
   if (sandbox.getFinalAnswer()) return finalAnswer;
   messages.push(formatResult(result));
 }
@@ -112,9 +112,9 @@ When REPL code calls `llm_query("find all stores in cms/")`, the expectation is 
 
 ```javascript
 // Inside the REPL sandbox (user-generated code)
-let stores = llm_query("find all ComponentStore files in libs/connect/cms/");
+let stores = llm_query('find all ComponentStore files in libs/connect/cms/');
 // 'stores' is immediately available as a string
-let storeCount = stores.split("\n").length;
+let storeCount = stores.split('\n').length;
 print(`Found ${storeCount} stores in CMS domain`);
 ```
 
@@ -179,26 +179,26 @@ The RLM plugin's core value proposition is **token reduction**:
 
 The projected savings are 2-5x for single queries and 3-9x for multi-query sessions [BRAINSTORM.md, section 11]:
 
-| Operation | Without RLM | With RLM | Savings |
-|-----------|------------|----------|---------|
-| Single exploration query | 35-70K tokens | 12-20K tokens | 2-5x |
-| 10-query session | 175-700K tokens | 50-80K tokens | 3-9x |
+| Operation                | Without RLM     | With RLM      | Savings |
+| ------------------------ | --------------- | ------------- | ------- |
+| Single exploration query | 35-70K tokens   | 12-20K tokens | 2-5x    |
+| 10-query session         | 175-700K tokens | 50-80K tokens | 3-9x    |
 
 Agent teams **multiply** token usage:
 
-| Source | Reported multiplier |
-|--------|-------------------|
-| Anthropic official | "3-10x more tokens" [SYNTHESIS, section 6.1] |
+| Source                 | Reported multiplier                                           |
+| ---------------------- | ------------------------------------------------------------- |
+| Anthropic official     | "3-10x more tokens" [SYNTHESIS, section 6.1]                  |
 | alexop blog (measured) | Solo ~200K, 3-person team ~800K (4x) [SYNTHESIS, section 6.1] |
-| Anthropic costs page | "~7x more tokens in plan mode" [SYNTHESIS, section 6.1] |
+| Anthropic costs page   | "~7x more tokens in plan mode" [SYNTHESIS, section 6.1]       |
 
 These forces directly oppose each other. Consider the token math for a single explore query:
 
-| Approach | Token estimate | Calculation |
-|----------|---------------|-------------|
-| Standard Explore (no RLM) | 35-70K | Baseline [BRAINSTORM.md, section 3a] |
-| RLM with Haiku sub-calls | 16-20K | 8K Sonnet root + 3-5 iterations x 2K + 1-2 Haiku x 1K [BRAINSTORM.md, section 3a] |
-| RLM with agent team | 50-200K | 16-20K base x 3-10x team multiplier |
+| Approach                  | Token estimate | Calculation                                                                       |
+| ------------------------- | -------------- | --------------------------------------------------------------------------------- |
+| Standard Explore (no RLM) | 35-70K         | Baseline [BRAINSTORM.md, section 3a]                                              |
+| RLM with Haiku sub-calls  | 16-20K         | 8K Sonnet root + 3-5 iterations x 2K + 1-2 Haiku x 1K [BRAINSTORM.md, section 3a] |
+| RLM with agent team       | 50-200K        | 16-20K base x 3-10x team multiplier                                               |
 
 An RLM plugin using agent teams for basic exploration could **net-increase** tokens compared to simply using a single Explore subagent without RLM at all. The token savings from RLM navigation would be wiped out by the agent team coordination overhead.
 
@@ -224,12 +224,12 @@ main session (runs REPL loop directly)
   └── haiku-searcher (subagent, spawned on llm_query())
 ```
 
-| Aspect | Assessment |
-|--------|-----------|
-| Nesting problem | Eliminated -- main session is root, can spawn subagents |
-| Synchronous flow | Preserved -- subagent returns result to caller |
-| Architecture complexity | Lowest -- no teams, no async messaging |
-| Token cost | Lowest -- no team overhead |
+| Aspect                  | Assessment                                              |
+| ----------------------- | ------------------------------------------------------- |
+| Nesting problem         | Eliminated -- main session is root, can spawn subagents |
+| Synchronous flow        | Preserved -- subagent returns result to caller          |
+| Architecture complexity | Lowest -- no teams, no async messaging                  |
+| Token cost              | Lowest -- no team overhead                              |
 
 **Cons:**
 
@@ -244,24 +244,28 @@ Remove `llm_query()` from the REPL sandbox entirely. The `repl-executor` subagen
 
 **How it works:** The REPL globals (`search()`, `files()`, `read()`, `deps()`) handle mechanical search deterministically. For any semantic understanding tasks, the `repl-executor` subagent reasons about the results itself rather than delegating to Haiku.
 
-| Aspect | Assessment |
-|--------|-----------|
-| Nesting problem | Eliminated -- no haiku-searcher at all |
-| Architecture complexity | Simplest -- single subagent, no coordination |
-| Token cost | Slightly higher per-iteration (Sonnet > Haiku for mechanical tasks) |
-| Context isolation | Preserved -- repl-executor is still a subagent |
+| Aspect                  | Assessment                                                          |
+| ----------------------- | ------------------------------------------------------------------- |
+| Nesting problem         | Eliminated -- no haiku-searcher at all                              |
+| Architecture complexity | Simplest -- single subagent, no coordination                        |
+| Token cost              | Slightly higher per-iteration (Sonnet > Haiku for mechanical tasks) |
+| Context isolation       | Preserved -- repl-executor is still a subagent                      |
 
 **Key insight:** The original RLM paper uses `llm_query()` for sub-problems that need LLM reasoning [BRAINSTORM.md, section 2a]. But the Nx workspace use case may not need LLM-powered sub-queries. Most "search" tasks can be handled by the deterministic `search()` global (git grep) without any LLM:
 
 ```javascript
 // These do NOT need an LLM:
-let stores = search("extends ComponentStore", ["libs/connect/cms/"]);
-let deps = deps("connect-shared-users-data-access");
-let files = files("libs/**/*.store.ts");
-let content = read("libs/connect/cms/analytics/data-access/src/lib/analytics.store.ts");
+let stores = search('extends ComponentStore', ['libs/connect/cms/']);
+let deps = deps('connect-shared-users-data-access');
+let files = files('libs/**/*.store.ts');
+let content = read(
+  'libs/connect/cms/analytics/data-access/src/lib/analytics.store.ts',
+);
 
 // Only this arguably needs an LLM:
-let answer = llm_query("Summarize the state management pattern used in this store");
+let answer = llm_query(
+  'Summarize the state management pattern used in this store',
+);
 ```
 
 The question is whether that last case -- semantic summarization during navigation -- occurs frequently enough to justify the architectural complexity of `llm_query()`.
@@ -279,13 +283,13 @@ Ship v0.0.1 without `llm_query()`. The `repl-executor` uses only deterministic g
 
 **How it works:** This is the current plan as expressed in PROJECT.md and ROADMAP.md. The REPL sandbox provides `search()`, `files()`, `read()`, `deps()`, `dependents()`, `nx()`, `print()`, `FINAL()`, `FINAL_VAR()`, and `SHOW_VARS()` [PROJECT.md, REPL Sandbox Design]. None of these require LLM sub-calls. The `repl-executor` subagent generates REPL code using these globals, iterates through fill/solve, and returns a FINAL answer.
 
-| Aspect | Assessment |
-|--------|-----------|
-| Nesting problem | Not applicable -- no llm_query() in v0.0.1 |
-| Architecture complexity | Lowest for v0.0.1 |
-| Token cost | Lowest -- deterministic globals are zero LLM tokens |
-| Risk | Lowest -- validates core RLM thesis before adding complexity |
-| Context isolation | Preserved -- repl-executor is still a subagent |
+| Aspect                  | Assessment                                                   |
+| ----------------------- | ------------------------------------------------------------ |
+| Nesting problem         | Not applicable -- no llm_query() in v0.0.1                   |
+| Architecture complexity | Lowest for v0.0.1                                            |
+| Token cost              | Lowest -- deterministic globals are zero LLM tokens          |
+| Risk                    | Lowest -- validates core RLM thesis before adding complexity |
+| Context isolation       | Preserved -- repl-executor is still a subagent               |
 
 **Pros:**
 
@@ -307,12 +311,12 @@ Keep the core explore skill using subagents (no `llm_query()`). Add agent teams 
 
 **How it works:** The explore skill uses `repl-executor` as a standard subagent with deterministic globals. Separately, the plugin offers team-based skills (`/rlm:debug`, `/rlm:review`, `/rlm:refactor`, `/rlm:migrate`) where the token multiplier is justified by the value of parallel investigation, adversarial reasoning, or parallel library modification.
 
-| Aspect | Assessment |
-|--------|-----------|
-| Nesting problem | Not applicable -- explore uses subagent, teams are separate skills |
+| Aspect                  | Assessment                                                                 |
+| ----------------------- | -------------------------------------------------------------------------- |
+| Nesting problem         | Not applicable -- explore uses subagent, teams are separate skills         |
 | Architecture complexity | Moderate -- two modes (subagent for explore, teams for specific scenarios) |
-| Token cost | Optimized per use case |
-| Context isolation | Preserved for explore; team skills have their own isolation model |
+| Token cost              | Optimized per use case                                                     |
+| Context isolation       | Preserved for explore; team skills have their own isolation model          |
 
 **Key insight from BRAINSTORM_AGENT_TEAMS.md:** The decision framework explicitly routes most RLM operations to the "use RLM sub-calls (cheaper, faster)" path. Only debug, audit, review, refactor, and migrate reach the "USE AGENT TEAMS" endpoint [BRAINSTORM_AGENT_TEAMS.md, Decision Framework].
 
@@ -324,13 +328,13 @@ This approach does NOT solve the `llm_query()` nesting problem -- it sidesteps i
 
 ### Comparison Table
 
-| Approach | Nesting Solved? | Sync Flow? | Context Isolation? | Token Overhead | v0.0.1 Viable? |
-|----------|:-:|:-:|:-:|:-:|:-:|
-| **Agent teams for llm_query()** | Yes | No (async) | Yes | 3-10x multiplier | No |
-| **4a. Main session drives REPL** | Yes | Yes | No (pollutes main) | Low | Possible |
-| **4b. Single agent, no haiku-searcher** | N/A | Yes | Yes | Slightly higher | Yes |
-| **4c. Deferred llm_query() (recommended)** | N/A | Yes | Yes | Lowest | Yes |
-| **4d. Teams for high-value only** | N/A | Yes | Yes | Optimized | Future milestone |
+| Approach                                   | Nesting Solved? | Sync Flow? | Context Isolation? |  Token Overhead  |  v0.0.1 Viable?  |
+| ------------------------------------------ | :-------------: | :--------: | :----------------: | :--------------: | :--------------: |
+| **Agent teams for llm_query()**            |       Yes       | No (async) |        Yes         | 3-10x multiplier |        No        |
+| **4a. Main session drives REPL**           |       Yes       |    Yes     | No (pollutes main) |       Low        |     Possible     |
+| **4b. Single agent, no haiku-searcher**    |       N/A       |    Yes     |        Yes         | Slightly higher  |       Yes        |
+| **4c. Deferred llm_query() (recommended)** |       N/A       |    Yes     |        Yes         |      Lowest      |       Yes        |
+| **4d. Teams for high-value only**          |       N/A       |    Yes     |        Yes         |    Optimized     | Future milestone |
 
 ---
 
@@ -400,12 +404,12 @@ This is correct and should remain. Agent teams are the right tool for those spec
 
 ## Source Materials
 
-| Reference | Path | Relevance |
-|-----------|------|-----------|
-| [PROJECT.md] | `.planning/PROJECT.md` | Active requirements, REPL sandbox design, haiku-searcher deferral |
-| [ROADMAP.md] | `.planning/ROADMAP.md` | Phase structure, success criteria |
-| [BRAINSTORM.md] | `research/claude-plugin/BRAINSTORM.md` | RLM plugin design, token projections, execution loop |
+| Reference                   | Path                                               | Relevance                                                              |
+| --------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------- |
+| [PROJECT.md]                | `.planning/PROJECT.md`                             | Active requirements, REPL sandbox design, haiku-searcher deferral      |
+| [ROADMAP.md]                | `.planning/ROADMAP.md`                             | Phase structure, success criteria                                      |
+| [BRAINSTORM.md]             | `research/claude-plugin/BRAINSTORM.md`             | RLM plugin design, token projections, execution loop                   |
 | [BRAINSTORM_AGENT_TEAMS.md] | `research/claude-plugin/BRAINSTORM_AGENT_TEAMS.md` | Agent teams integration proposals, decision framework, token economics |
-| [agent-teams.md] | `research/claude-agent-teams/agent-teams.md` | Official agent teams documentation, architecture, limitations |
-| [sub-agents.md] | `research/claude-agent-teams/sub-agents.md` | Subagent nesting constraint, configuration options |
-| [SYNTHESIS.md] | `research/claude-agent-teams/SYNTHESIS.md` | Research synthesis, token cost multipliers, best practices |
+| [agent-teams.md]            | `research/claude-agent-teams/agent-teams.md`       | Official agent teams documentation, architecture, limitations          |
+| [sub-agents.md]             | `research/claude-agent-teams/sub-agents.md`        | Subagent nesting constraint, configuration options                     |
+| [SYNTHESIS.md]              | `research/claude-agent-teams/SYNTHESIS.md`         | Research synthesis, token cost multipliers, best practices             |

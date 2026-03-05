@@ -14,9 +14,11 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 ## Implementation Decisions
 
 ### Guiding principle
+
 - Match RLM convention (Hampton-io, code-rabi/rllm, Matryoshka, official MIT RLM) as the default for all decisions unless incompatible with our design or Claude Code constraints.
 
 ### Variable persistence mechanism
+
 - Regex transform: `code.replace(/^(const|let|var)\s+(\w+)\s*=/gm, ...)` converts top-level declarations to globalThis assignments
 - `const` declarations use `Object.defineProperty(globalThis, name, { value: expr, writable: false, enumerable: true, configurable: true })` to preserve immutability within a turn while allowing redefinition across turns
 - `let`/`var` declarations use plain `globalThis.name = expr` (mutable)
@@ -25,12 +27,14 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 - Serialization: JSON-native only (strings, numbers, booleans, null, arrays, plain objects). Functions, Maps, Sets, Symbols, undefined, and circular references are silently dropped. Matches Hampton-io behavior. Map/Set support can be added in a later milestone if benefits are uncovered.
 
 ### SHOW_VARS() format
+
 - RLM convention (Hampton-io pattern): name + type + count for collections
 - Format: `"Variables: results (Array[247]), count (number), project (object), query (string)"`
 - The LLM uses print() to inspect specific values
 - Excludes all built-in globals (workspace, projects, deps, etc.)
 
 ### Handle store approach (FEATURES.md overrides PROJECT.md)
+
 - No separate handle-store.mjs script. The VM context's globalThis IS the handle store (Hampton-io pattern).
 - No $res1 handle naming, no store/get/filter API. The LLM navigates large data using native JavaScript (array.filter(), array.slice(), etc.) on persisted globalThis variables.
 - Smart print() truncation IS the handle UX:
@@ -44,6 +48,7 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 - PROJECT.md's handle-store.mjs listing is a documentation artifact from earlier brainstorm -- FEATURES.md explicitly flags it as over-engineering
 
 ### Sandbox invocation mode
+
 - Per-invocation model: each REPL turn is a separate `node` process invocation (architecture research recommendation, Anti-Pattern 2 avoidance)
 - Code passed via stdin (not CLI args -- Anti-Pattern 1 avoidance)
 - Session state persisted to JSON file between turns (`.cache/repl-session-<id>.json`)
@@ -52,6 +57,7 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 - Clean crash recovery: no orphaned processes, no IPC complexity
 
 ### Guardrails configuration
+
 - Config file: `lz-nx.rlm.config.json`
 - Defaults ship in plugin root (`plugins/lz-nx.rlm/lz-nx.rlm.config.json`)
 - User overrides in `.claude/lz-nx.rlm.config.json` (merged over defaults)
@@ -68,6 +74,7 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
   ```
 
 ### Execution loop termination (FEATURES.md state machine + adjustments)
+
 - Four independent trackers for four failure modes:
   - `codeExecutedCount` (number): guards against premature FINAL. Threshold: >= 1 (lowered from FEATURES.md's >= 2 to match Matryoshka convention). Also used for diagnostics and mid-loop hints.
   - `noCodeCount` (counter): guards against infinite thinking without code. After maxNoCodeTurns consecutive no-code turns, force final answer request.
@@ -78,6 +85,7 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 - maxTimeout wall-clock limit: terminate with best partial answer.
 
 ### Claude's Discretion
+
 - Exact regex pattern for const/let transform (the approach is decided, exact implementation details are flexible)
 - Session file naming convention and cleanup strategy
 - print() formatting details within the decided thresholds
@@ -101,9 +109,11 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 </specifics>
 
 <code_context>
+
 ## Existing Code Insights
 
 ### Reusable Assets
+
 - `shared/index-loader.mjs`: loadIndex(workspaceRoot) with auto-build/rebuild -- directly usable for loading workspace index into sandbox
 - `nx-runner.mjs`: safe Nx CLI wrapper with allowlisting -- wrap as the `nx()` REPL global
 - `path-resolver.mjs`: bidirectional alias resolution -- could power an `alias()` REPL global if needed
@@ -112,6 +122,7 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 - Test infrastructure: Vitest with fixtures pattern established in Phase 1
 
 ### Established Patterns
+
 - ESM `.mjs` with `node:` prefix imports, zero npm dependencies
 - Testable command pattern: export pure functions separate from process.argv entry point
 - `[OK]`, `[ERROR]`, `[WARN]`, `[INFO]` ASCII prefix tags for console output
@@ -119,6 +130,7 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 - JSDoc for exported functions with @typedef for data structures
 
 ### Integration Points
+
 - Workspace index at `tmp/lz-nx.rlm/workspace-index.json` -- sandbox loads this on each invocation
 - Session state at `.cache/repl-session-<id>.json` -- sandbox reads/writes between invocations
 - Config at `plugins/lz-nx.rlm/lz-nx.rlm.config.json` (defaults) and `.claude/lz-nx.rlm.config.json` (user overrides)
@@ -139,5 +151,5 @@ Isolated JavaScript sandbox with workspace-aware globals, variable persistence a
 
 ---
 
-*Phase: 02-repl-core*
-*Context gathered: 2026-03-05*
+_Phase: 02-repl-core_
+_Context gathered: 2026-03-05_

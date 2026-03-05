@@ -7,7 +7,7 @@
 
 ## Description
 
-January 06 session where we have the pleasure of having a chat with 
+January 06 session where we have the pleasure of having a chat with
 Alex L. Zhang about his work on RLM for long context!
 👉 https://x.com/a1zhang
 👉 https://alexzhang13.github.io/blog/2025/rlm/
@@ -15,8 +15,8 @@ Alex L. Zhang about his work on RLM for long context!
 
 big thanks to every channel members that are supporting this type of interview! 🌹🌹🌹
 
-come chat with the author and ask any questions related to this new paradigm! 
-:) Enjoy! 🌹 
+come chat with the author and ask any questions related to this new paradigm!
+:) Enjoy! 🌹
 
 If you want to continue the discussion holla at me on twitter:
 👋 https://x.com/yacinelearning

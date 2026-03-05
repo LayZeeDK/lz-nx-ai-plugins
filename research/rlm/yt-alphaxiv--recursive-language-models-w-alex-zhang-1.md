@@ -1,6 +1,6 @@
 # Recursive Language Models w: Alex Zhang
 
-[https://www.youtube.com/watch?v=_TaIZLKhfLc&hl=en](https://www.youtube.com/watch?v=_TaIZLKhfLc&hl=en)
+[https://www.youtube.com/watch?v=\_TaIZLKhfLc&hl=en](https://www.youtube.com/watch?v=_TaIZLKhfLc&hl=en)
 
 **Channel:** [alphaXiv](https://www.youtube.com/channel/UCG4Cbh6L9x6YRoUK3uFAZ1g)
 **Duration:** 1:14:57

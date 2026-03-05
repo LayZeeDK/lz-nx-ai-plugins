@@ -656,14 +656,15 @@ response = anthropic.messages.create(
 
 **Availability by environment:**
 
-| Environment | Status | Configuration |
-|-------------|--------|---------------|
-| Claude Code CLI | ✅ **GA** (enabled by default) | No configuration needed |
-| Messages API | ⚠️ Beta | Requires `interleaved-thinking-2025-05-14` header |
+| Environment     | Status                         | Configuration                                     |
+| --------------- | ------------------------------ | ------------------------------------------------- |
+| Claude Code CLI | ✅ **GA** (enabled by default) | No configuration needed                           |
+| Messages API    | ⚠️ Beta                        | Requires `interleaved-thinking-2025-05-14` header |
 
 **Enable thinking between tool calls** for sophisticated multi-step workflows.
 
 **In Claude Code CLI** (no configuration needed):
+
 ```
 ∴ Thinking…                    ← Initial reasoning
 ● Tool calls execute
@@ -672,6 +673,7 @@ response = anthropic.messages.create(
 ```
 
 **In Messages API** (requires beta header):
+
 ```python
 response = anthropic.messages.create(
     model="claude-haiku-4.5-20251001",
@@ -1142,6 +1144,7 @@ Task: Write 1-2 sentences explaining this chunk's role in the document.
 ---
 
 **Related Documents:**
+
 - [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) - Sonnet 4.5 implementation patterns
 - [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md) - Opus 4.5 patterns
 - [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md) - Multi-agent orchestration

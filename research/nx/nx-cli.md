@@ -88,6 +88,7 @@ nx run myapp:"build:test"                 # target name containing a colon
 ```
 
 Key flags:
+
 - `--configuration` / `-c` -- named configuration (e.g., `production`)
 - `--graph` -- view/export task graph instead of running
 - `--skipNxCache` / `--skipRemoteCache` -- bypass local or remote cache
@@ -110,6 +111,7 @@ nx run-many -t build --graph                # task graph preview
 ```
 
 Key flags:
+
 - `-t`, `--targets` -- one or more targets
 - `-p`, `--projects` -- specific projects, globs, or `tag:` prefixes
 - `--exclude` -- projects to skip
@@ -136,6 +138,7 @@ nx affected -t=build --graph                     # preview task graph
 ```
 
 Key flags:
+
 - `-t`, `--targets` -- targets to run
 - `--base` / `--head` -- git refs for comparison range (default: `main` / `HEAD`)
 - `--files` -- explicit file list instead of git diff
@@ -179,26 +182,26 @@ nx graph --open=false                     # don't auto-open browser
 
 All flags:
 
-| Flag | Type | Default | Description |
-|---|---|---|---|
-| `--view` | `projects` \| `tasks` | `projects` | Choose project graph or task graph |
-| `--targets` | string | | Target(s) to show in task graph view |
-| `--focus` | string | | Center on a project and its ancestors/descendants |
-| `--exclude` | string | | Hide specific projects |
-| `--affected` | boolean | | Highlight affected projects |
-| `--groupByFolder` | boolean | | Group project nodes by directory |
-| `--file` | string | | Output to file: `.json` for data, `.html` for static site |
-| `--print` | boolean | | Print full graph as JSON to stdout |
-| `--watch` | boolean | `true` | Auto-refresh browser as files change |
-| `--open` | boolean | `true` | Auto-open browser |
-| `--host` | string | | Bind graph server to specific IP address |
-| `--port` | number | | Bind graph server to specific port |
-| `--base` | string | | Base git ref for affected calculation |
-| `--head` | string | | Head git ref for affected calculation |
-| `--files` | string | | Explicit file list for affected calculation |
-| `--uncommitted` | boolean | | Include uncommitted changes in affected |
-| `--untracked` | boolean | | Include untracked changes in affected |
-| `--verbose` | boolean | | Print additional information (e.g., stack traces) |
+| Flag              | Type                  | Default    | Description                                               |
+| ----------------- | --------------------- | ---------- | --------------------------------------------------------- |
+| `--view`          | `projects` \| `tasks` | `projects` | Choose project graph or task graph                        |
+| `--targets`       | string                |            | Target(s) to show in task graph view                      |
+| `--focus`         | string                |            | Center on a project and its ancestors/descendants         |
+| `--exclude`       | string                |            | Hide specific projects                                    |
+| `--affected`      | boolean               |            | Highlight affected projects                               |
+| `--groupByFolder` | boolean               |            | Group project nodes by directory                          |
+| `--file`          | string                |            | Output to file: `.json` for data, `.html` for static site |
+| `--print`         | boolean               |            | Print full graph as JSON to stdout                        |
+| `--watch`         | boolean               | `true`     | Auto-refresh browser as files change                      |
+| `--open`          | boolean               | `true`     | Auto-open browser                                         |
+| `--host`          | string                |            | Bind graph server to specific IP address                  |
+| `--port`          | number                |            | Bind graph server to specific port                        |
+| `--base`          | string                |            | Base git ref for affected calculation                     |
+| `--head`          | string                |            | Head git ref for affected calculation                     |
+| `--files`         | string                |            | Explicit file list for affected calculation               |
+| `--uncommitted`   | boolean               |            | Include uncommitted changes in affected                   |
+| `--untracked`     | boolean               |            | Include untracked changes in affected                     |
+| `--verbose`       | boolean               |            | Print additional information (e.g., stack traces)         |
 
 The `--print` JSON output includes the full project graph with nodes (project name, type, root, targets, tags) and dependencies between them.
 
@@ -214,6 +217,7 @@ nx run-many -t lint test build --graph    # combined task graph for multiple tar
 ```
 
 Clicking task nodes in the graph shows:
+
 - Which executor runs the task
 - Which inputs are used for the computation hash
 - A link to the project's full configuration
@@ -231,12 +235,12 @@ nx show project my-app --web --open=false # generate web view but don't open bro
 
 All flags:
 
-| Flag | Type | Default | Description |
-|---|---|---|---|
-| `--json` | boolean | | Output as JSON |
-| `--web` | boolean | `true` (interactive) | Show in browser |
-| `--open` | boolean | | Auto-open browser when using `--web` |
-| `--verbose` | boolean | | Additional information (e.g., stack traces) |
+| Flag        | Type    | Default              | Description                                 |
+| ----------- | ------- | -------------------- | ------------------------------------------- |
+| `--json`    | boolean |                      | Output as JSON                              |
+| `--web`     | boolean | `true` (interactive) | Show in browser                             |
+| `--open`    | boolean |                      | Auto-open browser when using `--web`        |
+| `--verbose` | boolean |                      | Additional information (e.g., stack traces) |
 
 Example output (JSON) shows: `root`, `name`, `projectType`, `sourceRoot`, `prefix`, `tags`, `implicitDependencies`, `targets` (with executor, options, configurations, inputs, outputs, dependsOn, cache, parallelism), and `metadata`.
 
@@ -276,21 +280,21 @@ nx show projects --type lib --with-target test --projects='tag:scope:shared'
 
 All flags:
 
-| Flag | Type | Default | Description |
-|---|---|---|---|
-| `--json` | boolean | | Output as JSON array |
-| `-p`, `--projects` | string | | Filter by glob pattern or `tag:` prefix |
-| `-t`, `--withTarget` | string | | Only projects that have a specific target |
-| `--type` | `app` \| `lib` \| `e2e` | | Filter by project type |
-| `--affected` | boolean | | Show only affected projects |
-| `--exclude` | string | | Exclude projects matching pattern |
-| `--sep` | string | `\n` | Output separator (e.g., `,` for comma-separated) |
-| `--base` | string | | Base git ref for affected calculation |
-| `--head` | string | | Head git ref for affected calculation |
-| `--files` | string | | Explicit file list for affected calculation |
-| `--uncommitted` | boolean | | Include uncommitted changes in affected |
-| `--untracked` | boolean | | Include untracked changes in affected |
-| `--verbose` | boolean | | Additional information |
+| Flag                 | Type                    | Default | Description                                      |
+| -------------------- | ----------------------- | ------- | ------------------------------------------------ |
+| `--json`             | boolean                 |         | Output as JSON array                             |
+| `-p`, `--projects`   | string                  |         | Filter by glob pattern or `tag:` prefix          |
+| `-t`, `--withTarget` | string                  |         | Only projects that have a specific target        |
+| `--type`             | `app` \| `lib` \| `e2e` |         | Filter by project type                           |
+| `--affected`         | boolean                 |         | Show only affected projects                      |
+| `--exclude`          | string                  |         | Exclude projects matching pattern                |
+| `--sep`              | string                  | `\n`    | Output separator (e.g., `,` for comma-separated) |
+| `--base`             | string                  |         | Base git ref for affected calculation            |
+| `--head`             | string                  |         | Head git ref for affected calculation            |
+| `--files`            | string                  |         | Explicit file list for affected calculation      |
+| `--uncommitted`      | boolean                 |         | Include uncommitted changes in affected          |
+| `--untracked`        | boolean                 |         | Include untracked changes in affected            |
+| `--verbose`          | boolean                 |         | Additional information                           |
 
 Useful scripting patterns:
 
@@ -374,23 +378,23 @@ Cache Usage: 0.00 B / 28.54 GB
 
 #### Quick Reference: Which Command When?
 
-| I want to... | Command |
-|---|---|
-| See all projects | `nx show projects` |
-| See only apps / libs / e2e | `nx show projects --type app` |
-| See projects with a specific target | `nx show projects --with-target serve` |
-| See affected projects | `nx show projects --affected` |
-| See full config for one project | `nx show project my-app` |
-| See project config in browser | `nx show project my-app --web` |
-| Visualize project dependencies | `nx graph` |
-| Visualize one project's dependency tree | `nx graph --focus=my-app` |
-| Visualize which projects are affected | `nx graph --affected` |
-| Visualize task execution order | `nx graph --view=tasks --targets=build` |
-| Preview task graph for a specific command | `nx build my-app --graph` |
-| Export graph data for tooling | `nx graph --print` or `nx graph --file=out.json` |
-| See installed plugins and capabilities | `nx list` |
-| See generators for a plugin | `nx list @nx/angular` |
-| Get version info for bug report | `nx report` |
+| I want to...                              | Command                                          |
+| ----------------------------------------- | ------------------------------------------------ |
+| See all projects                          | `nx show projects`                               |
+| See only apps / libs / e2e                | `nx show projects --type app`                    |
+| See projects with a specific target       | `nx show projects --with-target serve`           |
+| See affected projects                     | `nx show projects --affected`                    |
+| See full config for one project           | `nx show project my-app`                         |
+| See project config in browser             | `nx show project my-app --web`                   |
+| Visualize project dependencies            | `nx graph`                                       |
+| Visualize one project's dependency tree   | `nx graph --focus=my-app`                        |
+| Visualize which projects are affected     | `nx graph --affected`                            |
+| Visualize task execution order            | `nx graph --view=tasks --targets=build`          |
+| Preview task graph for a specific command | `nx build my-app --graph`                        |
+| Export graph data for tooling             | `nx graph --print` or `nx graph --file=out.json` |
+| See installed plugins and capabilities    | `nx list`                                        |
+| See generators for a plugin               | `nx list @nx/angular`                            |
+| Get version info for bug report           | `nx report`                                      |
 
 ### Code Generation
 
@@ -418,6 +422,7 @@ nx format:write --base=main --head=HEAD   # only changed files
 ```
 
 Key flags:
+
 - `--all` -- check/format all projects
 - `--base` / `--head` -- only files changed in the given range
 - `--files` -- explicit list of files
@@ -450,6 +455,7 @@ nx watch --projects=my-lib --initialRun -- nx build my-lib
 ```
 
 Key flags:
+
 - `--projects` / `-p` -- projects to watch
 - `--all` -- watch all projects (including newly created ones)
 - `--includeDependentProjects` / `-d` -- also watch dependent projects
@@ -457,6 +463,7 @@ Key flags:
 - `--verbose` -- log commands before executing them
 
 Environment variables available in the command:
+
 - `$NX_PROJECT_NAME` -- the project that triggered the watch
 - `$NX_FILE_CHANGES` -- space-separated list of changed files
 
@@ -477,6 +484,7 @@ nx add non-core-nx-plugin             # community plugin at latest
 ```
 
 Key flags:
+
 - `--updatePackageScripts` -- update `package.json` scripts with inferred targets (default `true` for core plugins)
 
 ### Migrations & Upgrades
@@ -495,6 +503,7 @@ nx migrate latest --from=nx@19.8.0 --exclude-applied-migrations
 ```
 
 Key flags:
+
 - `--from` -- override the detected starting version
 - `--to` -- override target version for specific packages
 - `--runMigrations` -- execute migrations from file (default `migrations.json`)
@@ -504,6 +513,7 @@ Key flags:
 - `--excludeAppliedMigrations` -- skip already-applied migrations
 
 Workflow:
+
 1. `nx migrate latest` -- generates `migrations.json`
 2. Review the file manually
 3. `nx migrate --run-migrations` -- apply the changes
@@ -544,6 +554,7 @@ nx import --ref=main --depth=100
 ```
 
 Key flags:
+
 - `--sourceRepository` -- remote URL of the source repo
 - `--sourceDirectory` / `--source` -- subdirectory in the source repo to import
 - `--destinationDirectory` / `--destination` -- target directory in the current workspace
@@ -552,6 +563,7 @@ Key flags:
 - `--interactive` -- interactive mode (default `true`)
 
 What it does:
+
 1. Clones the source repository (optionally with limited depth)
 2. Rewrites git history to place source files under the destination directory
 3. Merges the rewritten history into the current repo
@@ -587,12 +599,14 @@ nx release                              # run all three phases
 ```
 
 Shared flags:
+
 - `--dry-run` / `-d` -- preview without writing or publishing
 - `--groups` / `-g` -- target specific release groups
 - `--projects` / `-p` -- target specific projects
 - `--printConfig` -- print resolved release config and exit
 
 Configuration in `nx.json`:
+
 ```json
 {
   "release": {
@@ -622,6 +636,7 @@ nx release version prerelease --preid=alpha
 ```
 
 Key flags:
+
 - `--specifier` -- semver keyword (`major`, `minor`, `patch`, `prerelease`) or exact version
 - `--preid` -- pre-release identifier (e.g., `alpha`, `beta`)
 - `--first-release` -- skip checks requiring previous git tag
@@ -637,6 +652,7 @@ nx release changelog --interactive=all       # edit before writing
 ```
 
 Key flags:
+
 - `--from` / `--to` -- git ref range
 - `--interactive` / `-i` -- edit changelog in editor before applying (`all`, `workspace`, `projects`)
 - `--git-commit`, `--git-tag`, `--git-push` -- automate git ops
@@ -652,6 +668,7 @@ nx release publish --registry=https://my-registry.example.com
 ```
 
 Key flags:
+
 - `--registry` -- override target registry URL
 - `--tag` -- npm dist-tag (e.g., `latest`, `next`)
 - `--access` -- `public` or `restricted`
@@ -667,6 +684,7 @@ nx release plan:check                   # CI: verify every touched project has a
 ```
 
 Key flags:
+
 - `--bump` -- `major`, `minor`, `patch`, etc.
 - `--message` / `-m` -- custom changelog entry text
 - `--onlyTouched` -- only include projects changed by the current diff (default `true`)
@@ -680,6 +698,7 @@ Introduced in Nx 19.
 Introduced in Nx 21.0. Interactive terminal interface showing multiple running tasks in a split-pane view. Default output mode for local development from Nx 21 onward. **Windows support added in Nx 22.1.**
 
 Features:
+
 - Split-pane view: running tasks list + selected task's log output
 - Arrow keys or Vim-style `h/j/k/l` navigation between tasks
 - Press `?` for keyboard shortcut help
@@ -689,6 +708,7 @@ Features:
 - Live task duration estimates (Nx 21.3/21.4)
 
 Configuration in `nx.json`:
+
 ```json
 {
   "tui": {
@@ -699,6 +719,7 @@ Configuration in `nx.json`:
 ```
 
 Per-command control:
+
 ```bash
 nx run-many -t build --no-tui         # disable TUI for this run
 nx run-many -t build --tui            # force enable TUI
@@ -745,6 +766,7 @@ nx configure-ai-agents --check=outdated              # check for outdated config
 Supported agents: `claude`, `codex`, `copilot`, `cursor`, `gemini`, `opencode`.
 
 What it configures:
+
 - Agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.)
 - Agent skills (workspace exploration, code generation, task execution, CI monitoring)
 - MCP server configuration
@@ -764,6 +786,7 @@ npx nx-mcp@latest
 ```
 
 Options:
+
 ```bash
 nx mcp --transport sse --port 9921   # HTTP/SSE transport instead of stdio
 nx mcp --tools "*" "!nx_docs"        # exclude specific tools
@@ -773,11 +796,13 @@ nx mcp [workspacePath]               # specify workspace root
 ```
 
 Manual configuration for Claude Code:
+
 ```bash
 claude mcp add nx-mcp npx nx mcp
 ```
 
 Via `.mcp.json`:
+
 ```json
 {
   "servers": {
@@ -793,6 +818,7 @@ Via `.mcp.json`:
 ### MCP Server Tools
 
 **Default tools (minimal mode, Nx 22+):**
+
 - `nx_docs` -- retrieve up-to-date Nx documentation sections
 - `nx_current_running_tasks_details` -- list running TUI processes and task statuses
 - `nx_current_running_task_output` -- retrieve output of a specific running task
@@ -802,6 +828,7 @@ Via `.mcp.json`:
 - `cloud_analytics_*` -- analytics tools for pipeline execution history
 
 **Extended tools (with `--no-minimal`):**
+
 - `nx_workspace` -- project graph and `nx.json` overview
 - `nx_workspace_path` -- workspace root path
 - `nx_project_details` -- full project configuration JSON
@@ -823,6 +850,7 @@ Nx Cloud analyzes failing CI tasks and proposes fixes. The workflow:
 5. Fix is pushed and CI re-runs
 
 Configuration in CI:
+
 ```bash
 npx nx-cloud start-ci-run \
   --fix-tasks="*lint*,*format*" \
@@ -830,6 +858,7 @@ npx nx-cloud start-ci-run \
 ```
 
 Commands:
+
 ```bash
 nx apply-locally     # apply self-healing fix to local working tree
 nx fix-ci            # alias for nx-cloud fix-ci
@@ -848,10 +877,12 @@ nx connect                 # connect workspace to Nx Cloud
 ```
 
 Config file locations:
+
 - macOS/Linux: `$HOME/config/nxcloud/nxcloud.ini` or `$HOME/.nxcloud.ini`
 - Windows: `%LOCALAPPDATA%/nxcloud/nxcloud.ini`
 
 Non-interactive authentication:
+
 ```bash
 npx nx-cloud configure --personalAccessToken=<token>
 ```
@@ -868,6 +899,7 @@ npx nx-cloud start-ci-run --distribute-on="8 linux-medium-js" --stop-agents-afte
 ```
 
 Key flags:
+
 - `--distribute-on` -- agent configuration: `"8 linux-medium-js"` or path to YAML
 - `--stop-agents-after` -- targets that signal when to terminate agents
 - `--stop-agents-on-failure` -- terminate agents on failure (default `true`)
@@ -902,6 +934,7 @@ Nx Agents are ephemeral CI machines managed by Nx Cloud. They start when `start-
 ```
 
 Dynamic scaling via YAML:
+
 ```yaml
 # .nx/workflows/dynamic-changesets.yaml
 distribute-on:
@@ -915,12 +948,14 @@ npx nx-cloud start-ci-run --distribute-on=".nx/workflows/dynamic-changesets.yaml
 ```
 
 Per-command distribution control:
+
 ```bash
 nx affected -t build --agents      # enable distribution for this command
 nx affected -t build --no-agents   # disable distribution for this command
 ```
 
 Manual distributed task execution (self-managed agents):
+
 ```bash
 # Main job
 npx nx-cloud start-ci-run --distribute-on=manual
@@ -998,21 +1033,21 @@ HTTP-based self-hosted caching (added in Nx 20.8): Teams can run their own remot
 
 ### Breaking Changes for 19.8 to 22.x Upgrade
 
-| Change | Version | Action Required |
-|---|---|---|
-| `@nrwl/*` packages removed | Nx 20 | Replace all `@nrwl/*` with `@nx/*` |
-| `useLegacyCache` removed | Nx 21 | Remove from `nx.json`; database cache is mandatory |
-| `createNodesV1` removed | Nx 21 | Migrate custom plugins to `createNodesV2` |
-| Custom task runner API removed | Nx 21 | Migrate to `preTasksExecution`/`postTaskExecution` hooks |
-| Node minimum raised to 20.19 | Nx 21 | Upgrade Node.js |
-| `NX_DISABLE_DB` removed | Nx 22 | Remove from env |
-| Legacy `nx release` versioning removed | Nx 22 | Cannot use `useLegacyVersioning: true` |
-| `simpleName` generator option removed | Nx 22 | Update scripts using this flag |
-| `useLegacyTypescriptPlugin` defaults `false` | Nx 22 | Test TS project graph behavior |
-| `--legacy-peer-deps` no longer forced by npm | Nx 22 | Add to `.npmrc` if deps require it |
-| `outputStyle=compact` removed | Nx 21 | Switch to `static`, `stream`, or `tui` |
-| Angular 17 support removed | Nx 21.2 | Must be on Angular 18+ |
-| Migrations prior to Nx 20 removed | Nx 22 | Must run `nx migrate` sequentially |
+| Change                                       | Version | Action Required                                          |
+| -------------------------------------------- | ------- | -------------------------------------------------------- |
+| `@nrwl/*` packages removed                   | Nx 20   | Replace all `@nrwl/*` with `@nx/*`                       |
+| `useLegacyCache` removed                     | Nx 21   | Remove from `nx.json`; database cache is mandatory       |
+| `createNodesV1` removed                      | Nx 21   | Migrate custom plugins to `createNodesV2`                |
+| Custom task runner API removed               | Nx 21   | Migrate to `preTasksExecution`/`postTaskExecution` hooks |
+| Node minimum raised to 20.19                 | Nx 21   | Upgrade Node.js                                          |
+| `NX_DISABLE_DB` removed                      | Nx 22   | Remove from env                                          |
+| Legacy `nx release` versioning removed       | Nx 22   | Cannot use `useLegacyVersioning: true`                   |
+| `simpleName` generator option removed        | Nx 22   | Update scripts using this flag                           |
+| `useLegacyTypescriptPlugin` defaults `false` | Nx 22   | Test TS project graph behavior                           |
+| `--legacy-peer-deps` no longer forced by npm | Nx 22   | Add to `.npmrc` if deps require it                       |
+| `outputStyle=compact` removed                | Nx 21   | Switch to `static`, `stream`, or `tui`                   |
+| Angular 17 support removed                   | Nx 21.2 | Must be on Angular 18+                                   |
+| Migrations prior to Nx 20 removed            | Nx 22   | Must run `nx migrate` sequentially                       |
 
 ---
 
@@ -1048,8 +1083,14 @@ libs/
   "plugins": [
     { "plugin": "@nx/playwright/plugin", "options": { "targetName": "e2e" } },
     { "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } },
-    { "plugin": "@nx/docker", "options": { "buildTarget": "docker:build", "runTarget": "docker:run" } },
-    { "plugin": "@nx/vite/plugin", "options": { "buildTargetName": "build", "serveTargetName": "serve" } },
+    {
+      "plugin": "@nx/docker",
+      "options": { "buildTarget": "docker:build", "runTarget": "docker:run" }
+    },
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": { "buildTargetName": "build", "serveTargetName": "serve" }
+    },
     { "plugin": "@nx/vitest", "options": { "testTargetName": "vite:test" } }
   ]
 }
@@ -1091,7 +1132,17 @@ scope:api     -> can depend on: [scope:api, scope:shared]
 Returns a **flat JSON array of project name strings**. No objects, no metadata -- just names.
 
 ```json
-["feature-product-detail","feature-products","shared-ui","models","products","data","shop-e2e","shop","api"]
+[
+  "feature-product-detail",
+  "feature-products",
+  "shared-ui",
+  "models",
+  "products",
+  "data",
+  "shop-e2e",
+  "shop",
+  "api"
+]
 ```
 
 **Verified:** Sandbox output (9 projects). The array order is deterministic within a single workspace but is not alphabetically sorted -- it follows the order Nx discovers projects (plugin inference order).
@@ -1106,40 +1157,40 @@ Returns a **flat JSON object** with the fully resolved project configuration. Th
 
 **Guaranteed keys** (present on every project):
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `root` | `string` | Relative path from workspace root (e.g., `"apps/shop"`, `"libs/shared/models"`) |
-| `name` | `string` | Project name as registered in the graph |
-| `projectType` | `"application"` \| `"library"` | Nx project type. Note: e2e projects have `projectType: "application"`, not `"e2e"` |
-| `sourceRoot` | `string` | Source directory (e.g., `"apps/shop/src"`) |
-| `targets` | `object` | Map of target name -> target configuration |
-| `tags` | `string[]` | Project tags (e.g., `["scope:shop"]`). Empty array if no tags. |
-| `metadata` | `object` | Plugin-generated metadata. Can be empty `{}` or contain `targetGroups`, `js`, etc. |
-| `$schema` | `string` | Path to the project JSON schema (e.g., `"../../node_modules/nx/schemas/project-schema.json"`) |
-| `implicitDependencies` | `string[]` | Explicitly declared dependencies. Empty array if none. |
+| Key                    | Type                           | Description                                                                                   |
+| ---------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
+| `root`                 | `string`                       | Relative path from workspace root (e.g., `"apps/shop"`, `"libs/shared/models"`)               |
+| `name`                 | `string`                       | Project name as registered in the graph                                                       |
+| `projectType`          | `"application"` \| `"library"` | Nx project type. Note: e2e projects have `projectType: "application"`, not `"e2e"`            |
+| `sourceRoot`           | `string`                       | Source directory (e.g., `"apps/shop/src"`)                                                    |
+| `targets`              | `object`                       | Map of target name -> target configuration                                                    |
+| `tags`                 | `string[]`                     | Project tags (e.g., `["scope:shop"]`). Empty array if no tags.                                |
+| `metadata`             | `object`                       | Plugin-generated metadata. Can be empty `{}` or contain `targetGroups`, `js`, etc.            |
+| `$schema`              | `string`                       | Path to the project JSON schema (e.g., `"../../node_modules/nx/schemas/project-schema.json"`) |
+| `implicitDependencies` | `string[]`                     | Explicitly declared dependencies. Empty array if none.                                        |
 
 **Optional keys** (present only on some projects):
 
-| Key | Type | When Present | Example |
-|-----|------|-------------|---------|
-| `prefix` | `string` | Angular projects with component prefix | `"app"`, `"lib"`, `"shop"` |
-| `release` | `object` | Projects with release configuration | `{ "docker": { "repositoryName": "..." } }` |
+| Key       | Type     | When Present                           | Example                                     |
+| --------- | -------- | -------------------------------------- | ------------------------------------------- |
+| `prefix`  | `string` | Angular projects with component prefix | `"app"`, `"lib"`, `"shop"`                  |
+| `release` | `object` | Projects with release configuration    | `{ "docker": { "repositoryName": "..." } }` |
 
 **Target configuration schema** (each entry in `targets`):
 
 ```typescript
 interface TargetConfiguration {
-  executor: string;               // always present (e.g., "@angular/build:application", "nx:run-commands")
-  options: object;                // always present, may be empty {}
-  configurations: object;         // always present, map of config name -> overrides, may be empty {}
-  parallelism: boolean;           // always present
-  cache?: boolean;                // present on cacheable targets
+  executor: string; // always present (e.g., "@angular/build:application", "nx:run-commands")
+  options: object; // always present, may be empty {}
+  configurations: object; // always present, map of config name -> overrides, may be empty {}
+  parallelism: boolean; // always present
+  cache?: boolean; // present on cacheable targets
   inputs?: Array<string | object>; // cache input patterns
-  outputs?: string[];             // cache output paths
+  outputs?: string[]; // cache output paths
   dependsOn?: Array<string | object>; // task dependencies
-  defaultConfiguration?: string;  // e.g., "production"
-  continuous?: boolean;           // Nx 21+: long-running tasks (serve, watch)
-  metadata?: object;              // description, technologies, help
+  defaultConfiguration?: string; // e.g., "production"
+  continuous?: boolean; // Nx 21+: long-running tasks (serve, watch)
+  metadata?: object; // description, technologies, help
 }
 ```
 
@@ -1234,14 +1285,14 @@ interface GraphOutput {
 
 ```typescript
 interface GraphNode {
-  name: string;           // project name
-  type: "app" | "lib" | "e2e";  // Nx project type (e2e IS a distinct type here)
+  name: string; // project name
+  type: 'app' | 'lib' | 'e2e'; // Nx project type (e2e IS a distinct type here)
   data: {
-    root: string;                    // same as nx show project root
+    root: string; // same as nx show project root
     targets: Record<string, object>; // full target configs (same schema as nx show project)
-    metadata: object;                // same as nx show project metadata
-    projectType: "application" | "library"; // same as nx show project projectType
-    name: string;                    // redundant with parent .name
+    metadata: object; // same as nx show project metadata
+    projectType: 'application' | 'library'; // same as nx show project projectType
+    name: string; // redundant with parent .name
     sourceRoot: string;
     tags: string[];
     implicitDependencies: string[];
@@ -1258,13 +1309,14 @@ interface GraphNode {
 
 ```typescript
 interface DependencyEdge {
-  source: string;  // source project name
-  target: string;  // target project name
-  type: "static" | "dynamic" | "implicit";
+  source: string; // source project name
+  target: string; // target project name
+  type: 'static' | 'dynamic' | 'implicit';
 }
 ```
 
 Dependency types:
+
 - `static` -- direct import statements (`import { X } from '@org/lib'`)
 - `dynamic` -- dynamic imports (`import('@org/lib')`, lazy-loaded routes)
 - `implicit` -- declared in `implicitDependencies` (e.g., e2e -> app)
@@ -1324,6 +1376,7 @@ Dependency types:
 ```
 
 **What is NOT in `--print` output:**
+
 - `externalNodes` -- npm dependency information is excluded from CLI output. The `ProjectGraph` TypeScript type marks it as optional, and both `--print` and `--file=output.json` omit it. Verified against Nx 22.3.
 - `version` -- no graph format version number is included
 - Affected metadata -- `--print` does not accept `--affected` filtering. Use `nx show projects --affected` separately.
@@ -1363,7 +1416,9 @@ Alternatively, the indexer can use `nx graph --print` as the sole data source (i
       "@org/api/products": ["libs/api/products/src/index.ts"],
       "@org/models": ["libs/shared/models/src/index.ts"],
       "@org/shop/data": ["libs/shop/data/src/index.ts"],
-      "@org/shop/feature-product-detail": ["libs/shop/feature-product-detail/src/index.ts"],
+      "@org/shop/feature-product-detail": [
+        "libs/shop/feature-product-detail/src/index.ts"
+      ],
       "@org/shop/feature-products": ["libs/shop/feature-products/src/index.ts"],
       "@org/shop/shared-ui": ["libs/shop/shared-ui/src/index.ts"]
     }
@@ -1376,14 +1431,14 @@ Alternatively, the indexer can use `nx graph --print` as the sole data source (i
 
 Each path alias maps to exactly one project's barrel export file (`src/index.ts`). The alias path can be matched to a project by comparing the alias value against project `sourceRoot` values:
 
-| Alias | Alias Value | Matching Project | sourceRoot |
-|-------|-------------|-----------------|------------|
-| `@org/api/products` | `libs/api/products/src/index.ts` | `products` | `libs/api/products/src` |
-| `@org/models` | `libs/shared/models/src/index.ts` | `models` | `libs/shared/models/src` |
-| `@org/shop/data` | `libs/shop/data/src/index.ts` | `data` | `libs/shop/data/src` |
+| Alias                              | Alias Value                                     | Matching Project         | sourceRoot                             |
+| ---------------------------------- | ----------------------------------------------- | ------------------------ | -------------------------------------- |
+| `@org/api/products`                | `libs/api/products/src/index.ts`                | `products`               | `libs/api/products/src`                |
+| `@org/models`                      | `libs/shared/models/src/index.ts`               | `models`                 | `libs/shared/models/src`               |
+| `@org/shop/data`                   | `libs/shop/data/src/index.ts`                   | `data`                   | `libs/shop/data/src`                   |
 | `@org/shop/feature-product-detail` | `libs/shop/feature-product-detail/src/index.ts` | `feature-product-detail` | `libs/shop/feature-product-detail/src` |
-| `@org/shop/feature-products` | `libs/shop/feature-products/src/index.ts` | `feature-products` | `libs/shop/feature-products/src` |
-| `@org/shop/shared-ui` | `libs/shop/shared-ui/src/index.ts` | `shared-ui` | `libs/shop/shared-ui/src` |
+| `@org/shop/feature-products`       | `libs/shop/feature-products/src/index.ts`       | `feature-products`       | `libs/shop/feature-products/src`       |
+| `@org/shop/shared-ui`              | `libs/shop/shared-ui/src/index.ts`              | `shared-ui`              | `libs/shop/shared-ui/src`              |
 
 **Algorithm for path-resolver.mjs:**
 
@@ -1393,6 +1448,7 @@ Each path alias maps to exactly one project's barrel export file (`src/index.ts`
 4. Build a bidirectional map: `alias -> project name` and `project name -> alias`
 
 **Edge cases:**
+
 - An alias value is always an array (TypeScript allows multiple resolution paths). Nx generates exactly one entry per alias. Use `paths[alias][0]`.
 - The `baseUrl` is `"."` (workspace root). All alias paths are relative to workspace root.
 - Not all projects have aliases. Applications (`apps/`) typically do not appear in `paths`. Only libraries that are imported by other projects need aliases.
@@ -1408,30 +1464,30 @@ In workspaces using TypeScript project references (`"references"` in `tsconfig.j
 
 #### Measured Timings (Daemon Running)
 
-| Command | Sandbox (9 projects) | Extrapolated (537 projects) |
-|---------|---------------------|----------------------------|
-| `nx show projects --json` | **2.2s** | ~2.5-3s (output scales linearly, graph calc is constant with daemon) |
-| `nx show project <name> --json` | **2.1s per project** | ~2-3s per project (constant per call, but N calls needed) |
-| `nx show project` x all projects | **19.6s total** (9 x 2.2s) | **~18-27 min total** (537 x 2-3s). UNACCEPTABLE. |
-| `nx graph --print` | **3.8s** | ~5-15s (graph size scales, but graph calc is daemon-cached) |
+| Command                          | Sandbox (9 projects)       | Extrapolated (537 projects)                                          |
+| -------------------------------- | -------------------------- | -------------------------------------------------------------------- |
+| `nx show projects --json`        | **2.2s**                   | ~2.5-3s (output scales linearly, graph calc is constant with daemon) |
+| `nx show project <name> --json`  | **2.1s per project**       | ~2-3s per project (constant per call, but N calls needed)            |
+| `nx show project` x all projects | **19.6s total** (9 x 2.2s) | **~18-27 min total** (537 x 2-3s). UNACCEPTABLE.                     |
+| `nx graph --print`               | **3.8s**                   | ~5-15s (graph size scales, but graph calc is daemon-cached)          |
 
 #### Measured Timings (Daemon Disabled, `NX_DAEMON=false`)
 
-| Command | Sandbox (9 projects) | Overhead vs Daemon |
-|---------|---------------------|-------------------|
-| `nx show projects --json` | **3.7s** | +1.5s (+68%) |
-| `nx show project <name> --json` | **4.8s** | +2.7s (+129%) |
-| `nx graph --print` | **5.3s** | +1.5s (+40%) |
+| Command                         | Sandbox (9 projects) | Overhead vs Daemon |
+| ------------------------------- | -------------------- | ------------------ |
+| `nx show projects --json`       | **3.7s**             | +1.5s (+68%)       |
+| `nx show project <name> --json` | **4.8s**             | +2.7s (+129%)      |
+| `nx graph --print`              | **5.3s**             | +1.5s (+40%)       |
 
 **Conclusion: The daemon provides 40-130% speedup.** The daemon must be running for acceptable programmatic performance. On cold start (first invocation after `nx reset`), expect an additional 3-10s for graph computation.
 
 #### Output Size
 
-| Command | Sandbox (9 projects) | Extrapolated (537 projects) |
-|---------|---------------------|----------------------------|
-| `nx show projects --json` | ~110 bytes | ~15KB |
-| `nx show project <name> --json` | 2-7KB per project | same (per project) |
-| `nx graph --print` | **63KB** | **2-4MB** |
+| Command                         | Sandbox (9 projects) | Extrapolated (537 projects) |
+| ------------------------------- | -------------------- | --------------------------- |
+| `nx show projects --json`       | ~110 bytes           | ~15KB                       |
+| `nx show project <name> --json` | 2-7KB per project    | same (per project)          |
+| `nx graph --print`              | **63KB**             | **2-4MB**                   |
 
 #### maxBuffer for child_process.execSync
 
@@ -1439,16 +1495,16 @@ Node.js `execSync` default `maxBuffer` is **1MB** (1,048,576 bytes). For `nx gra
 
 **Required `maxBuffer` settings:**
 
-| Command | Recommended maxBuffer |
-|---------|----------------------|
-| `nx show projects --json` | Default (1MB) is fine |
-| `nx show project <name> --json` | Default (1MB) is fine |
-| `nx graph --print` | **10MB** (`10 * 1024 * 1024`) for safety margin |
+| Command                         | Recommended maxBuffer                           |
+| ------------------------------- | ----------------------------------------------- |
+| `nx show projects --json`       | Default (1MB) is fine                           |
+| `nx show project <name> --json` | Default (1MB) is fine                           |
+| `nx graph --print`              | **10MB** (`10 * 1024 * 1024`) for safety margin |
 
 ```javascript
 // In nx-runner.mjs:
 const output = execSync('nx graph --print', {
-  maxBuffer: 10 * 1024 * 1024,  // 10MB
+  maxBuffer: 10 * 1024 * 1024, // 10MB
   encoding: 'utf8',
   cwd: workspaceRoot,
 });
@@ -1470,15 +1526,16 @@ If `nx graph --print` is used as the sole source, the N+1 pattern (`show project
 
 #### Exit Code Behavior
 
-| Condition | Exit Code | Stdout | Stderr |
-|-----------|-----------|--------|--------|
-| Success | `0` | JSON data | Empty |
-| Project not found | `1` | Error message (NOT stderr) | Empty |
-| Invalid flag value | `1` | Empty | Usage help + error details |
-| Invalid git ref (--affected --base=...) | `1` | Error message with git error (NOT stderr) | Empty |
-| Nx not installed / not in workspace | `1` | Varies | Varies |
+| Condition                               | Exit Code | Stdout                                    | Stderr                     |
+| --------------------------------------- | --------- | ----------------------------------------- | -------------------------- |
+| Success                                 | `0`       | JSON data                                 | Empty                      |
+| Project not found                       | `1`       | Error message (NOT stderr)                | Empty                      |
+| Invalid flag value                      | `1`       | Empty                                     | Usage help + error details |
+| Invalid git ref (--affected --base=...) | `1`       | Error message with git error (NOT stderr) | Empty                      |
+| Nx not installed / not in workspace     | `1`       | Varies                                    | Varies                     |
 
 **CRITICAL: Nx writes most error messages to stdout, not stderr.** The workspace-indexer cannot rely on stderr for error detection. It must check:
+
 1. Exit code (non-zero = error)
 2. Whether stdout parses as valid JSON (success case)
 3. If stdout is not valid JSON on exit code 0, treat as unexpected error
@@ -1486,19 +1543,24 @@ If `nx graph --print` is used as the sole source, the N+1 pattern (`show project
 #### Specific Error Messages
 
 **Project not found:**
+
 ```
 Could not find project nonexistent-project
 ```
+
 Exit code: 1. Written to stdout. Stderr is empty.
 
 **Invalid type filter:**
+
 ```
 Invalid values:
   Argument: type, Given: "badtype", Choices: "app", "lib", "e2e"
 ```
+
 Exit code: 1. Written to stderr (along with full usage help).
 
 **Invalid git ref for affected calculation:**
+
 ```
  NX   Command failed: git diff --name-only --no-renames --relative "nonexistent-branch" "HEAD"
 
@@ -1508,6 +1570,7 @@ Use '--' to separate paths from revisions, like this:
 
 Pass --verbose to see the stacktrace.
 ```
+
 Exit code: 1. Written to stdout (not stderr).
 
 **Daemon not running:**
@@ -1539,7 +1602,10 @@ function runNxCommand(command, options = {}) {
         return { data: JSON.parse(stdout), error: null };
       } catch {
         // Exit code 0 but non-JSON output -- unexpected
-        return { data: null, error: `Unexpected non-JSON output: ${stdout.slice(0, 200)}` };
+        return {
+          data: null,
+          error: `Unexpected non-JSON output: ${stdout.slice(0, 200)}`,
+        };
       }
     }
 
@@ -1561,14 +1627,14 @@ function runNxCommand(command, options = {}) {
 
 These environment variables ensure reliable, predictable output for programmatic consumption:
 
-| Variable | Value | Why |
-|----------|-------|-----|
-| `NX_DAEMON` | `true` | Ensure daemon is used for performance. Only set `false` for debugging. |
-| `NX_TUI` | `false` | **CRITICAL.** Prevents TUI mode which corrupts stdout with escape sequences. |
-| `NX_DEFAULT_OUTPUT_STYLE` | `static` | Fallback if TUI env is ignored; prevents dynamic output interleaving. |
-| `NX_INTERACTIVE` | `false` | Prevents interactive prompts that would hang the child process. |
-| `NX_NO_CLOUD` | `true` | Skip Nx Cloud connectivity checks (faster cold starts, no network dependency). |
-| `NX_SKIP_NX_CACHE` | `false` | Allow caching for repeated graph computations. Leave at default unless debugging. |
+| Variable                  | Value    | Why                                                                               |
+| ------------------------- | -------- | --------------------------------------------------------------------------------- |
+| `NX_DAEMON`               | `true`   | Ensure daemon is used for performance. Only set `false` for debugging.            |
+| `NX_TUI`                  | `false`  | **CRITICAL.** Prevents TUI mode which corrupts stdout with escape sequences.      |
+| `NX_DEFAULT_OUTPUT_STYLE` | `static` | Fallback if TUI env is ignored; prevents dynamic output interleaving.             |
+| `NX_INTERACTIVE`          | `false`  | Prevents interactive prompts that would hang the child process.                   |
+| `NX_NO_CLOUD`             | `true`   | Skip Nx Cloud connectivity checks (faster cold starts, no network dependency).    |
+| `NX_SKIP_NX_CACHE`        | `false`  | Allow caching for repeated graph computations. Leave at default unless debugging. |
 
 **Recommended env block for nx-runner.mjs:**
 
@@ -1582,33 +1648,33 @@ const NX_ENV = {
 
 #### Variables That Affect JSON Output
 
-| Variable | Effect |
-|----------|--------|
-| `NX_TUI` | If `true` (default on local dev), Nx may activate TUI mode for task-running commands. Does NOT affect `show` or `graph` commands but should be disabled for safety. |
-| `NX_VERBOSE_LOGGING` | If `true`, adds debug logging to stderr. Does NOT corrupt stdout JSON. Safe to enable for debugging. |
-| `NX_PERF_LOGGING` | If `true`, adds timing measurements to stderr via `console.log`. May interleave with stdout on Windows. Avoid in production. |
-| `NX_DEFAULT_OUTPUT_STYLE` | Affects task-running commands only (`run`, `run-many`, `affected`). Does not affect `show` or `graph`. |
+| Variable                  | Effect                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NX_TUI`                  | If `true` (default on local dev), Nx may activate TUI mode for task-running commands. Does NOT affect `show` or `graph` commands but should be disabled for safety. |
+| `NX_VERBOSE_LOGGING`      | If `true`, adds debug logging to stderr. Does NOT corrupt stdout JSON. Safe to enable for debugging.                                                                |
+| `NX_PERF_LOGGING`         | If `true`, adds timing measurements to stderr via `console.log`. May interleave with stdout on Windows. Avoid in production.                                        |
+| `NX_DEFAULT_OUTPUT_STYLE` | Affects task-running commands only (`run`, `run-many`, `affected`). Does not affect `show` or `graph`.                                                              |
 
 #### Variables That Affect Performance
 
-| Variable | Effect |
-|----------|--------|
-| `NX_DAEMON` | `false` disables daemon. 40-130% slowdown measured on read-only commands. |
-| `NX_CACHE_PROJECT_GRAPH` | `false` disables in-memory graph caching. Severe slowdown. Leave at default. |
+| Variable                      | Effect                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `NX_DAEMON`                   | `false` disables daemon. 40-130% slowdown measured on read-only commands.                                                     |
+| `NX_CACHE_PROJECT_GRAPH`      | `false` disables in-memory graph caching. Severe slowdown. Leave at default.                                                  |
 | `NX_FORCE_REUSE_CACHED_GRAPH` | `true` forces reuse of cached graph even if files changed. Useful for rapid consecutive indexer runs within the same session. |
 
 #### Variables the nx-runner Must NOT Set
 
-| Variable | Why Not |
-|----------|---------|
-| `NX_SKIP_NX_CACHE` | Would disable caching, slowing repeated operations |
-| `NX_CACHE_DIRECTORY` | Would redirect cache to non-standard location, confusing workspace |
-| `NX_WORKSPACE_ROOT_PATH` | Would override workspace detection, breaking multi-workspace support |
-| `NX_RUN_COMMANDS_DIRECTLY` | Internal; affects command execution behavior unpredictably |
-| `NX_BATCH_MODE` | Internal; changes task scheduling behavior |
-| `NX_PARALLEL` | Only meaningful for task execution, not read-only commands |
+| Variable                   | Why Not                                                              |
+| -------------------------- | -------------------------------------------------------------------- |
+| `NX_SKIP_NX_CACHE`         | Would disable caching, slowing repeated operations                   |
+| `NX_CACHE_DIRECTORY`       | Would redirect cache to non-standard location, confusing workspace   |
+| `NX_WORKSPACE_ROOT_PATH`   | Would override workspace detection, breaking multi-workspace support |
+| `NX_RUN_COMMANDS_DIRECTLY` | Internal; affects command execution behavior unpredictably           |
+| `NX_BATCH_MODE`            | Internal; changes task scheduling behavior                           |
+| `NX_PARALLEL`              | Only meaningful for task execution, not read-only commands           |
 
-#### Full Inventory of NX_* Variables (Nx 22.3.1)
+#### Full Inventory of NX\_\* Variables (Nx 22.3.1)
 
 For reference, the complete list of `process.env.NX_*` variables found in Nx 22.3.1 source:
 
@@ -1673,54 +1739,54 @@ NX_NATIVE_FILE_CACHE_DIRECTORY
 
 These commands read workspace metadata and output information. They never write files, execute tasks, install packages, or modify configuration.
 
-| Command | Notes |
-|---------|-------|
-| `nx show projects` | Lists project names. All flags safe (`--json`, `--type`, `--affected`, etc.) |
-| `nx show project <name>` | Shows resolved config for one project. All flags safe (`--json`, `--web`). Note: `--web` opens browser but does not modify files. |
-| `nx graph --print` | Outputs graph JSON to stdout. **SAFE.** |
-| `nx graph --file=<path>` | Writes a JSON/HTML file. Technically writes a file, but it is a read-only export of workspace data. **SAFE with path restriction** -- allowlist should restrict the output path to a temp/cache directory. |
-| `nx list` | Lists installed plugins. No flags modify anything. |
-| `nx list <plugin>` | Shows generators/executors for a plugin. |
-| `nx report` | Prints version/plugin info. |
-| `nx daemon` (no flags) | Prints daemon status information. |
-| `nx show` (no subcommand) | Shows help text. |
+| Command                   | Notes                                                                                                                                                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nx show projects`        | Lists project names. All flags safe (`--json`, `--type`, `--affected`, etc.)                                                                                                                               |
+| `nx show project <name>`  | Shows resolved config for one project. All flags safe (`--json`, `--web`). Note: `--web` opens browser but does not modify files.                                                                          |
+| `nx graph --print`        | Outputs graph JSON to stdout. **SAFE.**                                                                                                                                                                    |
+| `nx graph --file=<path>`  | Writes a JSON/HTML file. Technically writes a file, but it is a read-only export of workspace data. **SAFE with path restriction** -- allowlist should restrict the output path to a temp/cache directory. |
+| `nx list`                 | Lists installed plugins. No flags modify anything.                                                                                                                                                         |
+| `nx list <plugin>`        | Shows generators/executors for a plugin.                                                                                                                                                                   |
+| `nx report`               | Prints version/plugin info.                                                                                                                                                                                |
+| `nx daemon` (no flags)    | Prints daemon status information.                                                                                                                                                                          |
+| `nx show` (no subcommand) | Shows help text.                                                                                                                                                                                           |
 
 #### SAFE WITH CAVEATS
 
-| Command | Caveat |
-|---------|--------|
-| `nx graph` (no `--print`/`--file`) | Opens browser. Not a security risk but spawns a process. **Exclude from allowlist** -- the indexer should never open a browser. |
-| `nx graph --affected` (no `--print`) | Opens browser. Same caveat. |
-| `nx sync:check` | Read-only check, but runs sync generators in dry-run mode. Very unlikely to have side effects, but generators are plugin code. **Exclude from allowlist** for v1. |
+| Command                              | Caveat                                                                                                                                                            |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nx graph` (no `--print`/`--file`)   | Opens browser. Not a security risk but spawns a process. **Exclude from allowlist** -- the indexer should never open a browser.                                   |
+| `nx graph --affected` (no `--print`) | Opens browser. Same caveat.                                                                                                                                       |
+| `nx sync:check`                      | Read-only check, but runs sync generators in dry-run mode. Very unlikely to have side effects, but generators are plugin code. **Exclude from allowlist** for v1. |
 
 #### UNSAFE -- Modifies Workspace or Runs Tasks
 
 These commands must NEVER be in the nx-runner allowlist.
 
-| Command | Why Unsafe |
-|---------|-----------|
+| Command                     | Why Unsafe                                       |
+| --------------------------- | ------------------------------------------------ |
 | `nx run <project>:<target>` | Executes a task (build, test, lint, serve, etc.) |
-| `nx run-many` | Executes tasks on multiple projects |
-| `nx affected -t <target>` | Executes tasks on affected projects |
-| `nx build <project>` | Alias for `nx run <project>:build` |
-| `nx serve <project>` | Starts a dev server (long-running process) |
-| `nx test <project>` | Runs tests |
-| `nx lint <project>` | Runs linter |
-| `nx e2e <project>` | Runs e2e tests |
-| `nx generate` / `nx g` | Scaffolds code (writes files) |
-| `nx add` | Installs packages and runs init generators |
-| `nx migrate` | Modifies package.json, generates migrations.json |
-| `nx repair` | Runs migrations |
-| `nx reset` | Clears cache, stops daemon |
-| `nx format:write` | Modifies files (reformats) |
-| `nx sync` | Runs sync generators (writes files) |
-| `nx import` | Imports external repo (heavy git operations) |
-| `nx init` | Initializes Nx in a project (writes files) |
-| `nx release` | Versions, changelogs, publishes |
-| `nx exec` | Executes arbitrary shell commands |
-| `nx watch` | Long-running file watcher |
-| `nx connect` | Connects to Nx Cloud (modifies nx.json) |
-| `nx login` / `nx logout` | Authentication state changes |
+| `nx run-many`               | Executes tasks on multiple projects              |
+| `nx affected -t <target>`   | Executes tasks on affected projects              |
+| `nx build <project>`        | Alias for `nx run <project>:build`               |
+| `nx serve <project>`        | Starts a dev server (long-running process)       |
+| `nx test <project>`         | Runs tests                                       |
+| `nx lint <project>`         | Runs linter                                      |
+| `nx e2e <project>`          | Runs e2e tests                                   |
+| `nx generate` / `nx g`      | Scaffolds code (writes files)                    |
+| `nx add`                    | Installs packages and runs init generators       |
+| `nx migrate`                | Modifies package.json, generates migrations.json |
+| `nx repair`                 | Runs migrations                                  |
+| `nx reset`                  | Clears cache, stops daemon                       |
+| `nx format:write`           | Modifies files (reformats)                       |
+| `nx sync`                   | Runs sync generators (writes files)              |
+| `nx import`                 | Imports external repo (heavy git operations)     |
+| `nx init`                   | Initializes Nx in a project (writes files)       |
+| `nx release`                | Versions, changelogs, publishes                  |
+| `nx exec`                   | Executes arbitrary shell commands                |
+| `nx watch`                  | Long-running file watcher                        |
+| `nx connect`                | Connects to Nx Cloud (modifies nx.json)          |
+| `nx login` / `nx logout`    | Authentication state changes                     |
 
 #### Allowlist Implementation for nx-runner.mjs
 
@@ -1738,9 +1804,9 @@ const SAFE_COMMANDS = new Set([
 function isAllowedCommand(command) {
   // Normalize: "nx show projects --json --type lib" -> "show projects"
   const normalized = command
-    .replace(/^(pnpm |npm exec |npx )?nx\s+/, '')  // strip runner prefix
-    .replace(/\s+--\S+/g, '')                        // strip flags
-    .replace(/\s+\S+$/, '')                           // strip trailing arg (project name)
+    .replace(/^(pnpm |npm exec |npx )?nx\s+/, '') // strip runner prefix
+    .replace(/\s+--\S+/g, '') // strip flags
+    .replace(/\s+\S+$/, '') // strip trailing arg (project name)
     .trim();
 
   // Match against allowlist
@@ -1758,13 +1824,13 @@ function isAllowedCommand(command) {
 
 #### Commands That Do Not Exist (Common Misconceptions)
 
-| Misconception | Reality |
-|---------------|---------|
+| Misconception         | Reality                                                           |
+| --------------------- | ----------------------------------------------------------------- |
 | `nx affected --print` | Does not exist. Use `nx show projects --affected --json` instead. |
-| `nx print-affected` | Removed in Nx 19. Replaced by `nx show projects --affected`. |
-| `nx dep-graph` | Alias for `nx graph`. Works but deprecated name. |
-| `nx workspace-lint` | Removed in Nx 15+. |
+| `nx print-affected`   | Removed in Nx 19. Replaced by `nx show projects --affected`.      |
+| `nx dep-graph`        | Alias for `nx graph`. Works but deprecated name.                  |
+| `nx workspace-lint`   | Removed in Nx 15+.                                                |
 
 ---
 
-*Programmatic usage reference added: 2026-03-04. All JSON schemas verified against Nx 22.3.1 sandbox. Performance measurements on Windows 11 ARM64 (Snapdragon X Elite). Error patterns verified with real CLI output.*
+_Programmatic usage reference added: 2026-03-04. All JSON schemas verified against Nx 22.3.1 sandbox. Performance measurements on Windows 11 ARM64 (Snapdragon X Elite). Error patterns verified with real CLI output._

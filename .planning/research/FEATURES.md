@@ -11,6 +11,7 @@
 ### Evidence Base
 
 API contracts derived from source code analysis of four implementations:
+
 - **Official RLM** (Python, alexzhang13/rlm) -- canonical reference
 - **hampton-io/RLM** (TypeScript, Node.js VM) -- closest to our target
 - **code-rabi/rllm** (TypeScript, Node.js VM) -- simpler variant
@@ -22,13 +23,13 @@ Confidence: HIGH for all contracts below. Source code was read directly, not sum
 
 #### `workspace` -- Workspace Index Object
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | N/A (preloaded) | Loaded from `workspace-index.json` at REPL init |
-| Return | `WorkspaceIndex` object | `{ projects: Map<string, ProjectInfo>, deps: AdjacencyList, aliases: Map<string, string>, meta: { projectCount: number, ... } }` |
-| Mutability | Read-only | Should be frozen via `Object.freeze()` or getter-only proxy |
-| Async | No | Synchronous access |
-| Error | N/A | Always available; if index missing, REPL should refuse to start |
+| Property   | Type                    | Notes                                                                                                                            |
+| ---------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Input      | N/A (preloaded)         | Loaded from `workspace-index.json` at REPL init                                                                                  |
+| Return     | `WorkspaceIndex` object | `{ projects: Map<string, ProjectInfo>, deps: AdjacencyList, aliases: Map<string, string>, meta: { projectCount: number, ... } }` |
+| Mutability | Read-only               | Should be frozen via `Object.freeze()` or getter-only proxy                                                                      |
+| Async      | No                      | Synchronous access                                                                                                               |
+| Error      | N/A                     | Always available; if index missing, REPL should refuse to start                                                                  |
 
 **Contract:** The workspace index is the RLM `context` equivalent. In the official RLM, `context` is a string; here it is a structured object. This is a key differentiator -- the LLM navigates a graph, not flat text.
 
@@ -36,11 +37,11 @@ Confidence: HIGH for all contracts below. Source code was read directly, not sum
 
 #### `projects` -- Project Map Shorthand
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | N/A | Direct reference to `workspace.projects` |
-| Return | `Map<string, ProjectInfo>` | Keys are project names, values are `{ root: string, type: 'app'|'lib', tags: string[], targets: string[] }` |
-| Async | No | |
+| Property | Type                       | Notes                                                           |
+| -------- | -------------------------- | --------------------------------------------------------------- | ------------------------------------------- |
+| Input    | N/A                        | Direct reference to `workspace.projects`                        |
+| Return   | `Map<string, ProjectInfo>` | Keys are project names, values are `{ root: string, type: 'app' | 'lib', tags: string[], targets: string[] }` |
+| Async    | No                         |                                                                 |
 
 **Contract:** Syntactic sugar. `projects.get("my-lib")` is identical to `workspace.projects.get("my-lib")`. All 537 project entries are stored as a Map. The Map is the handle itself -- the LLM sees `Map(537)` in print output, not 537 serialized objects.
 
@@ -48,13 +49,13 @@ Confidence: HIGH for all contracts below. Source code was read directly, not sum
 
 #### `deps(name: string): DependencyTree`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `string` -- project name | |
-| Return | `{ direct: string[], transitive: string[], depth: Map<string, number> }` | |
-| Async | No | Pure graph traversal on in-memory adjacency list |
+| Property              | Type                                                                            | Notes                                                                |
+| --------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Input                 | `string` -- project name                                                        |                                                                      |
+| Return                | `{ direct: string[], transitive: string[], depth: Map<string, number> }`        |                                                                      |
+| Async                 | No                                                                              | Pure graph traversal on in-memory adjacency list                     |
 | Error on invalid name | Returns `{ direct: [], transitive: [], depth: new Map() }` with warning printed | Do not throw -- the LLM should see the empty result and self-correct |
-| Complexity | O(V+E) BFS | Cached after first call for same name |
+| Complexity            | O(V+E) BFS                                                                      | Cached after first call for same name                                |
 
 **Contract from official RLM pattern:** Navigation globals should return data, not throw. The LLM sees the output and decides what to do next. Throwing breaks the execution loop's async IIFE wrapper and wastes an iteration.
 
@@ -66,39 +67,39 @@ Identical contract to `deps()` but traverses the reverse adjacency list (who dep
 
 #### `read(path: string, start?: number, end?: number): string`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `path: string` -- relative to workspace root | |
-| Input (optional) | `start: number` -- line number (1-based) | |
-| Input (optional) | `end: number` -- line number (1-based, inclusive) | |
-| Return | `string` -- file content or slice | |
-| Async | No | `fs.readFileSync` under the hood |
-| Error on missing file | Returns `"[ERROR] File not found: <path>"` string | Do not throw |
-| Error on binary file | Returns `"[ERROR] Binary file: <path>"` string | |
-| Truncation | If content > 10,000 chars and no start/end, truncate with `"... [N chars truncated]"` | Prevents accidental context flooding |
+| Property              | Type                                                                                  | Notes                                |
+| --------------------- | ------------------------------------------------------------------------------------- | ------------------------------------ |
+| Input                 | `path: string` -- relative to workspace root                                          |                                      |
+| Input (optional)      | `start: number` -- line number (1-based)                                              |                                      |
+| Input (optional)      | `end: number` -- line number (1-based, inclusive)                                     |                                      |
+| Return                | `string` -- file content or slice                                                     |                                      |
+| Async                 | No                                                                                    | `fs.readFileSync` under the hood     |
+| Error on missing file | Returns `"[ERROR] File not found: <path>"` string                                     | Do not throw                         |
+| Error on binary file  | Returns `"[ERROR] Binary file: <path>"` string                                        |                                      |
+| Truncation            | If content > 10,000 chars and no start/end, truncate with `"... [N chars truncated]"` | Prevents accidental context flooding |
 
 **Contract note:** Both hampton-io and rllm truncate output. Hampton-io truncates `print()` output at 20,000 chars; the official RLM truncates at `max_character_length=20000` in `format_iteration()`. Our `read()` should truncate aggressively (10K) because the LLM should use `read(path, start, end)` for targeted reads.
 
 #### `files(glob: string): string[]`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `string` -- glob pattern (e.g., `"libs/**/*.store.ts"`) | |
-| Return | `string[]` -- matching file paths, relative to workspace root | |
-| Async | No | Uses `fs.globSync` (Node.js 22.17+) or fallback |
-| Error | Returns empty array on invalid glob | |
-| Limit | Cap at 500 results with `"... [N more files]"` warning | |
+| Property | Type                                                          | Notes                                           |
+| -------- | ------------------------------------------------------------- | ----------------------------------------------- |
+| Input    | `string` -- glob pattern (e.g., `"libs/**/*.store.ts"`)       |                                                 |
+| Return   | `string[]` -- matching file paths, relative to workspace root |                                                 |
+| Async    | No                                                            | Uses `fs.globSync` (Node.js 22.17+) or fallback |
+| Error    | Returns empty array on invalid glob                           |                                                 |
+| Limit    | Cap at 500 results with `"... [N more files]"` warning        |                                                 |
 
 #### `search(pattern: string, paths?: string[]): SearchResult[]`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `pattern: string` -- regex or literal string | |
-| Input (optional) | `paths: string[]` -- restrict to these directories | |
-| Return | `Array<{ file: string, line: number, match: string }>` | |
-| Async | No | `child_process.spawnSync('git', ['grep', '-n', ...], { shell: false })` (Node.js built-in fallback for non-git environments) |
-| Error | Returns empty array on invalid pattern or no matches | |
-| Limit | Cap at 100 results | |
+| Property         | Type                                                   | Notes                                                                                                                        |
+| ---------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Input            | `pattern: string` -- regex or literal string           |                                                                                                                              |
+| Input (optional) | `paths: string[]` -- restrict to these directories     |                                                                                                                              |
+| Return           | `Array<{ file: string, line: number, match: string }>` |                                                                                                                              |
+| Async            | No                                                     | `child_process.spawnSync('git', ['grep', '-n', ...], { shell: false })` (Node.js built-in fallback for non-git environments) |
+| Error            | Returns empty array on invalid pattern or no matches   |                                                                                                                              |
+| Limit            | Cap at 100 results                                     |                                                                                                                              |
 
 **Contract from Matryoshka's `grep()`:** Returns structured objects with `{ match, line, lineNum }`. Our `search()` follows the same pattern. The structured return lets the LLM reference specific lines without re-reading files.
 
@@ -106,28 +107,28 @@ Identical contract to `deps()` but traverses the reverse adjacency list (who dep
 
 #### `nx(command: string): string | object`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `string` -- Nx CLI command (without `nx` prefix) | |
-| Return | `string` (raw output) or parsed `object` if `--json` flag present | |
-| Async | No | `child_process.execSync` with 30s timeout |
-| Allowlist | `show`, `graph`, `list`, `report`, `affected --print` | |
-| Error on blocked command | Returns `"[ERROR] Command not allowed: <command>. Allowed: show, graph, list, report, affected"` | |
-| Error on timeout | Returns `"[ERROR] Command timed out after 30s"` | |
-| Caching | `nx graph --print` cached for 5 minutes (expensive, 3-5s on large workspaces) | |
+| Property                 | Type                                                                                             | Notes                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| Input                    | `string` -- Nx CLI command (without `nx` prefix)                                                 |                                           |
+| Return                   | `string` (raw output) or parsed `object` if `--json` flag present                                |                                           |
+| Async                    | No                                                                                               | `child_process.execSync` with 30s timeout |
+| Allowlist                | `show`, `graph`, `list`, `report`, `affected --print`                                            |                                           |
+| Error on blocked command | Returns `"[ERROR] Command not allowed: <command>. Allowed: show, graph, list, report, affected"` |                                           |
+| Error on timeout         | Returns `"[ERROR] Command timed out after 30s"`                                                  |                                           |
+| Caching                  | `nx graph --print` cached for 5 minutes (expensive, 3-5s on large workspaces)                    |                                           |
 
 ### LLM Sub-Call Global (Async)
 
 #### `llm_query(prompt: string, model?: string): Promise<string>`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `prompt: string` -- the question for the sub-LLM | |
-| Input (optional) | `model: string` -- ignored in v0.0.1 (always routes to haiku-searcher agent) | |
-| Return | `Promise<string>` -- the sub-LLM's response | |
-| Async | **YES** -- must be awaited | |
-| Error | Returns `"[ERROR] LLM query failed: <message>"` string (does not throw) | |
-| Timeout | 30s per call | |
+| Property         | Type                                                                         | Notes |
+| ---------------- | ---------------------------------------------------------------------------- | ----- |
+| Input            | `prompt: string` -- the question for the sub-LLM                             |       |
+| Input (optional) | `model: string` -- ignored in v0.0.1 (always routes to haiku-searcher agent) |       |
+| Return           | `Promise<string>` -- the sub-LLM's response                                  |       |
+| Async            | **YES** -- must be awaited                                                   |       |
+| Error            | Returns `"[ERROR] LLM query failed: <message>"` string (does not throw)      |       |
+| Timeout          | 30s per call                                                                 |       |
 
 **Critical architecture constraint: No subagent nesting.**
 
@@ -171,14 +172,15 @@ Evidence: Hampton-io's `llm_query()` implementation requires a complex `PendingQ
 
 #### `FINAL(answer: string): void`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `string` -- the final answer text | |
-| Return | The input string (for chaining, but return value is irrelevant) | |
-| Side effect | Sets internal `__FINAL_ANSWER__` variable | |
-| Async | No | |
+| Property    | Type                                                            | Notes |
+| ----------- | --------------------------------------------------------------- | ----- |
+| Input       | `string` -- the final answer text                               |       |
+| Return      | The input string (for chaining, but return value is irrelevant) |       |
+| Side effect | Sets internal `__FINAL_ANSWER__` variable                       |       |
+| Async       | No                                                              |       |
 
 **Contract from all implementations:**
+
 - Hampton-io: `FINAL` sets `this.variables['__FINAL_ANSWER__']` to the stringified value. The executor checks `sandbox.getVariable('__FINAL_ANSWER__')` after each code block execution.
 - Code-rabi/rllm: `giveFinalAnswer({ message, data? })` validates with Zod schema. Must be called inside a code block.
 - Official RLM (Python): `find_final_answer()` uses regex `r"^\s*FINAL\((.*)\)\s*$"` to parse from text. Can also be called as a function in the REPL.
@@ -188,12 +190,12 @@ Evidence: Hampton-io's `llm_query()` implementation requires a complex `PendingQ
 
 #### `FINAL_VAR(name: string): void`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | `string` -- name of a REPL variable to return as the answer | |
-| Return | The variable name (irrelevant) | |
-| Side effect | Sets internal `__FINAL_VAR_NAME__` variable | |
-| Error if variable not found | Official RLM: returns `"Variable 'X' not found"` and does NOT terminate (loop continues) | |
+| Property                    | Type                                                                                     | Notes |
+| --------------------------- | ---------------------------------------------------------------------------------------- | ----- |
+| Input                       | `string` -- name of a REPL variable to return as the answer                              |       |
+| Return                      | The variable name (irrelevant)                                                           |       |
+| Side effect                 | Sets internal `__FINAL_VAR_NAME__` variable                                              |       |
+| Error if variable not found | Official RLM: returns `"Variable 'X' not found"` and does NOT terminate (loop continues) |       |
 
 **Critical edge case from official RLM:** If `FINAL_VAR("myResult")` is called but `myResult` doesn't exist in the REPL, the official implementation returns `None` from `find_final_answer()`, causing the loop to continue rather than terminating with an error. This is deliberate -- it gives the LLM a chance to create the variable and try again.
 
@@ -201,24 +203,24 @@ Evidence: Hampton-io's `llm_query()` implementation requires a complex `PendingQ
 
 #### `print(...args: unknown[]): void`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | Variadic -- any number of arguments | |
-| Return | `void` | |
-| Side effect | Appends stringified output to the REPL turn output | |
-| Truncation | Output capped at 2,000 chars per `print()` call, 20,000 chars total per turn | |
-| Serialization | Objects serialized via `JSON.stringify(value, null, 2)`. Falls back to `String(value)` on circular refs. | |
+| Property      | Type                                                                                                     | Notes |
+| ------------- | -------------------------------------------------------------------------------------------------------- | ----- |
+| Input         | Variadic -- any number of arguments                                                                      |       |
+| Return        | `void`                                                                                                   |       |
+| Side effect   | Appends stringified output to the REPL turn output                                                       |       |
+| Truncation    | Output capped at 2,000 chars per `print()` call, 20,000 chars total per turn                             |       |
+| Serialization | Objects serialized via `JSON.stringify(value, null, 2)`. Falls back to `String(value)` on circular refs. |       |
 
 **Implementation note from hampton-io:** They patch `Object.prototype.toString` to return JSON instead of `[object Object]`. This prevents the common bug where `"text " + someObject` produces `"text [object Object]"`. We should apply the same patch.
 
 #### `SHOW_VARS(): string`
 
-| Property | Type | Notes |
-|----------|------|-------|
-| Input | None | |
-| Return | `string` -- formatted list of user-created variables | |
-| Filtering | Excludes all built-in globals (`workspace`, `projects`, `deps`, etc.) | |
-| Format | `"Variables: myResult (string), matches (Array[15]), ..."` | |
+| Property  | Type                                                                  | Notes |
+| --------- | --------------------------------------------------------------------- | ----- |
+| Input     | None                                                                  |       |
+| Return    | `string` -- formatted list of user-created variables                  |       |
+| Filtering | Excludes all built-in globals (`workspace`, `projects`, `deps`, etc.) |       |
+| Format    | `"Variables: myResult (string), matches (Array[15]), ..."`            |       |
 
 ---
 
@@ -239,18 +241,24 @@ When the LLM calls `projects` (537 entries) or `files("libs/**/*.ts")` (potentia
 5. The LLM operates on the handle via code: `RESULTS.filter(...)`, `RESULTS[0]`, etc.
 
 From Matryoshka's `nucleus-engine.ts` (line 244-266):
+
 ```typescript
 if (Array.isArray(solverResult.value)) {
-  solverBindings.set("RESULTS", solverResult.value);
+  solverBindings.set('RESULTS', solverResult.value);
 } else {
   // Scalar result - only bind to _N, preserve RESULTS
 }
 ```
 
 **Hampton-io/RLM** uses a simpler approach -- `store(name, value)` and `get(name)` functions for explicit persistence, plus the `const/let -> globalThis` transformation:
+
 ```typescript
-const transformedCode = code.replace(/\b(const|let)\s+(\w+)\s*=/g, 'globalThis.$2 =');
+const transformedCode = code.replace(
+  /\b(const|let)\s+(\w+)\s*=/g,
+  'globalThis.$2 =',
+);
 ```
+
 This makes all top-level variable declarations persist across code blocks automatically. No explicit handle store needed -- the VM context IS the store.
 
 ### Our Handle Store Protocol
@@ -258,6 +266,7 @@ This makes all top-level variable declarations persist across code blocks automa
 **Trigger:** Any return value that would serialize to > 500 tokens when printed.
 
 **What the stub looks like:**
+
 ```
 $projects: Map(537) [connect, connect-e2e, assets, shared-util-rxjs, ... +532 more]
 $searchResults: Array(47) [{ file: "libs/connect/...", line: 12 }, ... +46 more]
@@ -265,16 +274,17 @@ $depTree: { direct: 12, transitive: 35, total: 47 }
 ```
 
 **How the LLM references a handle in subsequent code:**
+
 ```javascript
 // The Map/Array IS the handle -- it lives in the VM context
 // The LLM navigates it via code:
-let p = projects.get("connect-shared-users-data-access")
-print(p.targets)  // Only the specific data it needs enters the output
+let p = projects.get('connect-shared-users-data-access');
+print(p.targets); // Only the specific data it needs enters the output
 
 // For search results stored as a variable:
-let relevant = searchResults.filter(r => r.file.includes("data-access"))
-print(relevant.length)  // "3"
-print(relevant[0])  // Only first result printed
+let relevant = searchResults.filter((r) => r.file.includes('data-access'));
+print(relevant.length); // "3"
+print(relevant[0]); // Only first result printed
 ```
 
 **Implementation:** The handle store is not a separate Map. It IS the VM context's `globalThis`. Variables persist across code blocks via the `const/let -> globalThis` transformation (hampton-io pattern). The `print()` function applies smart serialization:
@@ -285,18 +295,19 @@ print(relevant[0])  // Only first result printed
 4. Objects > 500 chars serialized: truncated with `"... [N chars]"`
 
 This means the "handle store" is not a separate component -- it is the combination of:
+
 - `globalThis` persistence across code blocks (hampton-io pattern)
 - Smart truncation in `print()` output
 - The `SHOW_VARS()` function to list what's in the store
 
 ### Token Savings Estimate
 
-| Scenario | Raw output tokens | Handle output tokens | Savings |
-|----------|-------------------|---------------------|---------|
-| 537 projects listed | ~50,000 | ~200 (stub) | 99.6% |
-| 1,700 file paths | ~17,000 | ~150 (stub) | 99.1% |
-| Dependency tree (47 deps) | ~2,000 | ~100 (summary) | 95% |
-| Single project detail | ~200 | ~200 (no truncation) | 0% |
+| Scenario                  | Raw output tokens | Handle output tokens | Savings |
+| ------------------------- | ----------------- | -------------------- | ------- |
+| 537 projects listed       | ~50,000           | ~200 (stub)          | 99.6%   |
+| 1,700 file paths          | ~17,000           | ~150 (stub)          | 99.1%   |
+| Dependency tree (47 deps) | ~2,000            | ~100 (summary)       | 95%     |
+| Single project detail     | ~200              | ~200 (no truncation) | 0%      |
 
 ---
 
@@ -306,7 +317,7 @@ This means the "handle store" is not a separate component -- it is the combinati
 
 All four implementations follow the same pattern:
 
-```
+````
 for iteration in range(maxIterations):
     response = llm.complete(messages)        # Root LLM generates text + code
     codeBlocks = extractCode(response)       # Parse ```repl blocks
@@ -315,7 +326,7 @@ for iteration in range(maxIterations):
         if sandbox.hasFinalAnswer():
             return sandbox.getFinalAnswer()  # DONE
     messages.append(response + result)       # Append for next iteration
-```
+````
 
 ### What "Brittleness in Answer Termination" Means Concretely
 
@@ -331,6 +342,7 @@ The LLM writes `FINAL("the answer")` as plain text instead of inside a code bloc
 - **Matryoshka:** Uses `<<<FINAL>>>...<<<END>>>` delimiters which are explicitly designed to be in prose (outside code blocks). Different paradigm.
 
 **Prevention for our plugin:**
+
 1. Make `FINAL()` a function in the VM context (like hampton-io). It ONLY works when executed as code.
 2. After parsing the LLM response, check for `FINAL(` in non-code text. If found, append a user message: `"FINAL() must be inside a \`\`\`repl code block. Please wrap it in code."`
 3. Do NOT regex-parse FINAL from prose. This eliminates the ambiguity entirely.
@@ -344,6 +356,7 @@ The LLM calls `FINAL("I think the answer is X")` on iteration 1 without actually
 - **Code-rabi/rllm:** On max iterations, explicitly prompts: `"You've reached the maximum iterations. Please provide your best final answer now."`
 
 **Prevention for our plugin:**
+
 1. Track a `codeExecutedCount` counter. If `FINAL()` is called and `codeExecutedCount < 2`, reject with: `"You must explore the workspace before answering. Use deps(), search(), or read() first."`
 2. The system prompt should include the iteration-0 safeguard from the official RLM.
 
@@ -356,7 +369,8 @@ The LLM responds with reasoning text but no code blocks, endlessly. No code mean
 - **Official RLM:** Relies on `max_iterations` as the hard stop, then calls `_default_answer()` which asks the LLM for a final answer in one more call.
 
 **Prevention for our plugin:**
-1. If no code block extracted from the response, append a prompt: `` "Write code in a ```repl block to explore the workspace. Available: deps(), search(), read(), files(), projects." ``
+
+1. If no code block extracted from the response, append a prompt: `"Write code in a ```repl block to explore the workspace. Available: deps(), search(), read(), files(), projects."`
 2. Track consecutive no-code turns. After 3, auto-request: `"You have not written code in 3 turns. Provide your best answer now using FINAL() in a code block, or write code to continue exploring."`
 3. Hard cap at `maxIterations` (20). On expiry, make one final LLM call requesting just the answer.
 
@@ -369,6 +383,7 @@ The LLM writes code that errors, fixes it incorrectly, errors again, in an infin
 - **Hampton-io:** Errors are caught inside the async IIFE wrapper and reported as stderr, but no error counter exists.
 
 **Prevention for our plugin:**
+
 1. Track `consecutiveErrors` counter. Reset to 0 on any successful execution.
 2. After `maxErrors` (default 3) consecutive errors, terminate with: `"Execution stopped after 3 consecutive errors. Last error: <message>."` Return the best partial answer if any.
 
@@ -414,45 +429,45 @@ START
 
 Features users expect from any RLM-powered codebase navigation tool. Missing these means the plugin provides no value over vanilla Claude Code.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Workspace index** (project graph as JSON) | Every Nx AI integration starts here. Nx's own skills and MCP server expose the project graph. Without it, the plugin is blind. | MEDIUM | Build from `nx show projects --json`, `nx graph --print`, `tsconfig.base.json`. ~50-100KB for 537 projects. Pure Node.js, zero LLM tokens. |
-| **REPL sandbox** (Node.js VM with workspace globals) | The defining RLM capability. Without a REPL, there is no context externalization -- the plugin is just another skill file. Every serious RLM plugin (rand, brainqub3, Hampton-io, rllm) implements this. | HIGH | `vm.createContext()` with controlled globals. <5ms startup. Security: `codeGeneration: { strings: false, wasm: false }`. `const/let -> globalThis` transformation for state persistence across code blocks. |
-| **Handle-based result storage** (smart truncation) | Large results (537 project objects, 1,700 file paths) must not dump into LLM context. | LOW | NOT a separate Map store. The VM context IS the store (globalThis persistence). Smart `print()` truncation provides the "handle" UX. The LLM navigates via code, not by reading raw dumps. |
-| **Execution loop** (fill/solve cycle) | The core RLM execution pattern. Root LLM generates code, sandbox executes, results appended, loop until `FINAL()`. Without this loop, the REPL is just a one-shot tool. | HIGH | 5-20 iterations typical. Needs `maxIterations` (20), `maxErrors` (3), `maxTimeout` (120s) guardrails. Four termination failure modes documented above with specific mitigations. |
-| **Deterministic commands** (deps, find, alias) | Zero-LLM-token operations for common queries. Users want instant answers for "what depends on X", "where is file Y", "what alias maps to Z". | LOW | Node.js scripts wrapping workspace index and `tsconfig.base.json`. Three commands: `/deps`, `/find`, `/alias`. |
-| **Nx CLI wrapper** (allowlisted read-only commands) | The REPL needs safe access to Nx CLI for `nx show`, `nx graph`. Must allowlist read-only commands and block mutations. | LOW | Allowlist: `show`, `graph`, `list`, `report`, `affected --print`. Block: `run`, `build`, `generate`, `migrate`. Timeout: 30s. Cache expensive operations. |
-| **RLM configuration/guardrails** | Without guardrails, RLM loops can run indefinitely. Only rand/rlm-claude-code implements explicit budget controls among existing plugins. | LOW | `maxIterations` (20), `maxDepth` (2), `maxTimeout` (120s), `maxErrors` (3). JSON config file. |
-| **Explore skill** (RLM-powered codebase Q&A) | The primary user-facing capability. "Where is X?", "How does Y work?", "What depends on Z?" -- answered via the REPL fill/solve loop. | HIGH | Loads workspace index into REPL, root LLM (Sonnet) navigates with deterministic globals. Sub-LLM calls deferred to a later milestone. |
+| Feature                                              | Why Expected                                                                                                                                                                                             | Complexity | Notes                                                                                                                                                                                                       |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Workspace index** (project graph as JSON)          | Every Nx AI integration starts here. Nx's own skills and MCP server expose the project graph. Without it, the plugin is blind.                                                                           | MEDIUM     | Build from `nx show projects --json`, `nx graph --print`, `tsconfig.base.json`. ~50-100KB for 537 projects. Pure Node.js, zero LLM tokens.                                                                  |
+| **REPL sandbox** (Node.js VM with workspace globals) | The defining RLM capability. Without a REPL, there is no context externalization -- the plugin is just another skill file. Every serious RLM plugin (rand, brainqub3, Hampton-io, rllm) implements this. | HIGH       | `vm.createContext()` with controlled globals. <5ms startup. Security: `codeGeneration: { strings: false, wasm: false }`. `const/let -> globalThis` transformation for state persistence across code blocks. |
+| **Handle-based result storage** (smart truncation)   | Large results (537 project objects, 1,700 file paths) must not dump into LLM context.                                                                                                                    | LOW        | NOT a separate Map store. The VM context IS the store (globalThis persistence). Smart `print()` truncation provides the "handle" UX. The LLM navigates via code, not by reading raw dumps.                  |
+| **Execution loop** (fill/solve cycle)                | The core RLM execution pattern. Root LLM generates code, sandbox executes, results appended, loop until `FINAL()`. Without this loop, the REPL is just a one-shot tool.                                  | HIGH       | 5-20 iterations typical. Needs `maxIterations` (20), `maxErrors` (3), `maxTimeout` (120s) guardrails. Four termination failure modes documented above with specific mitigations.                            |
+| **Deterministic commands** (deps, find, alias)       | Zero-LLM-token operations for common queries. Users want instant answers for "what depends on X", "where is file Y", "what alias maps to Z".                                                             | LOW        | Node.js scripts wrapping workspace index and `tsconfig.base.json`. Three commands: `/deps`, `/find`, `/alias`.                                                                                              |
+| **Nx CLI wrapper** (allowlisted read-only commands)  | The REPL needs safe access to Nx CLI for `nx show`, `nx graph`. Must allowlist read-only commands and block mutations.                                                                                   | LOW        | Allowlist: `show`, `graph`, `list`, `report`, `affected --print`. Block: `run`, `build`, `generate`, `migrate`. Timeout: 30s. Cache expensive operations.                                                   |
+| **RLM configuration/guardrails**                     | Without guardrails, RLM loops can run indefinitely. Only rand/rlm-claude-code implements explicit budget controls among existing plugins.                                                                | LOW        | `maxIterations` (20), `maxDepth` (2), `maxTimeout` (120s), `maxErrors` (3). JSON config file.                                                                                                               |
+| **Explore skill** (RLM-powered codebase Q&A)         | The primary user-facing capability. "Where is X?", "How does Y work?", "What depends on Z?" -- answered via the REPL fill/solve loop.                                                                    | HIGH       | Loads workspace index into REPL, root LLM (Sonnet) navigates with deterministic globals. Sub-LLM calls deferred to a later milestone.                                                                       |
 
 ## Differentiators (Competitive Advantage)
 
 Features that set this plugin apart from generic RLM plugins and Nx's own AI skills.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Nx-native workspace model** | No existing RLM plugin understands Nx project graphs, dependency edges, path aliases, or project tags. Generic RLM plugins treat codebases as flat file trees. | MEDIUM | REPL globals include `deps(name)`, `dependents(name)`, project tags, targets. The workspace model is Nx-specific. |
-| **Cross-platform Node.js-only** | Most RLM plugins require Python, Rust, Docker, or external services. This plugin needs only Node.js LTS. | LOW | Zero native modules. Works on macOS, Linux, Windows (Git Bash). |
-| **Context rot prevention by design** | REPL isolation means intermediate results never enter the main conversation. A 10-query session stays at ~50-60K tokens instead of 175-700K. | -- | Architectural, not a discrete feature. Every REPL interaction is isolated; only `FINAL()` answers enter conversation context. |
-| **Progressive workspace disclosure** | Instead of loading the full workspace index (~8K tokens), load only project counts and top-level domains at session start (~2K), then expand on demand. | LOW | Tier 1: domain summary. Tier 2: domain detail on first query. Tier 3: file content via REPL only. |
-| **Strategy hints** (model-specific REPL tips) | Prime Intellect's research shows strategy hints significantly improve RLM performance. Without hints, models sometimes underperform vs. base LLM. | LOW | Workspace-specific hints injected into REPL system prompt: library naming conventions, domain structure, preferred search patterns. |
-| **Robust termination** (multi-layer) | No existing Claude Code RLM plugin implements comprehensive termination handling. Most rely solely on `maxIterations`. | MEDIUM | Code-only FINAL, premature-answer rejection, no-code detection, error counting, timeout. See termination state machine above. |
+| Feature                                       | Value Proposition                                                                                                                                              | Complexity | Notes                                                                                                                               |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Nx-native workspace model**                 | No existing RLM plugin understands Nx project graphs, dependency edges, path aliases, or project tags. Generic RLM plugins treat codebases as flat file trees. | MEDIUM     | REPL globals include `deps(name)`, `dependents(name)`, project tags, targets. The workspace model is Nx-specific.                   |
+| **Cross-platform Node.js-only**               | Most RLM plugins require Python, Rust, Docker, or external services. This plugin needs only Node.js LTS.                                                       | LOW        | Zero native modules. Works on macOS, Linux, Windows (Git Bash).                                                                     |
+| **Context rot prevention by design**          | REPL isolation means intermediate results never enter the main conversation. A 10-query session stays at ~50-60K tokens instead of 175-700K.                   | --         | Architectural, not a discrete feature. Every REPL interaction is isolated; only `FINAL()` answers enter conversation context.       |
+| **Progressive workspace disclosure**          | Instead of loading the full workspace index (~8K tokens), load only project counts and top-level domains at session start (~2K), then expand on demand.        | LOW        | Tier 1: domain summary. Tier 2: domain detail on first query. Tier 3: file content via REPL only.                                   |
+| **Strategy hints** (model-specific REPL tips) | Prime Intellect's research shows strategy hints significantly improve RLM performance. Without hints, models sometimes underperform vs. base LLM.              | LOW        | Workspace-specific hints injected into REPL system prompt: library naming conventions, domain structure, preferred search patterns. |
+| **Robust termination** (multi-layer)          | No existing Claude Code RLM plugin implements comprehensive termination handling. Most rely solely on `maxIterations`.                                         | MEDIUM     | Code-only FINAL, premature-answer rejection, no-code detection, error counting, timeout. See termination state machine above.       |
 
 ## Anti-Features (Commonly Requested, Often Problematic)
 
 Features that seem valuable but create problems. Documenting these prevents scope creep.
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **llm_query() in v0.0.1** | Sub-LLM calls are core to the RLM paradigm. Hampton-io and official RLM implement them. | Requires solving async VM boundary (complex PendingQuery system), API key management, and cannot use subagent nesting in Claude Code. The `repl-executor` is already a subagent. | Defer to a later milestone. v0.0.1 validates the REPL approach with Sonnet-only reasoning + deterministic globals. If Sonnet can navigate the workspace without sub-calls, the architecture is sound. |
-| **Persistent cross-session memory** | 3 of 8 existing RLM plugins implement this. Seems natural. | Massive complexity (SQLite, graph schemas, lifecycle management). The workspace index already provides structural memory deterministically. Git is the cross-session memory for code. | The workspace index IS the persistent memory -- rebuilt from Nx CLI output each session. |
-| **Angular-specific registries** | The target workspace has 1,700 Angular components. Registries enable instant lookups. | Locks v0.0.1 to Angular, limiting the plugin to one framework. | Defer to a later milestone. v0.0.1 uses `search()` and `files()` for framework-agnostic patterns. |
-| **MCP server integration** | 4 of 8 existing RLM plugins use MCP. | MCP adds tool definitions to the system prompt (consuming context tokens). Nx's own blog explains why they deleted most MCP tools in favor of skills. | Use skills and Node.js scripts. The REPL sandbox provides richer interaction than MCP tool calls. |
-| **Hooks in v0.0.1** | Automate workspace indexing, intercept searches, cache results. | Hooks add invisible behavior that is hard to debug. v0.0.1 should prove value through explicit skill invocation before adding automation. | Defer to a later milestone. Users manually invoke `/explore`, `/deps`, `/find`. |
-| **Separate handle-store.mjs** | BRAINSTORM.md proposes a dedicated handle store script. | Over-engineering. The VM context's `globalThis` IS the handle store (hampton-io pattern). Smart `print()` truncation IS the handle UX. No separate Map needed. | Implement smart truncation in `print()` and `const/let -> globalThis` transform in `repl-sandbox.mjs`. No separate script. |
-| **S-expression DSL** | Matryoshka uses S-expressions. Reduced entropy for smaller models. | JavaScript is natural for TS/Nx workspaces. Claude (Sonnet/Opus) generates JavaScript fluently. | Use JavaScript REPL. Decision already made in PROJECT.md. |
-| **Semantic/vector search** | Zilliz claude-context claims ~40% token reduction via semantic search. | Requires external embedding model, vector database, and index build time. `git grep` + workspace index covers the workspace navigation use cases. | Use `git grep` via `spawnSync` with `shell: false` in the REPL's `search()` global (Node.js built-in fallback for non-git environments). See `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`. |
-| **Token benchmarking in v0.0.1** | Validates that RLM actually reduces tokens. | Premature optimization measurement. Building benchmarking infrastructure before the core REPL loop works is overhead. | Defer to a later milestone. Validate savings manually first. |
+| Feature                             | Why Requested                                                                           | Why Problematic                                                                                                                                                                       | Alternative                                                                                                                                                                                                            |
+| ----------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **llm_query() in v0.0.1**           | Sub-LLM calls are core to the RLM paradigm. Hampton-io and official RLM implement them. | Requires solving async VM boundary (complex PendingQuery system), API key management, and cannot use subagent nesting in Claude Code. The `repl-executor` is already a subagent.      | Defer to a later milestone. v0.0.1 validates the REPL approach with Sonnet-only reasoning + deterministic globals. If Sonnet can navigate the workspace without sub-calls, the architecture is sound.                  |
+| **Persistent cross-session memory** | 3 of 8 existing RLM plugins implement this. Seems natural.                              | Massive complexity (SQLite, graph schemas, lifecycle management). The workspace index already provides structural memory deterministically. Git is the cross-session memory for code. | The workspace index IS the persistent memory -- rebuilt from Nx CLI output each session.                                                                                                                               |
+| **Angular-specific registries**     | The target workspace has 1,700 Angular components. Registries enable instant lookups.   | Locks v0.0.1 to Angular, limiting the plugin to one framework.                                                                                                                        | Defer to a later milestone. v0.0.1 uses `search()` and `files()` for framework-agnostic patterns.                                                                                                                      |
+| **MCP server integration**          | 4 of 8 existing RLM plugins use MCP.                                                    | MCP adds tool definitions to the system prompt (consuming context tokens). Nx's own blog explains why they deleted most MCP tools in favor of skills.                                 | Use skills and Node.js scripts. The REPL sandbox provides richer interaction than MCP tool calls.                                                                                                                      |
+| **Hooks in v0.0.1**                 | Automate workspace indexing, intercept searches, cache results.                         | Hooks add invisible behavior that is hard to debug. v0.0.1 should prove value through explicit skill invocation before adding automation.                                             | Defer to a later milestone. Users manually invoke `/explore`, `/deps`, `/find`.                                                                                                                                        |
+| **Separate handle-store.mjs**       | BRAINSTORM.md proposes a dedicated handle store script.                                 | Over-engineering. The VM context's `globalThis` IS the handle store (hampton-io pattern). Smart `print()` truncation IS the handle UX. No separate Map needed.                        | Implement smart truncation in `print()` and `const/let -> globalThis` transform in `repl-sandbox.mjs`. No separate script.                                                                                             |
+| **S-expression DSL**                | Matryoshka uses S-expressions. Reduced entropy for smaller models.                      | JavaScript is natural for TS/Nx workspaces. Claude (Sonnet/Opus) generates JavaScript fluently.                                                                                       | Use JavaScript REPL. Decision already made in PROJECT.md.                                                                                                                                                              |
+| **Semantic/vector search**          | Zilliz claude-context claims ~40% token reduction via semantic search.                  | Requires external embedding model, vector database, and index build time. `git grep` + workspace index covers the workspace navigation use cases.                                     | Use `git grep` via `spawnSync` with `shell: false` in the REPL's `search()` global (Node.js built-in fallback for non-git environments). See `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`. |
+| **Token benchmarking in v0.0.1**    | Validates that RLM actually reduces tokens.                                             | Premature optimization measurement. Building benchmarking infrastructure before the core REPL loop works is overhead.                                                                 | Defer to a later milestone. Validate savings manually first.                                                                                                                                                           |
 
 ## Feature Dependencies
 
@@ -513,6 +528,7 @@ Minimum viable product -- what is needed to validate that RLM navigation actuall
 - [ ] **Deterministic commands** -- `/deps` (dependency tree), `/find` (project-scoped search), `/alias` (path alias lookup)
 
 **Explicitly NOT in v0.0.1:**
+
 - `llm_query()` -- deferred, subagent nesting constraint makes this non-trivial
 - `haiku-searcher` agent -- deferred, no `llm_query()` to route to
 - Hooks -- deferred, prove value through explicit invocation first
@@ -537,29 +553,30 @@ Minimum viable product -- what is needed to validate that RLM navigation actuall
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Risk | Priority |
-|---------|------------|---------------------|------|----------|
-| Workspace indexer | HIGH | MEDIUM | LOW | P0 |
-| Path resolver | MEDIUM | LOW | LOW | P0 |
-| REPL sandbox (VM + globals) | HIGH | HIGH | MEDIUM | P0 |
-| globalThis persistence | HIGH | LOW | LOW | P0 |
-| Smart print() truncation | HIGH | LOW | LOW | P0 |
-| Execution loop + termination | HIGH | HIGH | HIGH | P0 |
-| RLM config/guardrails | MEDIUM | LOW | LOW | P0 |
-| Nx CLI wrapper | HIGH | LOW | LOW | P0 |
-| Explore skill | HIGH | MEDIUM | MEDIUM | P0 |
-| repl-executor agent | HIGH | MEDIUM | MEDIUM | P0 |
-| Deterministic commands | HIGH | LOW | LOW | P0 |
-| llm_query() | MEDIUM | HIGH | HIGH | P1 |
-| haiku-searcher agent | MEDIUM | MEDIUM | MEDIUM | P1 |
-| Strategy hints | MEDIUM | LOW | LOW | P1 |
-| Impact analysis skill | MEDIUM | MEDIUM | LOW | P2 |
-| SessionStart hook | MEDIUM | LOW | LOW | P2 |
-| Token benchmarking | LOW | MEDIUM | LOW | P2 |
-| Angular registries | MEDIUM | HIGH | MEDIUM | P3 |
-| Agent teams | LOW | HIGH | HIGH | P3 |
+| Feature                      | User Value | Implementation Cost | Risk   | Priority |
+| ---------------------------- | ---------- | ------------------- | ------ | -------- |
+| Workspace indexer            | HIGH       | MEDIUM              | LOW    | P0       |
+| Path resolver                | MEDIUM     | LOW                 | LOW    | P0       |
+| REPL sandbox (VM + globals)  | HIGH       | HIGH                | MEDIUM | P0       |
+| globalThis persistence       | HIGH       | LOW                 | LOW    | P0       |
+| Smart print() truncation     | HIGH       | LOW                 | LOW    | P0       |
+| Execution loop + termination | HIGH       | HIGH                | HIGH   | P0       |
+| RLM config/guardrails        | MEDIUM     | LOW                 | LOW    | P0       |
+| Nx CLI wrapper               | HIGH       | LOW                 | LOW    | P0       |
+| Explore skill                | HIGH       | MEDIUM              | MEDIUM | P0       |
+| repl-executor agent          | HIGH       | MEDIUM              | MEDIUM | P0       |
+| Deterministic commands       | HIGH       | LOW                 | LOW    | P0       |
+| llm_query()                  | MEDIUM     | HIGH                | HIGH   | P1       |
+| haiku-searcher agent         | MEDIUM     | MEDIUM              | MEDIUM | P1       |
+| Strategy hints               | MEDIUM     | LOW                 | LOW    | P1       |
+| Impact analysis skill        | MEDIUM     | MEDIUM              | LOW    | P2       |
+| SessionStart hook            | MEDIUM     | LOW                 | LOW    | P2       |
+| Token benchmarking           | LOW        | MEDIUM              | LOW    | P2       |
+| Angular registries           | MEDIUM     | HIGH                | MEDIUM | P3       |
+| Agent teams                  | LOW        | HIGH                | HIGH   | P3       |
 
 **Priority key:**
+
 - P0: Must have for v0.0.1 -- validates the core RLM hypothesis
 - P1: Should have for a later milestone -- adds sub-LLM delegation
 - P2: Nice to have -- automation and measurement
@@ -586,8 +603,8 @@ Minimum viable product -- what is needed to validate that RLM navigation actuall
 
 ---
 
-> **Correction (2026-03-05):** The feature table (line 419) describes the workspace index as "Pure Node.js, zero LLM tokens." This is accurate for the script itself. However, the broader assumption that Claude Code commands consume "zero LLM tokens" (reflected throughout the planning documents) was incorrect. `disable-model-invocation: true` prevents Claude from *automatically* invoking commands but does not bypass model processing when users invoke them. The "zero LLM" framing was influenced by the RLM reference implementations where the REPL sandbox calls script functions as direct VM globals — genuinely zero model involvement. The Claude Code command invocation path is different. See CLI-01 in REQUIREMENTS.md.
+> **Correction (2026-03-05):** The feature table (line 419) describes the workspace index as "Pure Node.js, zero LLM tokens." This is accurate for the script itself. However, the broader assumption that Claude Code commands consume "zero LLM tokens" (reflected throughout the planning documents) was incorrect. `disable-model-invocation: true` prevents Claude from _automatically_ invoking commands but does not bypass model processing when users invoke them. The "zero LLM" framing was influenced by the RLM reference implementations where the REPL sandbox calls script functions as direct VM globals — genuinely zero model involvement. The Claude Code command invocation path is different. See CLI-01 in REQUIREMENTS.md.
 
-*Feature research for: RLM-powered Nx monorepo navigation -- REPL globals, handle store, execution loop, llm_query architecture*
-*Researched: 2026-03-03*
-*Source analysis confidence: HIGH -- all contracts derived from direct source code reading, not secondary documentation*
+_Feature research for: RLM-powered Nx monorepo navigation -- REPL globals, handle store, execution loop, llm_query architecture_
+_Researched: 2026-03-03_
+_Source analysis confidence: HIGH -- all contracts derived from direct source code reading, not secondary documentation_

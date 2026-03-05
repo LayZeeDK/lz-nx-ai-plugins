@@ -67,14 +67,14 @@ Before mapping tasks to sub-components, we must establish whether transformers.j
 
 The `onnxruntime-node` npm package (v1.21.0, pinned by `@huggingface/transformers` v3.8.1) uses a postinstall script that downloads platform-specific prebuilt binaries. The platform matrix from `install-metadata.js` in the [microsoft/onnxruntime] GitHub repository confirms:
 
-| Platform | Arch | Supported | Notes |
-|----------|------|:---------:|-------|
-| `win32` | `x64` | Yes | Base binary bundled in npm package |
-| `win32` | `arm64` | Yes | Base binary bundled in npm package |
-| `linux` | `x64` | Yes | Base binary bundled; CUDA 12 EP available via download |
-| `linux` | `arm64` | Yes | Base binary bundled in npm package |
-| `darwin` | `x64` | Yes | Base binary bundled in npm package |
-| `darwin` | `arm64` | Yes | Base binary bundled in npm package |
+| Platform | Arch    | Supported | Notes                                                  |
+| -------- | ------- | :-------: | ------------------------------------------------------ |
+| `win32`  | `x64`   |    Yes    | Base binary bundled in npm package                     |
+| `win32`  | `arm64` |    Yes    | Base binary bundled in npm package                     |
+| `linux`  | `x64`   |    Yes    | Base binary bundled; CUDA 12 EP available via download |
+| `linux`  | `arm64` |    Yes    | Base binary bundled in npm package                     |
+| `darwin` | `x64`   |    Yes    | Base binary bundled in npm package                     |
+| `darwin` | `arm64` |    Yes    | Base binary bundled in npm package                     |
 
 Key finding: **`win32/arm64` is explicitly listed** in the install-metadata requirements with an empty manifest array, meaning the base binary is already bundled in the npm tarball -- no additional downloads needed. The ONNX Runtime C++ library also ships `onnxruntime-win-arm64` release assets (71.5 MB in v1.24.2), confirming active ARM64 Windows support.
 
@@ -93,6 +93,7 @@ codeGeneration: { strings: false, wasm: false }
 This creates several integration constraints:
 
 **WASM blocked inside sandbox:** The `wasm: false` setting prevents WebAssembly compilation inside the VM context. This means:
+
 - `onnxruntime-web` (which uses WASM) **cannot run inside the sandbox**
 - `onnxruntime-node` (native N-API addon) also **cannot be loaded inside the sandbox** -- `vm.createContext()` does not have access to native addons unless explicitly injected
 
@@ -101,7 +102,10 @@ This creates several integration constraints:
 ```javascript
 // Host process (outside sandbox)
 const { pipeline } = require('@huggingface/transformers');
-const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+const embedder = await pipeline(
+  'feature-extraction',
+  'Xenova/all-MiniLM-L6-v2',
+);
 
 // Expose to sandbox as a controlled global
 context.semantic_search = async (query, scope) => {
@@ -116,29 +120,30 @@ context.semantic_search = async (query, scope) => {
 
 **Memory footprint:** Even small models consume significant RAM:
 
-| Model | Task | Size on Disk | RAM Usage (approx.) |
-|-------|------|:------------:|:-------------------:|
-| `Xenova/all-MiniLM-L6-v2` | Embeddings | 22 MB | ~100-200 MB |
-| `Xenova/distilgpt2` | Text generation | 200 MB | ~400-600 MB |
-| `Xenova/phi-2` | Text generation | 1.5 GB | ~2-3 GB |
-| `Xenova/distilbart-cnn-6-6` | Summarization | 600 MB | ~1-1.5 GB |
+| Model                       | Task            | Size on Disk | RAM Usage (approx.) |
+| --------------------------- | --------------- | :----------: | :-----------------: |
+| `Xenova/all-MiniLM-L6-v2`   | Embeddings      |    22 MB     |     ~100-200 MB     |
+| `Xenova/distilgpt2`         | Text generation |    200 MB    |     ~400-600 MB     |
+| `Xenova/phi-2`              | Text generation |    1.5 GB    |       ~2-3 GB       |
+| `Xenova/distilbart-cnn-6-6` | Summarization   |    600 MB    |      ~1-1.5 GB      |
 
 The target machine has 32 GB RAM, but Node.js default heap is 4 GB. Embedding models fit comfortably; text generation models may require `--max-old-space-size` adjustments.
 
 ### 3c. Cross-Platform Compatibility
 
-| Platform | `onnxruntime-node` | `onnxruntime-web` (WASM) | Notes |
-|----------|:-:|:-:|-------|
-| macOS x64 | Yes | Yes | Both work |
-| macOS arm64 (Apple Silicon) | Yes | Yes | Both work |
-| Linux x64 | Yes | Yes | Both work; CUDA EP available |
-| Linux arm64 | Yes | Yes | Both work |
-| Windows x64 | Yes | Yes | Both work |
-| Windows arm64 | Yes | Yes | Native ARM64 binary for `onnxruntime-node` |
+| Platform                    | `onnxruntime-node` | `onnxruntime-web` (WASM) | Notes                                      |
+| --------------------------- | :----------------: | :----------------------: | ------------------------------------------ |
+| macOS x64                   |        Yes         |           Yes            | Both work                                  |
+| macOS arm64 (Apple Silicon) |        Yes         |           Yes            | Both work                                  |
+| Linux x64                   |        Yes         |           Yes            | Both work; CUDA EP available               |
+| Linux arm64                 |        Yes         |           Yes            | Both work                                  |
+| Windows x64                 |        Yes         |           Yes            | Both work                                  |
+| Windows arm64               |        Yes         |           Yes            | Native ARM64 binary for `onnxruntime-node` |
 
 **The native module constraint conflict:** [PROJECT.md] states "Node.js LTS only, no native modules." `onnxruntime-node` IS a native module -- it distributes prebuilt N-API (napi-v6) binaries for each platform. This is a **direct conflict** with the constraint.
 
 The `onnxruntime-web` alternative avoids native modules (pure WASM), but:
+
 1. Cannot run inside the VM sandbox (`wasm: false`)
 2. Even outside the sandbox, WASM inference is 2-5x slower than native ONNX Runtime
 3. Still works cross-platform in the host process
@@ -149,13 +154,13 @@ The `onnxruntime-web` alternative avoids native modules (pure WASM), but:
 
 The plugin currently has **zero npm dependencies** [PROJECT.md, Constraints]. Adding transformers.js would be a major change:
 
-| Package | Unpacked Size | Role |
-|---------|:------------:|------|
-| `@huggingface/transformers` | 46 MB | Pipeline API, model loading, tokenization |
-| `onnxruntime-node` | 208 MB | Native ONNX Runtime binary (platform-specific) |
-| `onnxruntime-web` | 131 MB | WASM ONNX Runtime (alternative to native) |
-| `@huggingface/jinja` | < 1 MB | Template rendering for chat models |
-| `sharp` | ~50 MB | Image processing (only needed for vision tasks -- irrelevant here) |
+| Package                     | Unpacked Size | Role                                                               |
+| --------------------------- | :-----------: | ------------------------------------------------------------------ |
+| `@huggingface/transformers` |     46 MB     | Pipeline API, model loading, tokenization                          |
+| `onnxruntime-node`          |    208 MB     | Native ONNX Runtime binary (platform-specific)                     |
+| `onnxruntime-web`           |    131 MB     | WASM ONNX Runtime (alternative to native)                          |
+| `@huggingface/jinja`        |    < 1 MB     | Template rendering for chat models                                 |
+| `sharp`                     |    ~50 MB     | Image processing (only needed for vision tasks -- irrelevant here) |
 
 **Total for NLP tasks with native runtime:** ~255 MB of npm dependencies before any model files.
 **Total for NLP tasks with WASM runtime:** ~178 MB of npm dependencies before any model files.
@@ -180,16 +185,17 @@ For each potentially applicable NLP task, this section evaluates practical viabi
 
 **Assessment:**
 
-| Factor | Local ONNX Model | Claude Haiku |
-|--------|:-:|:-:|
-| Context window | 512-2048 tokens | 200,000 tokens |
-| Code understanding | Poor (trained on prose/general text) | Strong (trained on code) |
-| Instruction following | Basic | Strong |
-| Model size | 200 MB - 2 GB | N/A (cloud) |
-| Inference time | 2-30 sec per response | ~1 sec per response |
-| Cost per query | Zero (local CPU) | ~$0.001 (via Claude Code) |
+| Factor                |           Local ONNX Model           |       Claude Haiku        |
+| --------------------- | :----------------------------------: | :-----------------------: |
+| Context window        |           512-2048 tokens            |      200,000 tokens       |
+| Code understanding    | Poor (trained on prose/general text) | Strong (trained on code)  |
+| Instruction following |                Basic                 |          Strong           |
+| Model size            |            200 MB - 2 GB             |        N/A (cloud)        |
+| Inference time        |        2-30 sec per response         |    ~1 sec per response    |
+| Cost per query        |           Zero (local CPU)           | ~$0.001 (via Claude Code) |
 
 Available ONNX text generation models for transformers.js:
+
 - **`Xenova/distilgpt2`** (200 MB): 82M parameters, GPT-2 architecture. Generates plausible-looking text but cannot follow instructions or reason about code. Context: 1024 tokens.
 - **`Xenova/TinyLlama-1.1B-Chat-v1.0`** (~600 MB): 1.1B parameters. Basic instruction following, but quality gap vs. Haiku is enormous for code understanding.
 - **`Xenova/phi-2`** (~1.5 GB): 2.7B parameters. Better reasoning, but still far below Haiku for structured code navigation queries.
@@ -213,6 +219,7 @@ Local text generation models cannot meaningfully replace `llm_query()` for the R
 **Assessment:**
 
 The embedding model `Xenova/all-MiniLM-L6-v2` is compelling for this use case:
+
 - **22 MB model file** -- small enough to bundle or cache without major impact
 - **384-dimensional embeddings** -- good quality-to-size ratio
 - **~10-50ms per embedding** on CPU -- fast enough for real-time query embedding
@@ -231,15 +238,16 @@ This would enable a new REPL global: `semantic_search(query, scope?)` that retur
 
 ```javascript
 // Current: exact match only
-let results = search("authentication", ["libs/"]);
+let results = search('authentication', ['libs/']);
 // Misses: "login-guard.ts", "jwt-validator.ts", "access-control.service.ts"
 
 // With semantic search: finds related concepts
-let results = semantic_search("authentication");
+let results = semantic_search('authentication');
 // Finds: "auth.guard.ts", "login.service.ts", "jwt-validator.ts", "access-control.service.ts"
 ```
 
 **Limitations:**
+
 - Embedding quality depends on training data -- `all-MiniLM-L6-v2` is trained on English prose, not code. Code-specific embedding models (e.g., `microsoft/unixcoder-base`) would be better but are larger (~500 MB).
 - Pre-computing embeddings for a 537-project workspace with file-level granularity (thousands of files) would take 1-5 minutes and produce a 10-50 MB embedding index.
 - The embeddings need to be recomputed when the workspace changes (new files, renamed projects).
@@ -261,9 +269,16 @@ Embeddings are the strongest candidate. The model is small, inference is fast, a
 Zero-shot classification with `Xenova/distilbart-mnli-12-1` (~300 MB) can classify text into arbitrary categories without task-specific training:
 
 ```javascript
-const classifier = await pipeline('zero-shot-classification', 'Xenova/distilbart-mnli-12-1');
-const result = await classifier("What projects depend on shared-utils?", {
-  candidate_labels: ["dependency query", "file content query", "project structure query"]
+const classifier = await pipeline(
+  'zero-shot-classification',
+  'Xenova/distilbart-mnli-12-1',
+);
+const result = await classifier('What projects depend on shared-utils?', {
+  candidate_labels: [
+    'dependency query',
+    'file content query',
+    'project structure query',
+  ],
 });
 // { labels: ["dependency query", ...], scores: [0.87, ...] }
 ```
@@ -295,6 +310,7 @@ Answer: "8.5%" (extracted span)
 ```
 
 For code, this approach is problematic:
+
 - Code answers often require synthesis, not extraction. "What does this function return?" might need "It returns a filtered array of active users" -- but the code says `return users.filter(u => u.active)`. The model would extract `users.filter(u => u.active)` as a span, which is not a useful natural-language answer.
 - Context window limitations (512 tokens for most QA models) restrict input to small code snippets.
 - QA models are trained on SQuAD (English prose), not code comprehension tasks.
@@ -318,6 +334,7 @@ Extractive QA over code produces unhelpful span extractions rather than synthesi
 Summarization models (`Xenova/distilbart-cnn-6-6`, ~600 MB) are trained on news articles (CNN/DailyMail dataset). They produce abstractive summaries of prose text.
 
 For code-related results, this fails:
+
 - Search results are lists of file paths and line matches -- not prose paragraphs. Summarizing "libs/auth/src/guard.ts:15: export class AuthGuard" into a prose summary is nonsensical.
 - Code files have structural meaning (imports, exports, function signatures) that prose summarization models cannot preserve.
 - The handle-based result storage already solves the "large result" problem: the handle store keeps full results in memory, passing only lightweight stubs (e.g., `[Handle #3: 47 items]`) to the LLM context.
@@ -357,6 +374,7 @@ Not relevant to the RLM plugin's navigation and exploration purpose.
 NER models (e.g., `Xenova/bert-base-NER`, ~400 MB) are trained on CoNLL-2003 (English news text) to recognize Person, Organization, Location, and Miscellaneous entities. They have no concept of code entities (function declarations, class names, import statements, TypeScript types).
 
 Code-aware NER would require:
+
 - A code-specific NER model trained on annotated source code
 - Such models exist in research (e.g., CodeBERT) but few are available as ONNX models for transformers.js
 - Even with a code NER model, the workspace indexer already extracts project names, file paths, and (via tsconfig) path aliases. Function-level extraction would require AST parsing, which is more reliable than statistical NER.
@@ -371,15 +389,15 @@ NER models trained on prose cannot identify code entities. AST-based extraction 
 
 ## Viability Summary
 
-| Task | Sub-Component | Viability | Key Rationale |
-|------|--------------|:---------:|---------------|
-| Text Generation | `llm_query()` replacement | LOW | Quality gap vs. Haiku is categorical; 512-2048 token context window is insufficient |
-| Feature Extraction / Embeddings | `semantic_search()` (NEW) | MEDIUM-HIGH | Small model (22 MB), fast inference, adds capability git grep lacks |
-| Text Classification | Query intent routing | LOW | Redundant with repl-executor's inherent classification |
-| Question Answering | Post-read comprehension | LOW | Extractive QA over code produces unhelpful span extractions |
-| Summarization | Result compression | LOW | Prose models fail on code; handle store already solves the problem |
-| Fill-Mask | N/A | LOW | Not an RLM navigation use case |
-| Token Classification / NER | Code entity extraction | LOW | Prose NER cannot identify code entities; AST tools are superior |
+| Task                            | Sub-Component             |  Viability  | Key Rationale                                                                       |
+| ------------------------------- | ------------------------- | :---------: | ----------------------------------------------------------------------------------- |
+| Text Generation                 | `llm_query()` replacement |     LOW     | Quality gap vs. Haiku is categorical; 512-2048 token context window is insufficient |
+| Feature Extraction / Embeddings | `semantic_search()` (NEW) | MEDIUM-HIGH | Small model (22 MB), fast inference, adds capability git grep lacks                 |
+| Text Classification             | Query intent routing      |     LOW     | Redundant with repl-executor's inherent classification                              |
+| Question Answering              | Post-read comprehension   |     LOW     | Extractive QA over code produces unhelpful span extractions                         |
+| Summarization                   | Result compression        |     LOW     | Prose models fail on code; handle store already solves the problem                  |
+| Fill-Mask                       | N/A                       |     LOW     | Not an RLM navigation use case                                                      |
+| Token Classification / NER      | Code entity extraction    |     LOW     | Prose NER cannot identify code entities; AST tools are superior                     |
 
 ---
 
@@ -390,6 +408,7 @@ NER models trained on prose cannot identify code entities. AST-based extraction 
 Quick-2 analysis concluded: "Ship v0.0.1 without `llm_query()`" [ANALYSIS_AGENT_TEAMS_NESTING, section 5].
 
 **Does local text generation change this?** No. The quality gap between local models (distilgpt2, TinyLlama, phi-2) and Claude Haiku for code-related queries is categorical, not incremental. Local models:
+
 - Cannot follow complex instructions ("find all ComponentStore files in the cms domain")
 - Have 512-2048 token context windows (vs. Haiku's 200K)
 - Cannot reason about code structure or naming conventions
@@ -417,19 +436,20 @@ A 22MB embedding model can find "files related to authentication" via semantic s
 
 This was not in the original design. Semantic search via embeddings is a genuinely new capability that complements the existing `search()` global (exact/regex matching via git grep).
 
-| Capability | `search()` (git grep) | `semantic_search()` (embeddings) |
-|------------|:-:|:-:|
-| Exact string match | Yes | No |
-| Regex patterns | Yes | No |
-| Semantic similarity | No | Yes |
-| "Find code related to X" | Only if X appears literally | Yes, via embedding similarity |
-| Speed | ~50ms (git grep) | ~10-50ms query + index lookup |
-| Dependency footprint | Zero (git, Node.js) | ~255 MB (`onnxruntime-node` + model) |
-| Reliability | Deterministic | Probabilistic (may miss or hallucinate) |
+| Capability               |    `search()` (git grep)    |    `semantic_search()` (embeddings)     |
+| ------------------------ | :-------------------------: | :-------------------------------------: |
+| Exact string match       |             Yes             |                   No                    |
+| Regex patterns           |             Yes             |                   No                    |
+| Semantic similarity      |             No              |                   Yes                   |
+| "Find code related to X" | Only if X appears literally |      Yes, via embedding similarity      |
+| Speed                    |      ~50ms (git grep)       |      ~10-50ms query + index lookup      |
+| Dependency footprint     |     Zero (git, Node.js)     |  ~255 MB (`onnxruntime-node` + model)   |
+| Reliability              |        Deterministic        | Probabilistic (may miss or hallucinate) |
 
 **Assessment:** Semantic search adds genuine value for exploratory queries where the user does not know the exact terms to search for. It does not replace `search()` but complements it. The question is whether this value justifies the dependency footprint and constraint changes.
 
 For a 537-project workspace, the embedding index would contain project names (~537 entries), file paths (~10,000+ entries), and optionally function signatures (~50,000+ entries). At 384 dimensions x 4 bytes per float32, this is:
+
 - Project-level index: ~800 KB
 - File-level index: ~15 MB
 - Function-level index: ~75 MB
@@ -483,6 +503,7 @@ Host process (Node.js)
 ```
 
 Key architectural decisions:
+
 - **Host process, not VM sandbox.** ML models run in the host process. The sandbox receives results via controlled globals.
 - **Pre-computed embeddings.** Embedding the entire workspace at session start or during indexing. Query-time embedding is fast (~10ms) but index pre-computation takes minutes.
 - **Optional dependency.** `onnxruntime-node` (or `onnxruntime-web`) as an optional peer dependency. The plugin works without it (semantic search unavailable); with it, `semantic_search()` becomes available.
@@ -506,15 +527,15 @@ Option 2 is the more conservative approach and aligns with the plugin architectu
 
 ## Source Materials
 
-| Reference | Path | Relevance |
-|-----------|------|-----------|
-| [PROJECT.md] | `.planning/PROJECT.md` | Active requirements, REPL sandbox design, constraints (no native modules, zero dependencies) |
-| [ROADMAP.md] | `.planning/ROADMAP.md` | Phase structure, v0.0.1 scope |
-| [ANALYSIS_AGENT_TEAMS_NESTING] | `research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md` | Quick-2 findings on llm_query() deferral, sync/async mismatch, token cost |
-| [BRAINSTORM.md] | `research/claude-plugin/BRAINSTORM.md` | RLM plugin design, token projections, REPL globals |
-| [@huggingface/transformers] | [npm registry](https://www.npmjs.com/package/@huggingface/transformers) | v3.8.1, 46 MB unpacked, depends on onnxruntime-node v1.21.0 and onnxruntime-web |
-| [onnxruntime-node] | [npm registry](https://www.npmjs.com/package/onnxruntime-node) | v1.21.0 (pinned by transformers), 208 MB unpacked, N-API addon with win32-arm64 support |
-| [onnxruntime-web] | [npm registry](https://www.npmjs.com/package/onnxruntime-web) | v1.24.2, 131 MB unpacked, WASM backend |
-| [microsoft/onnxruntime] | [GitHub](https://github.com/microsoft/onnxruntime) | Platform binary matrix (install-metadata.js confirms win32/arm64 support) |
-| [Xenova/all-MiniLM-L6-v2] | [Hugging Face](https://huggingface.co/Xenova/all-MiniLM-L6-v2) | 22 MB embedding model, 384 dimensions |
-| [Xenova/distilgpt2] | [Hugging Face](https://huggingface.co/Xenova/distilgpt2) | 200 MB text generation model, 82M parameters |
+| Reference                      | Path                                                                    | Relevance                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [PROJECT.md]                   | `.planning/PROJECT.md`                                                  | Active requirements, REPL sandbox design, constraints (no native modules, zero dependencies) |
+| [ROADMAP.md]                   | `.planning/ROADMAP.md`                                                  | Phase structure, v0.0.1 scope                                                                |
+| [ANALYSIS_AGENT_TEAMS_NESTING] | `research/claude-plugin/ANALYSIS_AGENT_TEAMS_NESTING.md`                | Quick-2 findings on llm_query() deferral, sync/async mismatch, token cost                    |
+| [BRAINSTORM.md]                | `research/claude-plugin/BRAINSTORM.md`                                  | RLM plugin design, token projections, REPL globals                                           |
+| [@huggingface/transformers]    | [npm registry](https://www.npmjs.com/package/@huggingface/transformers) | v3.8.1, 46 MB unpacked, depends on onnxruntime-node v1.21.0 and onnxruntime-web              |
+| [onnxruntime-node]             | [npm registry](https://www.npmjs.com/package/onnxruntime-node)          | v1.21.0 (pinned by transformers), 208 MB unpacked, N-API addon with win32-arm64 support      |
+| [onnxruntime-web]              | [npm registry](https://www.npmjs.com/package/onnxruntime-web)           | v1.24.2, 131 MB unpacked, WASM backend                                                       |
+| [microsoft/onnxruntime]        | [GitHub](https://github.com/microsoft/onnxruntime)                      | Platform binary matrix (install-metadata.js confirms win32/arm64 support)                    |
+| [Xenova/all-MiniLM-L6-v2]      | [Hugging Face](https://huggingface.co/Xenova/all-MiniLM-L6-v2)          | 22 MB embedding model, 384 dimensions                                                        |
+| [Xenova/distilgpt2]            | [Hugging Face](https://huggingface.co/Xenova/distilgpt2)                | 200 MB text generation model, 82M parameters                                                 |

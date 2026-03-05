@@ -214,5 +214,6 @@ Based on community benchmarks:
 ---
 
 **Related Documents:**
+
 - [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md) - Skills vs commands, design patterns
 - [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md) - Haiku-specific optimization

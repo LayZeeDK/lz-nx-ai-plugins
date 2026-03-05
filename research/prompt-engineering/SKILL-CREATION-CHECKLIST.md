@@ -13,6 +13,7 @@
 **Solution**: This checklist embeds large file handling into the design phase.
 
 **Cost of Not Using This Checklist**:
+
 - Engineering time: 60 min per skill to debug + fix after failure
 - User impact: Workflow blocked on large documents
 - Technical debt: Skills designed without chunking from start
@@ -60,12 +61,12 @@
 
   **Common section needs by skill type**:
 
-  | Skill Type | Sections Needed | Sections to Skip |
-  |------------|----------------|------------------|
-  | **Clarification** | Requirements, User Stories, Edge Cases, Acceptance Criteria | Background, Overview, Goals/Non-Goals |
-  | **Analysis** | Requirements, User Stories, Edge Cases, Acceptance Criteria | Background, Overview, Goals/Non-Goals |
-  | **Task Generation** | User Stories, Success Criteria | Requirements, Background, Edge Cases |
-  | **Checklist Generation** | Depends on focus (e.g., UX → UI/Interaction sections) | All sections not matching focus |
+  | Skill Type               | Sections Needed                                             | Sections to Skip                      |
+  | ------------------------ | ----------------------------------------------------------- | ------------------------------------- |
+  | **Clarification**        | Requirements, User Stories, Edge Cases, Acceptance Criteria | Background, Overview, Goals/Non-Goals |
+  | **Analysis**             | Requirements, User Stories, Edge Cases, Acceptance Criteria | Background, Overview, Goals/Non-Goals |
+  | **Task Generation**      | User Stories, Success Criteria                              | Requirements, Background, Edge Cases  |
+  | **Checklist Generation** | Depends on focus (e.g., UX → UI/Interaction sections)       | All sections not matching focus       |
 
 - [ ] **Skip irrelevant sections**: Document which sections you DON'T need
   - Background, Overview, Goals/Non-Goals: Almost never needed (save tokens)
@@ -79,20 +80,26 @@
 **For requirements.md** (if >1,250 lines):
 
 \`\`\`
+
 # Step 1: Discover section boundaries
+
 Grep(pattern: "^#{1,3}\\s+", path: requirements.md, -n: true)
 
 # Step 2: Read relevant sections only
+
 sections_needed = ["Functional Requirements", "User Stories", "Edge Cases"]
 
 FOR EACH section IN sections_needed:
-  Read(requirements.md, offset=section.start, limit=section.lines)
+Read(requirements.md, offset=section.start, limit=section.lines)
 
 # Step 3: Skip irrelevant sections
+
 # Skip: Background, Overview, Goals/Non-Goals
+
 \`\`\`
 
 **Benefits**:
+
 - Works on any file size
 - Cost-efficient (skip 60-70% of irrelevant content)
 - Same quality (operation is section-scoped)
@@ -103,6 +110,7 @@ FOR EACH section IN sections_needed:
 - [ ] **Document dependencies**: What data crosses section boundaries?
 
   **Example analysis**:
+
   ```markdown
   Clarification skill dependency analysis:
 
@@ -141,11 +149,13 @@ FOR EACH section IN sections_needed:
 
 <validation_checklist>
 **For requirements.md**:
+
 - [ ] Did you extract {content type} DESCRIPTIONS (not just identifiers)?
 - [ ] Can you quote a specific {content item} from the loaded content?
 - [ ] Example: {Show what success looks like}
 
 **If you answered "NO" to any question above**:
+
 1. STOP immediately
 2. Re-read the affected file using Read(file, offset, limit)
 3. Validate again before proceeding to Step 3
@@ -160,12 +170,12 @@ FOR EACH section IN sections_needed:
 
 ### Validation Examples by Skill Type
 
-| Skill Type | Content Validation Test |
-|------------|------------------------|
-| **Clarification** | "Can you quote a specific requirement's imperative phrase?" |
-| **Analysis** | "Can you list requirement descriptions (not just REQ-XXX IDs)?" |
-| **Task Generation** | "Can you list user story descriptions (not just US-XXX IDs)?" |
-| **Checklist** | "Can you quote specific items for checklist (not section titles)?" |
+| Skill Type          | Content Validation Test                                            |
+| ------------------- | ------------------------------------------------------------------ |
+| **Clarification**   | "Can you quote a specific requirement's imperative phrase?"        |
+| **Analysis**        | "Can you list requirement descriptions (not just REQ-XXX IDs)?"    |
+| **Task Generation** | "Can you list user story descriptions (not just US-XXX IDs)?"      |
+| **Checklist**       | "Can you quote specific items for checklist (not section titles)?" |
 
 ---
 
@@ -178,8 +188,10 @@ FOR EACH section IN sections_needed:
 - [ ] **Explain why chunking works**: Prove operations are section-scoped
 
   **Template**:
+
   ```markdown
   **Why semantic chunking works for {skill name}**:
+
   - Operation X is local to section Y (no cross-section dependencies)
   - Detection/generation/analysis happens per-section
   - Results accumulate across sections without interaction
@@ -254,6 +266,7 @@ When reviewing a new skill, check:
 - [ ] **Tested on large file**: PR description shows test on large document or similar
 
 **Red flags during review**:
+
 - ❌ "Strategy: Full read required" (question this immediately)
 - ❌ No chunking strategy documented
 - ❌ Only tested on small example files
@@ -266,25 +279,25 @@ When reviewing a new skill, check:
 
 ### ❌ Don't Do This
 
-| Mistake | Why It's Wrong | Better Approach |
-|---------|----------------|-----------------|
-| "Full read required" | Often a false assumption | Question why; test semantic chunking |
-| Grep for content | Loads STRUCTURE not CONTENT | Use Grep for boundaries, Read for content |
-| No validation checkpoint | Might proceed with incomplete data | Add Step 2b: Content Loading Validation |
-| Test only on small files | Won't catch chunking failures | Test on large document (1,400+ lines) |
-| Arbitrary fixed chunks | Risk splitting mid-content | Use semantic boundaries (section headers) |
-| "I'll add chunking later" | Becomes technical debt | Design section-scoped from start |
+| Mistake                   | Why It's Wrong                     | Better Approach                           |
+| ------------------------- | ---------------------------------- | ----------------------------------------- |
+| "Full read required"      | Often a false assumption           | Question why; test semantic chunking      |
+| Grep for content          | Loads STRUCTURE not CONTENT        | Use Grep for boundaries, Read for content |
+| No validation checkpoint  | Might proceed with incomplete data | Add Step 2b: Content Loading Validation   |
+| Test only on small files  | Won't catch chunking failures      | Test on large document (1,400+ lines)     |
+| Arbitrary fixed chunks    | Risk splitting mid-content         | Use semantic boundaries (section headers) |
+| "I'll add chunking later" | Becomes technical debt             | Design section-scoped from start          |
 
 ### ✅ Do This Instead
 
-| Best Practice | Why It Works | Example |
-|---------------|--------------|---------|
-| Semantic section reading | Natural boundaries, no mid-content splits | Use section headers as split points |
-| Content validation | Catches header-only reads | "Can you quote specific requirement?" |
-| Skip irrelevant sections | Cost savings, same quality | Skip Background, Goals for analysis |
-| Test on large files | Catches Read tool failures | Use 1,400+ line document |
-| Reference research docs | Shows you did your homework | Link to chunking strategies doc |
-| Section-scoped operations | Enables chunking by design | "Operation X needs Section Y only" |
+| Best Practice             | Why It Works                              | Example                               |
+| ------------------------- | ----------------------------------------- | ------------------------------------- |
+| Semantic section reading  | Natural boundaries, no mid-content splits | Use section headers as split points   |
+| Content validation        | Catches header-only reads                 | "Can you quote specific requirement?" |
+| Skip irrelevant sections  | Cost savings, same quality                | Skip Background, Goals for analysis   |
+| Test on large files       | Catches Read tool failures                | Use 1,400+ line document              |
+| Reference research docs   | Shows you did your homework               | Link to chunking strategies doc       |
+| Section-scoped operations | Enables chunking by design                | "Operation X needs Section Y only"    |
 
 ---
 
@@ -303,30 +316,36 @@ Based on research-backed best practices from [LARGE-FILE-CHUNKING.md](./LARGE-FI
 **For requirements.md** (if >1,250 lines):
 
 \`\`\`
+
 # Step 1: Discover section boundaries
+
 Grep(
-  pattern: "^#{1,3}\\s+",
-  path: requirements.md,
-  output_mode: "content",
-  -n: true  # Include line numbers
+pattern: "^#{1,3}\\s+",
+path: requirements.md,
+output_mode: "content",
+-n: true # Include line numbers
 )
 
 # Step 2: Read relevant sections only
+
 sections_needed = [
-  "TODO: List sections your skill needs",
-  "Example: Functional Requirements",
-  "Example: User Stories"
+"TODO: List sections your skill needs",
+"Example: Functional Requirements",
+"Example: User Stories"
 ]
 
 FOR EACH section IN sections_needed:
-  Read(requirements.md, offset=section.start, limit=section.lines)
-  EXTRACT {content type} from content
+Read(requirements.md, offset=section.start, limit=section.lines)
+EXTRACT {content type} from content
 
 # Step 3: Skip irrelevant sections
+
 # Always skip: Background, Overview, Goals/Non-Goals (unless needed)
+
 \`\`\`
 
 **Why this works for {your skill name}**:
+
 - TODO: Explain why operations are section-scoped
 - TODO: List cross-section dependencies (if any)
 - TODO: Document cost impact
@@ -342,14 +361,16 @@ See: LARGE-FILE-CHUNKING.md
 
 <validation_checklist>
 **For requirements.md**:
+
 - [ ] Did you extract {content type} DESCRIPTIONS (not just identifiers)?
 - [ ] Can you quote a specific {content item} from the loaded content?
 
 **If you answered "NO"**:
+
 1. STOP immediately
 2. Re-read using Read(file, offset, limit) with semantic sections
 3. Validate again before Step 3
-</validation_checklist>
+   </validation_checklist>
 ```
 
 ---
@@ -359,16 +380,19 @@ See: LARGE-FILE-CHUNKING.md
 After using this checklist:
 
 **Immediate** (During development):
+
 - ✅ Chunking strategy documented in Step 2
 - ✅ Content validation checkpoint added (Step 2b)
 - ✅ Tested on large file (1,400+ lines or similar)
 
 **Short-term** (Code review):
+
 - ✅ Reviewer approved chunking approach
 - ✅ No "full read required" statements remain
 - ✅ Optimization notes reference research docs
 
 **Long-term** (Production):
+
 - ✅ Zero failures on large files (>1,250 lines)
 - ✅ No user reports of Read tool errors
 - ✅ Cost profile matches expectations
@@ -378,10 +402,12 @@ After using this checklist:
 ## Resources
 
 ### Documentation
+
 - **Chunking Strategies**: [LARGE-FILE-CHUNKING.md](./LARGE-FILE-CHUNKING.md)
 - **Model Optimization**: [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md)
 
 ### External Research
+
 - **Anthropic Guidance**: [Introducing Contextual Retrieval](https://www.anthropic.com/news/contextual-retrieval)
 - **Philosophy**: "Semantic chunking" over "full file reads"
 
@@ -392,6 +418,7 @@ After using this checklist:
 This checklist will evolve based on lessons learned from new skills.
 
 **Suggest improvements**:
+
 - Found a common mistake not covered? → Add to "Common Mistakes" section
 - Discovered a new anti-pattern? → Document in chunking strategies doc
 - Have a better template? → Update "Quick Start Template" section

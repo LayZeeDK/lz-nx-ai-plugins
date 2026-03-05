@@ -16,9 +16,9 @@
 
 ```typescript
 interface SearchResult {
-  file: string;   // relative path from workspace root
-  line: number;   // 1-based line number
-  match: string;  // the matching line content
+  file: string; // relative path from workspace root
+  line: number; // 1-based line number
+  match: string; // the matching line content
 }
 ```
 
@@ -68,14 +68,14 @@ A pure-Node.js approach using `fs.globSync()` (stable since Node.js 22.17) to en
 
 ## 3. Comparison Matrix
 
-| Dimension | `git grep` | `rg` (ripgrep) | `grep` (POSIX) | Grep Tool (vendored) | Node.js built-in |
-|-----------|:---:|:---:|:---:|:---:|:---:|
-| **A. Cross-platform availability** | GREEN | YELLOW | RED | RED | YELLOW |
-| **B. Performance** | GREEN | YELLOW | RED | N/A | RED |
-| **C. API ergonomics** | GREEN | GREEN | YELLOW | RED | YELLOW |
-| **D. Git-awareness** | GREEN | GREEN | RED | GREEN | RED |
-| **E. Dependency footprint** | GREEN | RED | YELLOW | RED | GREEN |
-| **F. Known pitfalls** | GREEN | YELLOW | RED | RED | YELLOW |
+| Dimension                          | `git grep` | `rg` (ripgrep) | `grep` (POSIX) | Grep Tool (vendored) | Node.js built-in |
+| ---------------------------------- | :--------: | :------------: | :------------: | :------------------: | :--------------: |
+| **A. Cross-platform availability** |   GREEN    |     YELLOW     |      RED       |         RED          |      YELLOW      |
+| **B. Performance**                 |   GREEN    |     YELLOW     |      RED       |         N/A          |       RED        |
+| **C. API ergonomics**              |   GREEN    |     GREEN      |     YELLOW     |         RED          |      YELLOW      |
+| **D. Git-awareness**               |   GREEN    |     GREEN      |      RED       |        GREEN         |       RED        |
+| **E. Dependency footprint**        |   GREEN    |      RED       |     YELLOW     |         RED          |      GREEN       |
+| **F. Known pitfalls**              |   GREEN    |     YELLOW     |      RED       |         RED          |      YELLOW      |
 
 **Legend:** GREEN = excellent fit, YELLOW = acceptable with caveats, RED = significant issues
 
@@ -89,12 +89,12 @@ A pure-Node.js approach using `fs.globSync()` (stable since Node.js 22.17) to en
 
 Git is a hard dependency of the plugin (the workspace is a git repository, and AGENTS.md assumes Git is available on all platforms). `git grep` ships with every Git installation:
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| macOS | Works | Natively compiled (Xcode or Homebrew Git) |
-| Linux | Works | Natively compiled (distro package manager) |
-| Windows x64 | Works | Git for Windows, natively compiled |
-| Windows arm64 | Works | Git for Windows arm64 build, natively compiled |
+| Platform      | Status | Notes                                          |
+| ------------- | ------ | ---------------------------------------------- |
+| macOS         | Works  | Natively compiled (Xcode or Homebrew Git)      |
+| Linux         | Works  | Natively compiled (distro package manager)     |
+| Windows x64   | Works  | Git for Windows, natively compiled             |
+| Windows arm64 | Works  | Git for Windows arm64 build, natively compiled |
 
 The critical advantage on Windows arm64: `git grep` runs natively (not under QEMU emulation), making it the fastest search tool on this platform. This is confirmed by CLAUDE.md's observation that git grep is ~2.5x faster than QEMU-emulated rg on arm64.
 
@@ -122,14 +122,19 @@ Format: `<file>:<line>:<match>` -- one per line, parseable with a single `split(
 The `spawnSync` invocation is clean:
 
 ```javascript
-const result = spawnSync('git', ['grep', '-n', '--no-color', '-e', pattern, '--', ...paths], {
-  cwd: workspaceRoot,
-  encoding: 'utf8',
-  env: { ...process.env, MSYS_NO_PATHCONV: '1' },
-});
+const result = spawnSync(
+  'git',
+  ['grep', '-n', '--no-color', '-e', pattern, '--', ...paths],
+  {
+    cwd: workspaceRoot,
+    encoding: 'utf8',
+    env: { ...process.env, MSYS_NO_PATHCONV: '1' },
+  },
+);
 ```
 
 Key API points:
+
 - `-n` gives line numbers
 - `--no-color` ensures no ANSI escape codes in output
 - `-e pattern` safely passes the pattern (avoids ambiguity with patterns starting with `-`)
@@ -144,6 +149,7 @@ Error handling: `spawnSync` returns `status` code. Status 1 with empty stdout me
 #### D. Git-awareness -- GREEN
 
 Inherent. `git grep` only searches files tracked by Git. It does not search:
+
 - `node_modules/` (gitignored)
 - `dist/` and build output (gitignored)
 - `.nx/` cache (gitignored)
@@ -175,11 +181,11 @@ Requires only Git, which is already a hard dependency of the plugin (the project
 
 Ripgrep must be installed separately -- it is not bundled with Git, Node.js, or any OS.
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| macOS | Works | `brew install ripgrep` |
-| Linux | Works | `apt install ripgrep` / `dnf install ripgrep` |
-| Windows x64 | Works | `choco install ripgrep` or `winget install ripgrep` |
+| Platform      | Status       | Notes                                                                                     |
+| ------------- | ------------ | ----------------------------------------------------------------------------------------- |
+| macOS         | Works        | `brew install ripgrep`                                                                    |
+| Linux         | Works        | `apt install ripgrep` / `dnf install ripgrep`                                             |
+| Windows x64   | Works        | `choco install ripgrep` or `winget install ripgrep`                                       |
 | Windows arm64 | Works (slow) | Chocolatey installs x86_64 binary; runs under QEMU emulation at ~2.5x performance penalty |
 
 The YELLOW rating is because: (a) ripgrep is not guaranteed to be installed, and (b) on Windows arm64, the performance penalty from QEMU emulation makes it slower than the native `git grep` alternative.
@@ -219,6 +225,7 @@ Ripgrep is a separate binary that must be installed by the user. The plugin cons
 #### F. Known pitfalls -- YELLOW
 
 Ripgrep on Windows arm64 runs under QEMU emulation (Chocolatey installs the x86_64 binary). This means:
+
 - ~2.5x slower than native alternatives
 - Higher memory usage from emulation overhead
 - Potential for rare QEMU-specific bugs
@@ -231,12 +238,12 @@ Additionally, CLAUDE.md documents a known bug (#27988) with the arm64-win32 vend
 
 #### A. Cross-platform availability -- RED
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| macOS | Works | BSD grep (or GNU grep via Homebrew) |
-| Linux | Works | GNU grep, natively compiled |
-| Windows x64 | Works (slow) | Via Git Bash MSYS2 layer; `grep -r` is slow and can produce incomplete results |
-| Windows arm64 | Works (slow) | Same MSYS2 issues, plus running under QEMU-like translation |
+| Platform      | Status       | Notes                                                                          |
+| ------------- | ------------ | ------------------------------------------------------------------------------ |
+| macOS         | Works        | BSD grep (or GNU grep via Homebrew)                                            |
+| Linux         | Works        | GNU grep, natively compiled                                                    |
+| Windows x64   | Works (slow) | Via Git Bash MSYS2 layer; `grep -r` is slow and can produce incomplete results |
+| Windows arm64 | Works (slow) | Same MSYS2 issues, plus running under QEMU-like translation                    |
 
 The RED rating is because CLAUDE.md explicitly warns: "Git Bash's `grep -r` is ~14x slower than `git grep`, and its MSYS2 recursive glob produces incomplete results." This makes `grep` unreliable as a primary search tool on Windows.
 
@@ -253,6 +260,7 @@ libs/shared/utils/src/lib/string.ts:42:export function capitalize(str: string) {
 ```
 
 However, constructing the command correctly is harder:
+
 - Must manually exclude directories (`--exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.nx`)
 - Different flags across BSD grep (macOS) and GNU grep (Linux)
 - `-r` flag behavior differs between implementations
@@ -296,11 +304,11 @@ Since this tool is architecturally unavailable to the `search()` function, no fu
 
 `fs.globSync()` became stable in Node.js 22.17. The current Node.js LTS schedule:
 
-| Node.js Version | LTS Status | `fs.globSync` Available |
-|-----------------|------------|-------------------------|
-| Node.js 20 (Iron) | Maintenance LTS until Apr 2026 | No |
-| Node.js 22 (Jod) | Active LTS until Oct 2025, Maintenance until Apr 2027 | Yes (since 22.17) |
-| Node.js 24 | Current (LTS from Oct 2025) | Yes |
+| Node.js Version   | LTS Status                                            | `fs.globSync` Available |
+| ----------------- | ----------------------------------------------------- | ----------------------- |
+| Node.js 20 (Iron) | Maintenance LTS until Apr 2026                        | No                      |
+| Node.js 22 (Jod)  | Active LTS until Oct 2025, Maintenance until Apr 2027 | Yes (since 22.17)       |
+| Node.js 24        | Current (LTS from Oct 2025)                           | Yes                     |
 
 The YELLOW rating is because: users on Node.js 20 (still in Maintenance LTS) would not have `fs.globSync`. The plugin states "Node.js LTS" as the requirement. If interpreted strictly as "any active LTS," this includes Node.js 20, which lacks the API. If interpreted as "current Active LTS" (Node.js 22+), the API is available.
 
@@ -329,7 +337,7 @@ function search(pattern, paths) {
   const regex = new RegExp(pattern);
   const results = [];
   const globPattern = paths?.length
-    ? paths.map(p => `${p}/**/*`).join('\0')
+    ? paths.map((p) => `${p}/**/*`).join('\0')
     : '**/*.{ts,js,mjs,json}';
 
   for (const file of fs.globSync(globPattern, { cwd: workspaceRoot })) {
@@ -356,6 +364,7 @@ function search(pattern, paths) {
 ```
 
 However, this approach has ergonomic downsides:
+
 - Must implement `.gitignore` exclusion logic manually (or accept searching ignored files)
 - Must handle binary file detection (avoid reading `.png`, `.woff`, etc.)
 - Must handle file encoding (assume UTF-8, skip files that fail to decode)
@@ -426,7 +435,7 @@ function search(pattern, paths, workspaceRoot) {
   const result = spawnSync('git', args, {
     cwd: workspaceRoot,
     encoding: 'utf8',
-    timeout: 10000,  // 10s hard timeout
+    timeout: 10000, // 10s hard timeout
     env: { ...process.env, MSYS_NO_PATHCONV: '1' },
   });
 
@@ -475,9 +484,9 @@ function parseGitGrepOutput(stdout, maxResults) {
 
     if (!isNaN(lineNum)) {
       results.push({
-        file: file.replace(/\\/g, '/'),  // Normalize Windows paths
+        file: file.replace(/\\/g, '/'), // Normalize Windows paths
         line: lineNum,
-        match: match.trimEnd(),  // Remove trailing \r on Windows
+        match: match.trimEnd(), // Remove trailing \r on Windows
       });
     }
 
@@ -492,13 +501,13 @@ function parseGitGrepOutput(stdout, maxResults) {
 
 **Key flags explained:**
 
-| Flag | Purpose |
-|------|---------|
-| `-n` | Include line numbers in output |
-| `--no-color` | Disable ANSI color codes (ensures clean parsing) |
-| `-I` | Skip binary files (equivalent to `--binary-files=without-match`) |
+| Flag         | Purpose                                                                 |
+| ------------ | ----------------------------------------------------------------------- |
+| `-n`         | Include line numbers in output                                          |
+| `--no-color` | Disable ANSI color codes (ensures clean parsing)                        |
+| `-I`         | Skip binary files (equivalent to `--binary-files=without-match`)        |
 | `-e pattern` | Explicit pattern flag (avoids ambiguity for patterns starting with `-`) |
-| `--` | Separator between options and path arguments |
+| `--`         | Separator between options and path arguments                            |
 
 **Regex behavior:** `git grep` uses POSIX Basic Regular Expressions by default. Use `-E` for Extended Regular Expressions (ERE) or `-P` for Perl-Compatible Regular Expressions (PCRE, requires git compiled with libpcre). For the REPL `search()` function, BRE is sufficient for most patterns. If the LLM needs PCRE features, add `-P` (verify availability with `git grep -P "test" 2>/dev/null`).
 
@@ -517,7 +526,7 @@ function searchFallback(pattern, paths, workspaceRoot) {
   }
 
   const globPatterns = paths?.length
-    ? paths.map(p => p + '/**/*')
+    ? paths.map((p) => p + '/**/*')
     : ['**/*.ts', '**/*.js', '**/*.mjs', '**/*.json', '**/*.html', '**/*.css'];
 
   for (const globPattern of globPatterns) {
@@ -525,9 +534,11 @@ function searchFallback(pattern, paths, workspaceRoot) {
       cwd: workspaceRoot,
       exclude: (p) => {
         const rel = path.relative(workspaceRoot, p);
-        return rel.startsWith('node_modules') ||
-               rel.startsWith('dist') ||
-               rel.startsWith('.nx');
+        return (
+          rel.startsWith('node_modules') ||
+          rel.startsWith('dist') ||
+          rel.startsWith('.nx')
+        );
       },
     })) {
       const absPath = path.join(workspaceRoot, file);
@@ -561,6 +572,7 @@ function searchFallback(pattern, paths, workspaceRoot) {
 ```
 
 **Fallback limitations:**
+
 - Much slower (3-pass vs single-pass)
 - Manual `.gitignore` exclusion (only covers common directories, not full `.gitignore` semantics)
 - Requires Node.js 22.17+ for `fs.globSync`
@@ -590,27 +602,27 @@ The 100-result cap from FEATURES.md can be implemented at two levels:
 
 1. **Parse-level cap** (implemented above): Parse output until 100 results are collected, then stop. This is simple but still requires `git grep` to produce all output before the Node.js process reads it.
 
-2. **Git-level cap** (optimization): There is no single `-m` flag that limits total results across all files. The `-m N` flag limits to N matches *per file*. For a global cap, the parse-level approach is the correct strategy. If performance profiling shows the full output is a bottleneck, consider piping through `head -100` (on Unix) or truncating the stdout buffer.
+2. **Git-level cap** (optimization): There is no single `-m` flag that limits total results across all files. The `-m N` flag limits to N matches _per file_. For a global cap, the parse-level approach is the correct strategy. If performance profiling shows the full output is a bottleneck, consider piping through `head -100` (on Unix) or truncating the stdout buffer.
 
 ### 6.3 Error Handling Contract
 
 The `search()` function follows the REPL global contract: **never throw, return empty array on error**.
 
-| Scenario | `git grep` behavior | `search()` returns |
-|----------|---------------------|-------------------|
-| No matches | Exit code 1, empty stdout | `[]` |
-| Invalid regex pattern | Exit code 2, stderr message | `[]` |
-| Git not installed | `spawnSync` returns `error: ENOENT` | `[]` (then fallback) |
-| Timeout (10s) | `spawnSync` returns `signal: SIGTERM` | `[]` |
-| Path does not exist | Exit code 128, stderr message | `[]` |
-| Empty workspace | Exit code 1, empty stdout | `[]` |
+| Scenario              | `git grep` behavior                   | `search()` returns   |
+| --------------------- | ------------------------------------- | -------------------- |
+| No matches            | Exit code 1, empty stdout             | `[]`                 |
+| Invalid regex pattern | Exit code 2, stderr message           | `[]`                 |
+| Git not installed     | `spawnSync` returns `error: ENOENT`   | `[]` (then fallback) |
+| Timeout (10s)         | `spawnSync` returns `signal: SIGTERM` | `[]`                 |
+| Path does not exist   | Exit code 128, stderr message         | `[]`                 |
+| Empty workspace       | Exit code 1, empty stdout             | `[]`                 |
 
 ### 6.4 Path Normalization on Windows
 
 Git always uses forward slashes in its output, even on Windows. However, the `paths` argument to `search()` might contain backslashes if constructed from Windows APIs. Normalize before passing to `git grep`:
 
 ```javascript
-const normalizedPaths = paths?.map(p => p.replace(/\\/g, '/'));
+const normalizedPaths = paths?.map((p) => p.replace(/\\/g, '/'));
 ```
 
 ### 6.5 Literal vs. Regex Pattern Detection
@@ -623,9 +635,9 @@ The FEATURES.md contract says the pattern can be "regex or literal string." To s
 const hasRegexChars = /[.*+?^${}()|[\]\\]/.test(pattern);
 
 if (hasRegexChars) {
-  args.push('-E');  // Extended regex
+  args.push('-E'); // Extended regex
 } else {
-  args.push('-F');  // Fixed string (faster)
+  args.push('-F'); // Fixed string (faster)
 }
 ```
 
@@ -665,16 +677,16 @@ For workspaces with 50K+ tracked files, `git grep` is already fast (<500ms for m
 
 ## 7. Decision Summary
 
-| Choice | Tool |
-|--------|------|
-| **Primary** | `git grep` via `spawnSync('git', ['grep', ...args])` with `shell: false` |
-| **Fallback** | Node.js `fs.globSync` + `readFileSync` + regex (zero-dep, slower) |
+| Choice           | Tool                                                                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Primary**      | `git grep` via `spawnSync('git', ['grep', ...args])` with `shell: false`                                                   |
+| **Fallback**     | Node.js `fs.globSync` + `readFileSync` + regex (zero-dep, slower)                                                          |
 | **Disqualified** | `grep` (slow/unreliable on Windows), `rg` (extra dependency, slow on arm64), Claude Grep tool (not available from Node.js) |
 
 **Rationale:** `git grep` is the only candidate that scores GREEN on 5 of 6 dimensions. It is the fastest tool on all target platforms (especially Windows arm64), has zero additional dependencies, inherently respects `.gitignore`, produces easily parseable output, and both Windows-specific pitfalls (PITFALLS.md Pitfall 7 and Pitfall 8) are fully mitigated by the `spawnSync` + `shell: false` invocation pattern.
 
 ---
 
-*Analysis for: `search()` REPL global function in lz-nx.rlm Claude Code plugin*
-*Authored: 2026-03-04*
-*References: FEATURES.md (search() contract), PITFALLS.md (Pitfalls 7-9), AGENTS.md (platform compatibility), CLAUDE.md (git grep performance data), PROJECT.md (Node.js LTS constraint)*
+_Analysis for: `search()` REPL global function in lz-nx.rlm Claude Code plugin_
+_Authored: 2026-03-04_
+_References: FEATURES.md (search() contract), PITFALLS.md (Pitfalls 7-9), AGENTS.md (platform compatibility), CLAUDE.md (git grep performance data), PROJECT.md (Node.js LTS constraint)_

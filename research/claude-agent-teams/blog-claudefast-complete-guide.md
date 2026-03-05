@@ -5,6 +5,7 @@
 > Site: Claude Fast
 
 ---
+
 Guide to Claude Code Agent Teams for parallel multi-agent development. What they are, when to use them, and how they compare to subagents.
 
 **Problem**: You're managing a complex codebase refactor that touches the API layer, database migrations, test coverage, and documentation. A single Claude Code session handles one piece at a time. [Subagents](https://claudefa.st/blog/guide/agents/agent-fundamentals) can parallelize work, but they report results back in isolation. They can't share findings, challenge assumptions, or coordinate directly with each other. When you need real collaboration between AI workers, subagents hit a wall.
@@ -28,22 +29,19 @@ Anthropic shipped Agent Teams as an experimental feature with the Opus 4.6 relea
 This is significant for three reasons:
 
 1.  **Native integration beats bolted-on solutions.** The shared task list, mailbox system, and teammate lifecycle management are built into Claude Code's core. No external dependencies, no fragile scripts.
-    
 2.  **The multi-agent paradigm is maturing.** Developers who build muscle memory with agent teams now will have a serious edge as these tools evolve. The gap between "uses Claude Code" and "orchestrates Claude Code teams" will widen.
-    
 3.  **Complex projects demand collaboration, not just parallelism.** A [task distribution](https://claudefa.st/blog/guide/agents/task-distribution) strategy gets you parallel execution. Agent Teams gets you parallel execution with active coordination, where teammates can share context, challenge each other's approaches, and converge on better solutions together.
-    
 
 Agent Teams add coordination overhead and use significantly more tokens than a single session. They work best when teammates can operate independently on distinct scopes while still benefiting from communication.
 
 ### [Strong Use Cases](https://claudefa.st/#strong-use-cases)
 
--   **Research and review**: Multiple teammates investigate different aspects of a problem simultaneously, then share and challenge each other's findings
--   **New modules or features**: Teammates each own a separate component without stepping on each other's files
--   **Debugging with competing hypotheses**: Teammates test different theories in parallel and actively try to disprove each other
--   **Cross-layer coordination**: Changes that span frontend, backend, and tests, each owned by a different teammate
--   **Debate and consensus**: Multiple teammates argue different positions on an architectural decision, converging on the strongest approach
--   **Large-scale inventory or classification**: Teammates divide a large dataset and process segments independently
+- **Research and review**: Multiple teammates investigate different aspects of a problem simultaneously, then share and challenge each other's findings
+- **New modules or features**: Teammates each own a separate component without stepping on each other's files
+- **Debugging with competing hypotheses**: Teammates test different theories in parallel and actively try to disprove each other
+- **Cross-layer coordination**: Changes that span frontend, backend, and tests, each owned by a different teammate
+- **Debate and consensus**: Multiple teammates argue different positions on an architectural decision, converging on the strongest approach
+- **Large-scale inventory or classification**: Teammates divide a large dataset and process segments independently
 
 For detailed prompt templates and 10+ real-world examples (including marketing, research, and non-dev use cases), see [Agent Teams Use Cases and Prompt Templates](https://claudefa.st/blog/guide/agents/agent-teams-use-cases).
 
@@ -53,16 +51,16 @@ For sequential tasks, same-file edits, or work with tight dependencies, a single
 
 Both let you parallelize work, but they operate at different levels. The deciding question: do your workers need to communicate with each other?
 
-| Feature | Subagents | Agent Teams |
-| --- | --- | --- |
-| **Context** | Own window, results summarized back to caller | Own window, fully independent |
-| **Communication** | Report results back to the main agent only | Teammates message each other directly |
-| **Coordination** | Main agent manages all work | Shared task list with self-coordination |
-| **Best for** | Focused tasks where only the result matters | Complex work requiring discussion and collaboration |
-| **Token cost** | Lower: results summarized back to main context | Higher: each teammate is a separate Claude instance |
-| **Use case examples** | Code review, file analysis, research lookups | Multi-component features, debates, cross-layer refactors |
-| **Setup required** | None (built into Claude Code) | Environment variable to enable |
-| **Communication pattern** | Hub-and-spoke (all through main agent) | Mesh (any teammate to any teammate) |
+| Feature                   | Subagents                                      | Agent Teams                                              |
+| ------------------------- | ---------------------------------------------- | -------------------------------------------------------- |
+| **Context**               | Own window, results summarized back to caller  | Own window, fully independent                            |
+| **Communication**         | Report results back to the main agent only     | Teammates message each other directly                    |
+| **Coordination**          | Main agent manages all work                    | Shared task list with self-coordination                  |
+| **Best for**              | Focused tasks where only the result matters    | Complex work requiring discussion and collaboration      |
+| **Token cost**            | Lower: results summarized back to main context | Higher: each teammate is a separate Claude instance      |
+| **Use case examples**     | Code review, file analysis, research lookups   | Multi-component features, debates, cross-layer refactors |
+| **Setup required**        | None (built into Claude Code)                  | Environment variable to enable                           |
+| **Communication pattern** | Hub-and-spoke (all through main agent)         | Mesh (any teammate to any teammate)                      |
 
 Use subagents when you need quick, focused workers that report back. Use Agent Teams when teammates need to share findings, challenge each other, and coordinate on their own. For complex projects, a layered approach works best: a planning phase to define roles and boundaries, then parallel Agent Teams for execution. [ClaudeFast's Code Kit](https://claudefa.st/) implements this exact pipeline with its `/team-plan` and `/team-build` commands, routing work through a 5-tier complexity system that selects subagents or Agent Teams automatically.
 
@@ -96,17 +94,17 @@ For detailed coverage of display modes, delegate mode, plan approval, hooks, tas
 
 An Agent Team has four components working together:
 
-| Component | Purpose |
-| --- | --- |
-| **Team Lead** | Your main Claude Code session. Creates the team, spawns teammates, assigns tasks, and synthesizes results. |
-| **Teammates** | Separate Claude Code instances. Each gets its own context window and works on assigned tasks. |
+| Component            | Purpose                                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Team Lead**        | Your main Claude Code session. Creates the team, spawns teammates, assigns tasks, and synthesizes results.           |
+| **Teammates**        | Separate Claude Code instances. Each gets its own context window and works on assigned tasks.                        |
 | **Shared Task List** | Central work queue all agents can see. Tasks have states (pending, in progress, completed) and support dependencies. |
-| **Mailbox** | Messaging system for communication between agents. |
+| **Mailbox**          | Messaging system for communication between agents.                                                                   |
 
 Teams and their configuration live locally:
 
--   Team config: `~/.claude/teams/{team-name}/config.json`
--   Task list: `~/.claude/tasks/{team-name}/`
+- Team config: `~/.claude/teams/{team-name}/config.json`
+- Task list: `~/.claude/tasks/{team-name}/`
 
 Each teammate has its own context window. When spawned, a teammate loads the same project context as a regular Claude Code session: your [CLAUDE.md](https://claudefa.st/blog/guide/mechanics/claude-md-mastery), MCP servers, and [skills](https://claudefa.st/blog/guide/mechanics/claude-skills-guide). It also receives the spawn prompt from the lead. The lead's conversation history does not carry over.
 
@@ -118,32 +116,29 @@ For tips on optimizing your CLAUDE.md for agent teams, controlling team behavior
 
 This hub article covers the fundamentals. Three companion guides go deeper into specific aspects:
 
--   **[Advanced Controls](https://claudefa.st/blog/guide/agents/agent-teams-controls)**: Display modes, delegate mode, plan approval, quality gate hooks, task assignment, token cost management, and optimizing CLAUDE.md for teams
--   **[Use Cases and Prompt Templates](https://claudefa.st/blog/guide/agents/agent-teams-use-cases)**: 10+ real-world scenarios with copy-paste prompts for code review, debugging, full-stack features, architecture decisions, marketing campaigns, and a progressive getting-started path
--   **[Best Practices and Troubleshooting](https://claudefa.st/blog/guide/agents/agent-teams-best-practices)**: Battle-tested practices, plan mode behavior, troubleshooting guide, current limitations, and recent fixes from v2.1.33 through v2.1.45
--   **[End-to-End Workflow](https://claudefa.st/blog/guide/agents/agent-teams-workflow)**: The complete 7-step pipeline from brain dump to production: planning, contract chains, wave execution, and post-build validation
+- **[Advanced Controls](https://claudefa.st/blog/guide/agents/agent-teams-controls)**: Display modes, delegate mode, plan approval, quality gate hooks, task assignment, token cost management, and optimizing CLAUDE.md for teams
+- **[Use Cases and Prompt Templates](https://claudefa.st/blog/guide/agents/agent-teams-use-cases)**: 10+ real-world scenarios with copy-paste prompts for code review, debugging, full-stack features, architecture decisions, marketing campaigns, and a progressive getting-started path
+- **[Best Practices and Troubleshooting](https://claudefa.st/blog/guide/agents/agent-teams-best-practices)**: Battle-tested practices, plan mode behavior, troubleshooting guide, current limitations, and recent fixes from v2.1.33 through v2.1.45
+- **[End-to-End Workflow](https://claudefa.st/blog/guide/agents/agent-teams-workflow)**: The complete 7-step pipeline from brain dump to production: planning, contract chains, wave execution, and post-build validation
 
 For even faster interactive work while using agent teams, check out [Fast Mode](https://claudefa.st/blog/guide/performance/fast-mode) for 2.5x speed on Opus 4.6 responses.
 
 As your agent teams grow in complexity, the coordination challenge shifts from "can I parallelize?" to "how do I manage the orchestration?" Three patterns help at scale:
 
 1.  **Standardized spawn prompt templates.** Create reusable prompt structures for your most common team configurations (review team, implementation team, research team). Each template defines roles, file boundaries, and success criteria so you don't rebuild from scratch each session. For the full workflow that these templates support, see the [end-to-end workflow guide](https://claudefa.st/blog/guide/agents/agent-teams-workflow).
-    
 2.  **Permission presets.** Pre-approve common operations in your [permission settings](https://claudefa.st/blog/guide/development/permission-management) before spawning teammates. This eliminates the flood of permission prompts that can slow a new team to a crawl.
-    
 3.  **CLAUDE.md as shared runtime context.** A well-structured CLAUDE.md with module boundaries, verification commands, and operational context reduces per-teammate exploration costs significantly. Three teammates reading a clear CLAUDE.md is far cheaper than three teammates exploring the codebase independently.
-    
 
 ClaudeFast's multi-agent system packages these patterns into pre-configured agent definitions and invocation protocols. If you're running agent teams regularly, having a tested orchestration layer saves significant setup time per session.
 
 Agent Teams sits at one end of a spectrum of multi-agent approaches in Claude Code. Understanding where each tool fits helps you choose the right one:
 
-| Approach | Communication | Best For | Guide |
-| --- | --- | --- | --- |
-| **Single session** | N/A | Sequential, focused tasks | [Context management](https://claudefa.st/blog/guide/mechanics/context-management) |
-| **Subagents (Task tool)** | Results only, back to main | Parallel focused work | [Agent fundamentals](https://claudefa.st/blog/guide/agents/agent-fundamentals) |
-| **Builder-validator pairs** | Structured handoff via tasks | Quality-gated implementation | [Team orchestration](https://claudefa.st/blog/guide/agents/team-orchestration) |
-| **Agent Teams** | Full mesh, direct messaging | Collaborative exploration | This guide |
+| Approach                    | Communication                | Best For                     | Guide                                                                             |
+| --------------------------- | ---------------------------- | ---------------------------- | --------------------------------------------------------------------------------- |
+| **Single session**          | N/A                          | Sequential, focused tasks    | [Context management](https://claudefa.st/blog/guide/mechanics/context-management) |
+| **Subagents (Task tool)**   | Results only, back to main   | Parallel focused work        | [Agent fundamentals](https://claudefa.st/blog/guide/agents/agent-fundamentals)    |
+| **Builder-validator pairs** | Structured handoff via tasks | Quality-gated implementation | [Team orchestration](https://claudefa.st/blog/guide/agents/team-orchestration)    |
+| **Agent Teams**             | Full mesh, direct messaging  | Collaborative exploration    | This guide                                                                        |
 
 Combine these approaches based on your needs. Use Agent Teams for the collaborative exploration phase, then switch to [builder-validator patterns](https://claudefa.st/blog/guide/agents/team-orchestration) for the implementation phase where quality gates matter. For [keeping context manageable](https://claudefa.st/blog/guide/performance/context-preservation) across long-running team sessions, apply the same strategies you would with any multi-agent workflow.
 

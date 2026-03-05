@@ -7,9 +7,9 @@ tags: [agent-teams, subagents, nesting, llm_query, repl, rlm]
 # Dependency graph
 requires: []
 provides:
-  - "Technical analysis of agent teams as solution to subagent nesting constraint"
-  - "Clear recommendation: ship v0.0.1 without llm_query(), defer haiku-searcher"
-  - "4 alternative approaches evaluated with comparison table"
+  - 'Technical analysis of agent teams as solution to subagent nesting constraint'
+  - 'Clear recommendation: ship v0.0.1 without llm_query(), defer haiku-searcher'
+  - '4 alternative approaches evaluated with comparison table'
 affects: [phase-2-repl-core, phase-3-agent-explore]
 
 # Tech tracking
@@ -24,9 +24,9 @@ key-files:
 
 key-decisions:
   - "Agent teams solve nesting constraint structurally but introduce sync-to-async mismatch and 3-10x token cost that oppose the RLM plugin's core value"
-  - "Ship v0.0.1 without llm_query() -- deterministic REPL globals cover the workspace navigation use cases"
-  - "haiku-searcher remains deferred; llm_query() kept as documented extension point with runtime stub"
-  - "If llm_query() eventually needed, approach 4a (main session drives REPL) is simplest path"
+  - 'Ship v0.0.1 without llm_query() -- deterministic REPL globals cover the workspace navigation use cases'
+  - 'haiku-searcher remains deferred; llm_query() kept as documented extension point with runtime stub'
+  - 'If llm_query() eventually needed, approach 4a (main session drives REPL) is simplest path'
 
 patterns-established: []
 
@@ -103,5 +103,6 @@ None - no external service configuration required.
 - [x] Task commit `35941cc` verified in git log
 
 ---
-*Quick task: 2*
-*Completed: 2026-03-04*
+
+_Quick task: 2_
+_Completed: 2026-03-04_

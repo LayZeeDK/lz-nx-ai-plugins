@@ -13,6 +13,7 @@ Claude can navigate and understand a large Nx workspace without burning context 
 **Goal:** Deliver the complete RLM-powered explore workflow -- from workspace indexing through the REPL sandbox and agent integration to the explore skill that proves token savings.
 
 **Target features:**
+
 - Plugin shell with workspace indexer, path resolver, and Nx runner
 - Isolated JavaScript REPL with workspace-aware globals and handle-based result storage
 - Zero-LLM-token deterministic commands (deps, find, alias)
@@ -65,6 +66,7 @@ Nx monorepos with JavaScript/TypeScript projects. The plugin is designed to scal
 ### Research Foundation
 
 Extensive research corpus in `research/`:
+
 - `research/rlm/SYNTHESIS.md` -- RLM theory, architecture, benchmarks, existing implementations
 - `research/claude-plugin/BRAINSTORM.md` -- detailed plugin design with token projections
 - `research/claude-plugin/BRAINSTORM_AGENT_TEAMS.md` -- agent team integration proposals
@@ -76,6 +78,7 @@ Extensive research corpus in `research/`:
 Plugin location: `plugins/lz-nx.rlm/`
 
 Plugin structure:
+
 ```
 plugins/lz-nx.rlm/
   .claude-plugin/
@@ -103,27 +106,28 @@ plugins/lz-nx.rlm/
 
 Node.js `vm.createContext()` with controlled globals:
 
-| Global | Purpose |
-|--------|---------|
-| `workspace` | The workspace index as a navigable object |
-| `projects` | Shorthand for `workspace.projects` (Map) |
-| `deps(name)` | Get dependency tree for a project |
-| `dependents(name)` | Get reverse dependency tree |
-| `read(path, start?, end?)` | Read file content (or slice) |
-| `files(glob)` | Find files matching pattern |
-| `search(pattern, paths?)` | Search file contents (git grep primary, Node.js built-in fallback) |
-| `nx(command)` | Run allowlisted Nx CLI command, return parsed output |
-| `llm_query(prompt, model?)` | Sub-LLM call (routes to Haiku by default) |
-| `FINAL(answer)` | Mark final answer (string) |
-| `FINAL_VAR(name)` | Mark final answer (from variable) |
-| `print(...args)` | Capture output (truncated) |
-| `SHOW_VARS()` | List user-created variables |
+| Global                      | Purpose                                                            |
+| --------------------------- | ------------------------------------------------------------------ |
+| `workspace`                 | The workspace index as a navigable object                          |
+| `projects`                  | Shorthand for `workspace.projects` (Map)                           |
+| `deps(name)`                | Get dependency tree for a project                                  |
+| `dependents(name)`          | Get reverse dependency tree                                        |
+| `read(path, start?, end?)`  | Read file content (or slice)                                       |
+| `files(glob)`               | Find files matching pattern                                        |
+| `search(pattern, paths?)`   | Search file contents (git grep primary, Node.js built-in fallback) |
+| `nx(command)`               | Run allowlisted Nx CLI command, return parsed output               |
+| `llm_query(prompt, model?)` | Sub-LLM call (routes to Haiku by default)                          |
+| `FINAL(answer)`             | Mark final answer (string)                                         |
+| `FINAL_VAR(name)`           | Mark final answer (from variable)                                  |
+| `print(...args)`            | Capture output (truncated)                                         |
+| `SHOW_VARS()`               | List user-created variables                                        |
 
 Security: `codeGeneration: { strings: false, wasm: false }`, restricted builtins (no `process`, `require`, `child_process` except via controlled wrappers), execution timeout per block.
 
 ### Workspace Index Schema
 
 JSON file (~50-100KB for large workspaces) containing:
+
 - Project names mapped to source roots, types, tags, and available targets
 - Dependency edges as an adjacency list
 - Path aliases from `tsconfig.base.json`
@@ -133,12 +137,12 @@ Built from: `nx graph --print` (single call returns all project nodes with metad
 
 ### Model Routing
 
-| Operation | Model | Rationale |
-|-----------|-------|-----------|
-| Workspace indexing | None (Node.js) | Pure data transformation |
-| REPL root orchestration | Sonnet | Code generation for navigation |
-| Mechanical search sub-calls | Haiku | Bounded, mechanical tasks |
-| Commands (deps, find, alias) | None (Node.js) | Deterministic scripts |
+| Operation                    | Model          | Rationale                      |
+| ---------------------------- | -------------- | ------------------------------ |
+| Workspace indexing           | None (Node.js) | Pure data transformation       |
+| REPL root orchestration      | Sonnet         | Code generation for navigation |
+| Mechanical search sub-calls  | Haiku          | Bounded, mechanical tasks      |
+| Commands (deps, find, alias) | None (Node.js) | Deterministic scripts          |
 
 ### Risk Profile
 
@@ -161,16 +165,17 @@ Low-risk components: workspace indexer (wraps known Nx CLI calls), path resolver
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| One plugin (not split generic + Nx) | Generic RLM engine has limited standalone user-facing value; Nx provides the structured map that makes RLM navigation powerful | -- Pending |
-| Generic Nx JS/TS (not Angular-specific) | Broader audience, cleaner architecture; Angular intelligence as a future milestone | -- Pending |
-| JavaScript REPL (not S-expression DSL) | Natural for TS workspace, proven in Hampton-io/RLM and code-rabi/rllm | -- Pending |
-| JSON workspace index (not SQLite) | Simplest v0.0.1; loads directly as REPL variable; SQLite can be added later | -- Pending |
-| No hooks in v0.0.1 | Hooks add complexity; skills and commands prove value first | -- Pending |
-| Defer token benchmarking | Validate savings manually first; benchmarking infrastructure is overhead before core works | -- Pending |
-| `nx graph --print` as primary index source (not per-project calls) | Single call returns all project nodes + dependency edges, eliminating N+1 `nx show project` calls (~18-27 min savings on 537 projects). `tsconfig.base.json` still needed for path aliases. | -- Pending |
-| No runtime ESM CDN imports in sandbox | vm contexts have no module system (no `import()`, no `require()`) unless explicitly injected. ESM CDNs (esm.sh, skypack, jspm) would require `vm.SourceTextModule` with a custom linker, turning the synchronous sandbox into async and network-dependent. Import maps (`@node-loader/import-maps`) operate at the Node.js process level and don't penetrate vm boundaries. CDN imports would also break the controlled-globals security model (LLM code could import arbitrary packages) and make execution non-deterministic. If npm functionality is needed, import in the host process and expose as a controlled vm global. | -- Pending |
+| Decision                                                           | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Outcome    |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| One plugin (not split generic + Nx)                                | Generic RLM engine has limited standalone user-facing value; Nx provides the structured map that makes RLM navigation powerful                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | -- Pending |
+| Generic Nx JS/TS (not Angular-specific)                            | Broader audience, cleaner architecture; Angular intelligence as a future milestone                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | -- Pending |
+| JavaScript REPL (not S-expression DSL)                             | Natural for TS workspace, proven in Hampton-io/RLM and code-rabi/rllm                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | -- Pending |
+| JSON workspace index (not SQLite)                                  | Simplest v0.0.1; loads directly as REPL variable; SQLite can be added later                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | -- Pending |
+| No hooks in v0.0.1                                                 | Hooks add complexity; skills and commands prove value first                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | -- Pending |
+| Defer token benchmarking                                           | Validate savings manually first; benchmarking infrastructure is overhead before core works                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | -- Pending |
+| `nx graph --print` as primary index source (not per-project calls) | Single call returns all project nodes + dependency edges, eliminating N+1 `nx show project` calls (~18-27 min savings on 537 projects). `tsconfig.base.json` still needed for path aliases.                                                                                                                                                                                                                                                                                                                                                                                                                                      | -- Pending |
+| No runtime ESM CDN imports in sandbox                              | vm contexts have no module system (no `import()`, no `require()`) unless explicitly injected. ESM CDNs (esm.sh, skypack, jspm) would require `vm.SourceTextModule` with a custom linker, turning the synchronous sandbox into async and network-dependent. Import maps (`@node-loader/import-maps`) operate at the Node.js process level and don't penetrate vm boundaries. CDN imports would also break the controlled-globals security model (LLM code could import arbitrary packages) and make execution non-deterministic. If npm functionality is needed, import in the host process and expose as a controlled vm global. | -- Pending |
 
 ---
-*Last updated: 2026-03-04 after Nx CLI research (indexer data sources updated, nx-runner error handling clarified)*
+
+_Last updated: 2026-03-04 after Nx CLI research (indexer data sources updated, nx-runner error handling clarified)_

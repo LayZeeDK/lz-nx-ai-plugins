@@ -4,6 +4,7 @@
 > Site: Prime Intellect
 
 ---
+
 ## Recursive Language Models: _the_ paradigm of 2026
 
 ### How we plan to manage extremely long contexts
@@ -18,9 +19,9 @@ Claude Code, OpenAI's Codex, and similar TUI systems tend to use file-systems an
 
 A different approach to the context problem is "context folding". Its goal is to have a continual, growing rollout, while managing the context window itself (instead of external files) in order to keep it short. This is compatible with the file-based scaffolding, as an LLM using context folding looks just like a normal LLM from the outside, and thus, it is a way to further prevent context rot and manage costs. Some examples are:
 
--   [Scaling Long-Horizon LLM Agent via Context-Folding](http://arxiv.org/abs/2510.11967): the agent can actively `branch` its rollout, and `return` from the branch; within the branch, it retains the full previous context, but after returning, only a self-chosen summary of the branch remains in the context window
--   [AgentFold: Long-Horizon Web Agents with Proactive Context Management](http://arxiv.org/abs/2510.24699): every one of the agent's actions produces both a result, and a summary of the action and the reasoning that led to it. These summaries can be hierarchical, consolidating the lessons from multiple actions into a single point, or retaining per-action summaries
--   [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](http://arxiv.org/abs/2510.04618): a three-agent system with a Generator that uses the current knowledge base for creating the rollout, a Reflector which takes lessons and information about the generation and about the current state of the knowledge base, and a Curator for taking the Reflector's lessons and adapting the knowledge base with them in a structured manner
+- [Scaling Long-Horizon LLM Agent via Context-Folding](http://arxiv.org/abs/2510.11967): the agent can actively `branch` its rollout, and `return` from the branch; within the branch, it retains the full previous context, but after returning, only a self-chosen summary of the branch remains in the context window
+- [AgentFold: Long-Horizon Web Agents with Proactive Context Management](http://arxiv.org/abs/2510.24699): every one of the agent's actions produces both a result, and a summary of the action and the reasoning that led to it. These summaries can be hierarchical, consolidating the lessons from multiple actions into a single point, or retaining per-action summaries
+- [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](http://arxiv.org/abs/2510.04618): a three-agent system with a Generator that uses the current knowledge base for creating the rollout, a Reflector which takes lessons and information about the generation and about the current state of the knowledge base, and a Curator for taking the Reflector's lessons and adapting the knowledge base with them in a structured manner
 
 However, we at [Prime Intellect](https://www.primeintellect.ai/) believe that the simplest, most flexible method for context folding is the Recursive Language Model (RLM), introduced by Alex Zhang in October 2025 as a [blog post](https://alexzhang13.github.io/blog/2025/rlm/), and now available as a full paper: [https://arxiv.org/abs/2512.24601](https://arxiv.org/abs/2512.24601). It is now a major focus of our research.
 
@@ -38,9 +39,9 @@ Rather than directly ingesting its (potentially large) input data, the RLM allow
 
 This enables several nice capabilities:
 
--   Potentially huge input data, like PDFs or Datasets or videos, doesn't have to be loaded directly into a model's context, which makes the LLM leaner and avoids context rot
--   The LLM can search, filter, and transform the context using Python functionality, avoiding the need to process redundant input
--   It can use sub-LLMs--fresh instances of itself--to perform work for it, and programmatically pipe parts of the input data into them
+- Potentially huge input data, like PDFs or Datasets or videos, doesn't have to be loaded directly into a model's context, which makes the LLM leaner and avoids context rot
+- The LLM can search, filter, and transform the context using Python functionality, avoiding the need to process redundant input
+- It can use sub-LLMs--fresh instances of itself--to perform work for it, and programmatically pipe parts of the input data into them
 
 These skills combined make it a great candidate for situations that typically require large context sizes.
 
@@ -48,23 +49,23 @@ We at Prime Intellect have implemented our version of the RLM in [verifiers](htt
 
 The two most important changes required to understand the rest of the article are (1) that tools beyond the Python REPL can be used, but only by sub-LLMs; and (2) that the model can only provide its answer via an environment variable. The details are as follows:
 
--   The sub-LLM calls can be parallelized
-    -   The model has an `llm_batch` function available in the REPL, through which it can process a batch of prompts in parallel
--   The sub-LLMs can be given tools
-    -   In fact, any tools you give the environment will only be usable by the sub-LLMs
-    -   This decision was made because many tools produce a lot of tokens. Now, the main RLM doesn't have to see those tokens, and can instead delegate the work that requires tools
-    -   As shown below, this strategy is very successful in our tests
--   Any pip package can be installed
-    -   The RLM is made aware of which packages are installed
-    -   In math-python, for example, `numpy`, `scipy`, and `sympy` were installed
-    -   The standard library is always available
-    -   Code execution happens in isolated [Sandboxes](https://docs.primeintellect.ai/sandboxes/overview)
--   The RLM only ever provides an answer in a Python variable
-    -   An `answer` variable is initialized at the start of each Sandbox running the Python code; it's a dictionary with two keys:
-        -   `"content"`: The LLM can write into this as often as it wants, and it can delete or edit the content over multiple turns
-        -   `"ready"`: Only when this is set to `True` will the rollout end, and the answer be extracted from `"content"`
-    -   At the start of each rollout, `answer = {"content": "", ready: False}`
-    -   This setup allows the model to generate its final answer via a form of diffusion, which occurs over the course of its reasoning chain
+- The sub-LLM calls can be parallelized
+  - The model has an `llm_batch` function available in the REPL, through which it can process a batch of prompts in parallel
+- The sub-LLMs can be given tools
+  - In fact, any tools you give the environment will only be usable by the sub-LLMs
+  - This decision was made because many tools produce a lot of tokens. Now, the main RLM doesn't have to see those tokens, and can instead delegate the work that requires tools
+  - As shown below, this strategy is very successful in our tests
+- Any pip package can be installed
+  - The RLM is made aware of which packages are installed
+  - In math-python, for example, `numpy`, `scipy`, and `sympy` were installed
+  - The standard library is always available
+  - Code execution happens in isolated [Sandboxes](https://docs.primeintellect.ai/sandboxes/overview)
+- The RLM only ever provides an answer in a Python variable
+  - An `answer` variable is initialized at the start of each Sandbox running the Python code; it's a dictionary with two keys:
+    - `"content"`: The LLM can write into this as often as it wants, and it can delete or edit the content over multiple turns
+    - `"ready"`: Only when this is set to `True` will the rollout end, and the answer be extracted from `"content"`
+  - At the start of each rollout, `answer = {"content": "", ready: False}`
+  - This setup allows the model to generate its final answer via a form of diffusion, which occurs over the course of its reasoning chain
 
 In our current implementation, both a prompt and extra input data can be given. The prompt is put directly into the RLM's context window, while the extra input data is available only programmatically. The only way for the RLM to view that data is to print it in the REPL. But since we limit the number of output characters from the REPL output that will be shown to the RLM in each turn (to 8192 by default, user-adjustable), the RLM is forced to make use of Python and sub-LLMs to work with input data.
 
@@ -74,9 +75,9 @@ Taking it all together, the RLM is powerful long-context agent, strong at tool-u
 
 The basic setup of all our experiments is to compare three scaffolds for the same environment:
 
--   A standard LLM with whatever tools the environment normally provides
--   The RLM
--   The RLM with environment-specific tips (which will be explained later)
+- A standard LLM with whatever tools the environment normally provides
+- The RLM
+- The RLM with environment-specific tips (which will be explained later)
 
 This tells us how a normal LLM compares to an RLM, and to an RLM that knows how its scaffold is best used in the given environment. We directly compare to an LLM because at its core, an RLM is an abstraction around a single LLM call.
 
@@ -86,10 +87,10 @@ The RLM is limited in its per-REPL-call timeout, which we set to 120 seconds unl
 
 The environments we chose are:
 
--   DeepDive
--   math-python
--   Oolong
--   verbatim-copy
+- DeepDive
+- math-python
+- Oolong
+- verbatim-copy
 
 We perform ablations on them using default settings (which were chosen before doing any experiments), and also ablate environment settings for Oolong and verbatim-copy.
 
@@ -99,28 +100,29 @@ Let's go through what they do and why we looked at them one by one.
 
 [DeepDive](http://arxiv.org/abs/2509.10446) is a method for gathering data for Deep Research tasks by walking open knowledge graphs to create complex questions and verifiable answers, then obfuscating the questions via LLM re-formulation. A [GitHub repo](https://github.com/THUDM/DeepDive) and a [HuggingFace dataset](https://huggingface.co/datasets/zai-org/DeepDive) exist.
 
--   [The version of DeepDive used for these experiments](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/deepdive)
--   [deepdive-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/deepdive-rlm)
+- [The version of DeepDive used for these experiments](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/deepdive)
+- [deepdive-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/deepdive-rlm)
 
 Some examples:
 
 | Question | Answer |
-| --- | --- |
-| 
+| -------- | ------ |
+
+|
 In 2011, a study emerged from a Sicilian university department focused on pharmaceutical sciences, delving into the physical form of crystals. This work specifically examined how atomic-level forces dictate the overall shape, or habit, of a well-known butyrophenone antipsychotic. It employed molecular mechanics and modelling, validated against X-ray powder diffraction data, to understand this structure-morphology link crucial for drug formulation, like tableting. The investigation involved researchers whose other contributions span sigma receptor agonists for neuroprotection, inhibitors targeting fatty acid binding proteins relevant to metabolic conditions, and modulators of aldose reductase implicated in inflammation. What is the precise title of this 2011 publication that connects molecular interactions to the crystal appearance of haloperidol?
 
- | How Molecular Interactions Affect Crystal Morphology: the Case of Haloperidol. |
-| 
+| How Molecular Interactions Affect Crystal Morphology: the Case of Haloperidol. |
+|
 
 Begin with an educational institution in a major coastal city of a West African nation, founded after a specific official body suggested its creation for advanced studies in commerce. A notable academic from its faculty, recognized by a moniker tied to the institution's main campus area and distinguished for being the first from his continent to receive a particular advanced scientific degree in engineering from a London college at an early age, later became a vocal critic during a subsequent period of his country's democratic governance. This democratic period, which succeeded military leadership and adopted a system of rule similar to that of a large North American nation, saw the election of a head of state. This head of state initiated a nationwide agricultural enhancement program sometimes referred to by a colorful name, before being overthrown in a military takeover on the final day of a calendar year. A medical professional specializing in cardiac care, who also meticulously documented his nation's military interventions, provided a detailed account of this particular overthrow. What is the full date of birth (Month Day, Year) of this medical professional and historian?
 
- | March 28, 1959 |
+| March 28, 1959 |
 
 To solve such problems, the models have three tools available to them:
 
--   `search(query: str)`; use Google via [Serper](https://serper.dev/). Returns an enumerated list of Google results and the corresponding URL
--   `click(index: int)`; "click" on one of the results from the previous search by providing the list-index
--   `open(url: str)`; open the given URL
+- `search(query: str)`; use Google via [Serper](https://serper.dev/). Returns an enumerated list of Google results and the corresponding URL
+- `click(index: int)`; "click" on one of the results from the previous search by providing the list-index
+- `open(url: str)`; open the given URL
 
 These three tools are what's used in the original paper. However, `open` and `click` are redundant, and `open` is the more general tool. Since `click` requires not only the agent but the function itself to have knowledge of the previous `search` outputs, which is currently difficult to achieve in the RLM, we provided neither the RLM nor the standard agent with the `click` tool.
 
@@ -134,26 +136,26 @@ _Environment tips for DeepDive_
 
 ```
 _ENV_TIPS = """
- 
+
 <env_tips>
 Strategy for deep research tasks:
- 
+
 1. **Decompose the question**: Break the main question into multiple smaller, focused research sub-tasks that can be investigated independently.
- 
+
 2. **Parallel sub-LLM research**: Use `llm_batch()` to dispatch these sub-tasks in parallel. Each sub-LLM has access to web search tools (search, open) and can:
 - Search for relevant information
 - Open promising results to read full content
 - Extract and summarize key facts
- 
+
 2. **Synthesize findings**: After collecting sub-LLM responses, combine and cross-reference their findings. Look for:
 - Consistent facts across sources (high confidence)
 - Contradictions that need resolution
 - Gaps that require follow-up research
- 
+
 3. **Iterate if needed**: If the initial research reveals new questions or missing information, dispatch another batch of targeted sub-tasks. Repeat until you have sufficient evidence.
- 
+
 4. **Finalize**: Write your synthesized answer to `answer["content"]`, verify it addresses the original question, then set `answer["ready"] = True`.
- 
+
 Key insight: Sub-LLMs handle the verbose web content, returning concise summaries. This keeps your context clean while leveraging deep research.
 </env_tips>"""
 ```
@@ -166,29 +168,30 @@ We don't ablate settings for DeepDive, meaning that no specific default settings
 
 math-python poses difficult math problems, and gives an LLM a Python tool to solve those problems.
 
--   [The version of math-python used for these experiments](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/math_python)
--   [math-env-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/math-env-rlm)
+- [The version of math-python used for these experiments](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/math_python)
+- [math-env-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/math-env-rlm)
 
 Examples:
 
 | Question | Answer |
-| --- | --- |
-| 
+| -------- | ------ |
+
+|
 In triangle ABCABC, sin⁡∠A\=45\\sin \\angle A = \\frac{4}{5} and ∠A<90∘\\angle A < 90^\\circ. Let DD be a point outside triangle ABCABC such that ∠BAD\=∠DAC\\angle BAD = \\angle DAC and ∠BDC\=90∘\\angle BDC = 90^\\circ. Suppose that AD\=1AD = 1 and that BDCD\=32\\frac{BD}{CD} = \\frac{3}{2}. If AB+ACAB + AC can be expressed in the form abc\\frac{a\\sqrt{b}}{c} where a,b,ca, b, c are pairwise relatively prime integers, find a+b+ca + b + c.
 
- | 34 |
-| 
+| 34 |
+|
 
 If a,ba, b are real numbers such that a3+12a2+49a+69\=0a^3 + 12a^2 + 49a + 69 = 0 and b3−9b2+28b−31\=0b^3 - 9b^2 + 28b - 31 = 0, find a+ba + b.
 
- | 1 |
+| 1 |
 
 _Why math-python?_
 
 The Python REPL is very similar to the Python tool that the standard LLM gets. However, there are two important differences between the two:
 
--   The RLM has sub-LLMs available to it, and can therefore theoretically break the task down into subtasks, or let sub-LLMs evaluate its work
--   The RLM has to manage much more complicated scaffolding. While it can keep things simple, it needs to be able to ignore a lot of complexity
+- The RLM has sub-LLMs available to it, and can therefore theoretically break the task down into subtasks, or let sub-LLMs evaluate its work
+- The RLM has to manage much more complicated scaffolding. While it can keep things simple, it needs to be able to ignore a lot of complexity
 
 _Environment tips for math-python_
 
@@ -208,17 +211,17 @@ Like in DeepDive, we simply use the environment defaults.
 
 [Oolong](http://arxiv.org/abs/2511.02817) is a long-context eval with both a [GitHub page](https://github.com/abertsch72/oolong) and a [HuggingFace dataset](https://huggingface.co/oolongbench/datasets).
 
--   [The version of Oolong used for this article](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/oolong)
--   [oolong-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/oolong-rlm)
+- [The version of Oolong used for this article](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/oolong)
+- [oolong-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/oolong-rlm)
 
 The dataset is split into _synth_, _synth-with-labels_, and _real_:
 
--   The _synth_ data is constructed by aggregating multiple existing classification prompts into one bigger prompt and asking the model to aggregate some quantity
-    -   For example: take a dataset for classifying mails into "spam" and "no spam"; throw many of the example inputs into one prompt; and ask the model to count how many spam mails are contained within the prompt
--   The _synth-with-labels_ data is the _synth_ data, but the classification (for example, "spam" or "no spam") is provided for each sub-prompt from which the data is created
--   The _real_ dataset is constructed from real D&D playing sessions that were recorded and from which some information was extracted
-    -   For example: how often was xyz spell cast?
-    -   For example: when did xyz happen?
+- The _synth_ data is constructed by aggregating multiple existing classification prompts into one bigger prompt and asking the model to aggregate some quantity
+  - For example: take a dataset for classifying mails into "spam" and "no spam"; throw many of the example inputs into one prompt; and ask the model to count how many spam mails are contained within the prompt
+- The _synth-with-labels_ data is the _synth_ data, but the classification (for example, "spam" or "no spam") is provided for each sub-prompt from which the data is created
+- The _real_ dataset is constructed from real D&D playing sessions that were recorded and from which some information was extracted
+  - For example: how often was xyz spell cast?
+  - For example: when did xyz happen?
 
 Both the _synth_ and _real_ subsets involve many instances of classification and data extraction per prompt, followed by aggregation of the results. _synth-with-labels_ only requires aggregation. The most important dataset is _real_, which we therefore choose for our default setting.
 
@@ -246,31 +249,31 @@ Strategy for long-context information retrieval:
 
 _Default settings for Oolong_
 
--   default subset: _real_
+- default subset: _real_
 
 ### Verbatim copy
 
 LLMs often struggle to repeat complex texts verbatim. This is both a result of training, and an inherent limitation from sampling-based generation. To test this, we developed the verbatim copy environment.
 
--   [The version of verbatim-copy used for this article](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/verbatim_copy)
--   [verbatim-copy-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/verbatim-copy-rlm)
+- [The version of verbatim-copy used for this article](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm/environments/verbatim_copy)
+- [verbatim-copy-rlm on the Environments Hub](https://app.primeintellect.ai/dashboard/environments/primeintellect/verbatim-copy-rlm)
 
 It auto-generates data for the model to copy, and has several knobs to turn:
 
--   `content_type`: how the data is generated
-    -   "words": English word sequences
-    -   "json": JSON formatted data
-    -   "csv": CSV tabular data
-    -   "codes": UUIDs and alphanumeric codes
-    -   "mixed": combination of all types in one prompt (see `mean_fragment_length` below to see how this is implemented)
-    -   "all": balanced mix across all types; each prompt has a random content type
--   `target_length`: the length of each repeatable sequence in characters. Achieved by over-generating and then truncating to the desired length
--   `mean_fragment_length`: the mean length of fragments
-    -   We oversample the data for each prompt by generating a much larger batch than requested
-    -   Say we have 4 initial prompts per final prompt
-    -   Then, we take a random slice from each of those 4 prompts and put them together
-    -   `mean_fragment_length` controls the mean size of those slices (which randomly vary by ±50%)
-    -   The nice thing is that if we have "mixed" data, the prompt will be made up of slices from different data-types, which could lead to strange tokenization and weird texts; though even with a single data-type, it can have advantages like breaking json syntax in strange ways
+- `content_type`: how the data is generated
+  - "words": English word sequences
+  - "json": JSON formatted data
+  - "csv": CSV tabular data
+  - "codes": UUIDs and alphanumeric codes
+  - "mixed": combination of all types in one prompt (see `mean_fragment_length` below to see how this is implemented)
+  - "all": balanced mix across all types; each prompt has a random content type
+- `target_length`: the length of each repeatable sequence in characters. Achieved by over-generating and then truncating to the desired length
+- `mean_fragment_length`: the mean length of fragments
+  - We oversample the data for each prompt by generating a much larger batch than requested
+  - Say we have 4 initial prompts per final prompt
+  - Then, we take a random slice from each of those 4 prompts and put them together
+  - `mean_fragment_length` controls the mean size of those slices (which randomly vary by ±50%)
+  - The nice thing is that if we have "mixed" data, the prompt will be made up of slices from different data-types, which could lead to strange tokenization and weird texts; though even with a single data-type, it can have advantages like breaking json syntax in strange ways
 
 All randomness is controllable via a seed, which we keep the same across experiments.
 
@@ -284,10 +287,10 @@ _Environment tips for verbatim copy_
 
 ```
 _ENV_TIPS = """
- 
+
 <env_tips>
 Strategy for verbatim copying:
- 
+
 1. Write your initial attempt to answer["content"]
 2. Print answer["content"] to see exactly what you wrote
 3. Compare carefully with the original text - look for typos, transpositions, missing characters
@@ -298,9 +301,9 @@ Strategy for verbatim copying:
 
 Default settings for verbatim-copy
 
--   `content_type = "all"`
--   `target_length = 500`
--   `mean_fragment_length = 20`
+- `content_type = "all"`
+- `target_length = 500`
+- `mean_fragment_length = 20`
 
 ### Models
 
@@ -316,9 +319,9 @@ The comparison we care about is that between the LLM and the RLM; absolute perfo
 
 We will present the results in three sections:
 
--   Across environments, using per-environment default settings (GPT-5-mini only)
--   Within environments, shining more light on the behavior of some specific environments (GPT-5-mini only)
--   For different models
+- Across environments, using per-environment default settings (GPT-5-mini only)
+- Within environments, shining more light on the behavior of some specific environments (GPT-5-mini only)
+- For different models
 
 Every plot will be paired with the command with which it can be replicated from [verifiers](https://github.com/PrimeIntellect-ai/verifiers) [sebastian/experiment/rlm branch](https://github.com/PrimeIntellect-ai/verifiers/tree/sebastian/experiment/rlm), from the root verifiers directory.
 
@@ -368,8 +371,8 @@ Oolong should show a significant increase in token efficiency for the RLM compar
 
 Both math-python and verbatim-copy are hurt significantly in token efficiency. Both contain the full prompt in the model's context, but the reasons for the different main model token efficiency are different between both:
 
--   math-python causes the RLM to simply think inefficiently and poorly, which explains the decreased performance at increased main model token count
--   verbatim-copy is improved by the RLM, but the solution strategy is very different between LLM and RLM: the LLM simply one-shots the answer, while the RLM has to call a tool to give its response, and often does so repeatedly to slowly improve its answer
+- math-python causes the RLM to simply think inefficiently and poorly, which explains the decreased performance at increased main model token count
+- verbatim-copy is improved by the RLM, but the solution strategy is very different between LLM and RLM: the LLM simply one-shots the answer, while the RLM has to call a tool to give its response, and often does so repeatedly to slowly improve its answer
 
 ### Timing by Environment
 
@@ -379,10 +382,10 @@ Both math-python and verbatim-copy are hurt significantly in token efficiency. B
 
 In all cases, the RLM increases the time required to finish the job significantly. However, the reasons for this differ between the environments:
 
--   For DeepDive and Oolong, it's due to an increased total token budget, paid mostly by sub-LLMs. While those can be parallelized, GPT-5-mini doesn't always do so (pointing to further potential efficiency gains from training), and even where it does, the API can be limiting, and the increased total token budget has to be paid. Most importantly, though, using sub-LLMs leads to a strong increase in completion tokens
--   For math-python, it's simply the increased amount of (inefficient) thinking that the main RLM performs
--   For Needle in Haystack, the total number of tokens is reduced a lot for the RLM (and there are no sub-LLM calls). However, the LLM can simply spit out its answer in a single token. The RLM is writing code to solve its problem, and then again to provide its final answer. That means that in this environment, the LLM's token are almost all spent on pre-filling, while the RLM's are in large part spent on decoding
--   For verbatim-copy, the cause is the increased amount of tool-calls and turns we've discussed above
+- For DeepDive and Oolong, it's due to an increased total token budget, paid mostly by sub-LLMs. While those can be parallelized, GPT-5-mini doesn't always do so (pointing to further potential efficiency gains from training), and even where it does, the API can be limiting, and the increased total token budget has to be paid. Most importantly, though, using sub-LLMs leads to a strong increase in completion tokens
+- For math-python, it's simply the increased amount of (inefficient) thinking that the main RLM performs
+- For Needle in Haystack, the total number of tokens is reduced a lot for the RLM (and there are no sub-LLM calls). However, the LLM can simply spit out its answer in a single token. The RLM is writing code to solve its problem, and then again to provide its final answer. That means that in this environment, the LLM's token are almost all spent on pre-filling, while the RLM's are in large part spent on decoding
+- For verbatim-copy, the cause is the increased amount of tool-calls and turns we've discussed above
 
 ### Reward vs Tokens
 
@@ -392,10 +395,10 @@ In all cases, the RLM increases the time required to finish the job significantl
 
 We can see for each environment (differentiated by shapes) how the mode (LLM, RLM, RLM+tips; differentiated by colors) affects both the main model tokens and the reward.
 
--   DeepDive: we can see how strongly the context window of the RLM is compressed, while retaining performance
--   math-python: the presence of the RLM harness, despite enabling the exact same behavior as the default LLM harness, clearly makes the model dumber and less efficient at this task
--   Oolong: the RLM improves performance. With tips, it retains the main model context length, but without them, the main model context length is increased a lot (again, we will see that this is a function of only the RLM ever actually seeing the longest problems)
--   Verbatim copy: The RLM improves performance in line with its increased token usage
+- DeepDive: we can see how strongly the context window of the RLM is compressed, while retaining performance
+- math-python: the presence of the RLM harness, despite enabling the exact same behavior as the default LLM harness, clearly makes the model dumber and less efficient at this task
+- Oolong: the RLM improves performance. With tips, it retains the main model context length, but without them, the main model context length is increased a lot (again, we will see that this is a function of only the RLM ever actually seeing the longest problems)
+- Verbatim copy: The RLM improves performance in line with its increased token usage
 
 ### Across-environment results: Summary
 
@@ -417,7 +420,7 @@ To test the idea of using sub-LLMs in math-python mentioned above, we added a se
 
 ```
 _ENV_TIPS_SUB_LLMS = """
- 
+
 <env_tips>
 Use `llm_batch()` for reasoning steps: breaking down the problem, validating intermediate results, and checking your logic. Use Python for numerical calculations.
 </env_tips>"""
@@ -437,10 +440,10 @@ Below, we plot the most important statistics about these ablations:
 
 We quickly see three results:
 
--   Using sub-LLMs for math makes GPT-5-mini weaker
--   It barely reduced main model token usage (it's still way higher than for the LLM)
--   It adds sub-LLM tokens, but only a little, because the GPT-5-mini RLM seems to use sub-LLMs very sparsely even with the extra prompt
--   The RLM gives very little context to the sub-LLMs: they consist mostly of completion tokens, with very little prompting involved, which points to improvements being possible
+- Using sub-LLMs for math makes GPT-5-mini weaker
+- It barely reduced main model token usage (it's still way higher than for the LLM)
+- It adds sub-LLM tokens, but only a little, because the GPT-5-mini RLM seems to use sub-LLMs very sparsely even with the extra prompt
+- The RLM gives very little context to the sub-LLMs: they consist mostly of completion tokens, with very little prompting involved, which points to improvements being possible
 
 It remains to be seen if training a model to use the RLM scaffold and use sub-LLM calls extensively will help with these statistics. If yes, then the problem is likely just a lack of training for this specific setup. If no, it's possible that math is simply not a domain that benefits strongly from a multi-agent system.
 
@@ -454,9 +457,9 @@ We've already seen that the reward is increased by using the RLM.
 
 This plot also shows **Reward by Subset**. This is interesting because it shows a big difference between RLM performance depending on the data type:
 
--   For synthetic data with labels, the RLM outperforms the LLM easily
--   For synthetic Oolong data, RLM is worse than the LLM, and more so when given the tip to heavily rely on sub-LLMs
--   However, for real data (which is the most complex and most important), the RLM outperforms the LLM by a large margin, which demonstrates that the reliance on sub-LLMs is useful for complex data
+- For synthetic data with labels, the RLM outperforms the LLM easily
+- For synthetic Oolong data, RLM is worse than the LLM, and more so when given the tip to heavily rely on sub-LLMs
+- However, for real data (which is the most complex and most important), the RLM outperforms the LLM by a large margin, which demonstrates that the reliance on sub-LLMs is useful for complex data
 
 We can also look at the **Reward vs Context Length** subplot. Context length here refers only to the length of the input data, which is fully inside the LLM's context but only available from within a Python variable for the RLM. This shows a strength of the RLM: the LLM is better than any RLM _only_ for the shortest-context data available.
 
@@ -598,11 +601,11 @@ We observe that the RLM scaffold doesn’t necessarily improve baseline on all b
 
 We plan to improve our implementation of the RLM further, and perform more experiments. Concretely:
 
--   Right now, the RLM has a recursion depth of exactly 1. We plan on making it possible to decrease that recursion depth to 0 (so that we have a normal LLM with a Python REPL containing the input data, and access to all user-added tools), and to increase it arbitrarily, so that sub-LLMs can call further sub-LLMs
--   We plan on making it easy for users to define custom functions for the RLM to use in its REPL
--   While users can already install arbitrary pip packages, and the model is told about those packages, it might not always know them in detail. We plan on making it easy for users to add descriptions without having to re-write the entire prompt
--   The RLM looks like a normal LLM from the outside: text comes in, text goes out. However, we plan on making context compression over multiple assistant-user turns a natural part of the RLM
--   We will improve multi-modal support, and even custom data-types (the difficulty in them lies in the communication with the Sandboxes; we hope to solve this soon)
--   We will train models to use the RLM, starting with small models
+- Right now, the RLM has a recursion depth of exactly 1. We plan on making it possible to decrease that recursion depth to 0 (so that we have a normal LLM with a Python REPL containing the input data, and access to all user-added tools), and to increase it arbitrarily, so that sub-LLMs can call further sub-LLMs
+- We plan on making it easy for users to define custom functions for the RLM to use in its REPL
+- While users can already install arbitrary pip packages, and the model is told about those packages, it might not always know them in detail. We plan on making it easy for users to add descriptions without having to re-write the entire prompt
+- The RLM looks like a normal LLM from the outside: text comes in, text goes out. However, we plan on making context compression over multiple assistant-user turns a natural part of the RLM
+- We will improve multi-modal support, and even custom data-types (the difficulty in them lies in the communication with the Sandboxes; we hope to solve this soon)
+- We will train models to use the RLM, starting with small models
 
 And of course, we will optimize the performance and trainability of the RLM, collect more metrics, and fix any bugs we find along the way.

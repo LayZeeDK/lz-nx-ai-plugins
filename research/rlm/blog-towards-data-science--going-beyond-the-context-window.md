@@ -5,6 +5,7 @@
 > Site: Towards Data Science
 
 ---
+
 , context really is everything. The quality of an LLM’s output is tightly linked to the quality and amount of information you provide. In practice, many real-world use cases come with massive contexts: code generation over large codebases, querying complex knowledge systems, or even long, meandering chats while researching the perfect holiday destination (we’ve all been there).
 
 Unfortunately, LLMs can only work efficiently with a limited amount of context. And this isn’t just about the hard limits of the context window, especially now that frontier models support hundreds of thousands, or even millions, of tokens. And those limits are continuing to grow. The bigger challenge is a phenomenon known as **context rot**, where model performance degrades as the context length increases.
@@ -49,7 +50,6 @@ Fortunately, DSPy has recently introduced an implementation of the Recursive Lan
 pip install dspy --upgrade
 ```
 
-  
 Let’s start by loading the dataset.
 
 ```
@@ -97,8 +97,8 @@ Now we can execute the RLM and access the `trends` field in the output.
 
 ```
 output = rlm(
-  articles = articles, 
-  question = '''What were the main AI trends of 2025 based on provided 
+  articles = articles,
+  question = '''What were the main AI trends of 2025 based on provided
     articles? Pay attention to the content not only the titles.'''
 )
 
@@ -130,10 +130,10 @@ As discussed earlier, the key idea behind Recursive Language Models is that long
 
 At a high level, the implementation has a few core characteristics:
 
--   It uses a sandboxed Python REPL (Read–Eval–Print Loop) that allows the LLM to explore large contexts through code execution.
--   The LLM operates in a familiar agentic loop: it writes Python code, observes the output, and then decides what to do next.
--   It can perform recursive sub-calls (effectively calling itself) using tools like `llm_query()` and `llm_query_batched()` to analyse smaller chunks semantically.
--   Once the model is satisfied with the result, it finalises the process by calling `SUBMIT()` with the output.
+- It uses a sandboxed Python REPL (Read–Eval–Print Loop) that allows the LLM to explore large contexts through code execution.
+- The LLM operates in a familiar agentic loop: it writes Python code, observes the output, and then decides what to do next.
+- It can perform recursive sub-calls (effectively calling itself) using tools like `llm_query()` and `llm_query_batched()` to analyse smaller chunks semantically.
+- Once the model is satisfied with the result, it finalises the process by calling `SUBMIT()` with the output.
 
 ### Prompts
 
@@ -176,12 +176,12 @@ All interactions will be structured in the following way, with the appropriate v
 {code}
 
 [[ ## completed ## ]]
-In adhering to this structure, your objective is: 
+In adhering to this structure, your objective is:
 Given the fields `articles`, `question`, produce the fields `trends`.
-        
+
 You are tasked with producing the following outputs given the inputs `articles`, `question`:
 - {trends}        # note: the value you produce must adhere to the JSON schema: {"type": "array", "items": {"type": "string"}}
-        
+
 You have access to a Python REPL environment. Write Python code and it will be executed. You will see the output, then write more code based on what you learned. This is an iterative process.
 
 Available:
@@ -191,22 +191,22 @@ Available:
 - `print()` - ALWAYS print to see results
 - `SUBMIT(trends)` - submit final output when done
 - Standard libraries: re, json, collections, math, etc.
-        
+
 IMPORTANT: This is ITERATIVE. Each code block you write will execute, you'll see the output, then you decide what to do next. Do NOT try to solve everything in one step.
-        
+
 1. EXPLORE FIRST - Look at your data before processing it. Print samples, check types/lengths, understand the structure.
 2. ITERATE - Write small code snippets, observe outputs, then decide next steps. State persists between iterations.
 3. VERIFY BEFORE SUBMITTING - If results seem wrong (zeros, empty, unexpected), reconsider your approach.
 4. USE llm_query FOR SEMANTICS - String matching finds WHERE things are; llm_query understands WHAT things mean.
 5. MINIMIZE RETYPING (INPUTS & OUTPUTS) - When values are long, precise, or error-prone (IDs, numbers, code, quotes), re-access them via variables and parse/compute in code instead of retyping. Use small, targeted prints to sanity-check, but avoid manual copying when variables can carry the exact value.
 6. SUBMIT ONLY AFTER SEEING OUTPUTS - SUBMIT ends the current run immediately. If you need to inspect printed output, run it in one step, review the result, then call SUBMIT in a later step.
-        
+
 You have max 50 sub-LLM calls. When done, call SUBMIT() with your output.
 ```
 
 Let’s also take a look at the first user message sent to the LLM. This gives the model an overview of the input variables: their types, lengths (so the model knows how much it can read at once), and a preview of the content to understand the structure.
 
-```
+````
 [[ ## variables_info ## ]]
 [1] «««
     Variable: `articles` (access it in your code)
@@ -221,7 +221,7 @@ Let’s also take a look at the first user message sent to the LLM. This gives t
     read_time: "21 min read"
     url: "https://towardsdatascience.com/agentic-ai-from-first-principles-reflection/"
     ---
-    
+
     Arthur C. Clarke's Third Law says that "*any sufficiently advanced technology is indistinguishable from magic*". That's exactly how a lot of today's AI frameworks feel. Tools like GitHub Copilot, Claude Desktop, OpenAI Operator, and Perplexity Comet are automating everyda...
     ```
 »»»
@@ -251,7 +251,7 @@ You have not interacted with the REPL environment yet.
 1/20
 
 Respond with the corresponding output fields, starting with the field `[[ ## reasoning ## ]]`, then `[[ ## code ## ]]`, and then ending with the marker for `[[ ## completed ## ]]`.
-```
+````
 
 Here’s the model’s initial response in line with the format specified in the user message.
 
@@ -343,16 +343,16 @@ parsed_articles = []
 for i, raw_article in enumerate(raw_articles[1:], 1):  # Skip first empty element
   # Add back the "title:" that was removed by split
   raw_article = "title:" + raw_article
-  
+
   # Extract metadata using regex
   title_match = re.search(r'title:\s*"([^"]*)"', raw_article)
   date_match = re.search(r'date:\s*"([^"]*)"', raw_article)
   category_match = re.search(r'category:\s*"([^"]*)"', raw_article)
-  
+
   # Find where content starts (after the second "---")
   content_start = raw_article.find("---", 10)  # Skip the first part
   content = raw_article[content_start+3:].strip() if content_start != -1 else ""
-  
+
   parsed_articles.append({
     'index': i,
     'title': title_match.group(1) if title_match else "Unknown",
@@ -396,7 +396,7 @@ prompts_batch1 = []
 for i, article in enumerate(selected_for_analysis[:8]):  # First batch of 8
   # Take first ~15K chars of content to stay within LLM limits while getting substance
   content_sample = article['content'][:15000]
-  
+
   prompt = f"""Analyze this article about AI from 2025 and identify the main AI trends, technologies, methodologies, or concepts it discusses.
 
 Article Title: {article['title']}
@@ -487,10 +487,10 @@ To address this, I repeated the request, this time emphasising the importance of
 
 ```
 output2 = rlm(
-  articles = articles, 
-  question = '''What were the main AI trends of 2025 based on provided 
-    articles? Pay attention to the content not only the titles. 
-    Don\'t forget to filter by year, this information is present in 
+  articles = articles,
+  question = '''What were the main AI trends of 2025 based on provided
+    articles? Pay attention to the content not only the titles.
+    Don\'t forget to filter by year, this information is present in
     metadata for each article.'''
 )
 ```
@@ -533,7 +533,7 @@ for match in matches:
   title, date_str, category, read_time, url, content = match
   # Extract year from date string (format: "2025-10-24T12:00:00-05:00")
   year = date_str.split('-')[0]
-  
+
   if year == "2025":
     articles_2025.append({
       'title': title,

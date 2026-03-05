@@ -16,15 +16,16 @@ This corpus represents a practitioner's guide to Claude Code optimization, disti
 
 The single most impactful optimization is choosing the right model for each task. The corpus establishes a clear three-tier hierarchy (see the [README model selection guide](./README.md) for a quick reference):
 
-| Model | Cost (Input/Output per 1M) | SWE-bench | Context | Best Role |
-|-------|---------------------------|-----------|---------|-----------|
-| **Haiku 4.5** | $1 / $5 | 73.3% | 200K | Parallel workers, mechanical tasks |
-| **Sonnet 4.5** | $3 / $15 | 77.2% | 200K-1M | Daily development, standard implementation |
-| **Opus 4.5** | $15 / $75 | 80.9% | 200K | Complex reasoning, first-try correctness |
+| Model          | Cost (Input/Output per 1M) | SWE-bench | Context | Best Role                                  |
+| -------------- | -------------------------- | --------- | ------- | ------------------------------------------ |
+| **Haiku 4.5**  | $1 / $5                    | 73.3%     | 200K    | Parallel workers, mechanical tasks         |
+| **Sonnet 4.5** | $3 / $15                   | 77.2%     | 200K-1M | Daily development, standard implementation |
+| **Opus 4.5**   | $15 / $75                  | 80.9%     | 200K    | Complex reasoning, first-try correctness   |
 
 **Key finding**: The cost spread between models is 15x (Haiku to Opus), but the quality spread is only ~8 percentage points on SWE-bench. This asymmetry is the basis for the "cheapest model that reliably completes the task" heuristic.
 
 **Decision tree distilled**:
+
 - Mechanical/bounded tasks (search, template fill, pattern match) -> **Haiku**
 - Standard implementation with moderate reasoning -> **Sonnet**
 - Complex judgment, deep debugging, first-try-critical production code -> **Opus**
@@ -39,6 +40,7 @@ Each model responds best to different prompt structures. The corpus identifies m
 ### Haiku: Structured Constraint Satisfaction ([full guide](./MODEL-OPTIMIZATION-HAIKU.md))
 
 Haiku excels when given explicit boundaries. The optimal prompt pattern uses:
+
 - **XML tags** for structure (`<task>`, `<context>`, `<constraints>`, `<anti_goals>`)
 - **Step-bounded reasoning** (3-5 steps maximum)
 - **Checklists** over open-ended exploration
@@ -50,6 +52,7 @@ The research shows Haiku is highly sensitive to examples and will reproduce demo
 ### Sonnet: Phase-Based Implementation with Thinking Breaks ([full guide](./MODEL-OPTIMIZATION-SONNET.md))
 
 Sonnet's optimal pattern leverages its 0% error rate on code editing benchmarks:
+
 - **Phase-based execution** (context -> implementation -> verification -> completion)
 - **Parallel tool calls** for context building (10-20x speedup over sequential reads)
 - **Extended thinking** at phase transitions (8K for context, 16K for complex implementation)
@@ -61,6 +64,7 @@ Sonnet's optimal pattern leverages its 0% error rate on code editing benchmarks:
 ### Opus: Calibrated Language with First-Try Correctness ([full guide](./MODEL-OPTIMIZATION-OPUS.md))
 
 Opus requires the most nuanced prompting:
+
 - **Calibrated language** - use "Use X" not "CRITICAL: MUST use X" (Opus overtriggers on aggressive language)
 - **Trust first-try correctness** - implement complete solution, then test (less iteration than Sonnet TDD)
 - **Effort parameter** (beta, API-key only) - medium effort matches Sonnet's best at 76% fewer tokens
@@ -89,10 +93,12 @@ Context is the scarcest resource in Claude Code workflows. The corpus identifies
 ### Parallel File Loading
 
 Loading multiple files in a single message is one of the highest-impact optimizations:
+
 ```
 Sequential: Read(A) -> wait -> Read(B) -> wait -> Read(C) = T1 + T2 + T3
 Parallel:   Read(A), Read(B), Read(C) in one message  = max(T1, T2, T3)
 ```
+
 This yields 3-5x speedup for multi-file context gathering and costs the same number of tokens.
 
 ---
@@ -133,6 +139,7 @@ Each Task carries ~20K tokens of overhead before any work begins. This makes Tas
 ### Error Handling
 
 The corpus documents four known issues (see [known issues](./TASK-SPAWNING-GUIDE.md#known-issues-and-workarounds) for workarounds):
+
 1. Model parameter sometimes ignored (defaults to Opus regardless of specification)
 2. Haiku fails with "tool_reference blocks not supported" when parent has many MCP tools
 3. Cascading failures where one Task failure terminates all running Tasks
@@ -146,11 +153,11 @@ Mitigations: `run_in_background: true` for isolation, retry with exponential bac
 
 [MCP Tool Search](./MCP-TOOL-SEARCH.md) activates automatically when tool definitions exceed 10% of the context window (~10K tokens). This is one of the most impactful automatic optimizations:
 
-| Metric | Without Tool Search | With Tool Search |
-|--------|-------------------|------------------|
-| Token consumption | ~77K | ~8.7K |
-| Context preserved | 62% | 95% |
-| Tool selection accuracy (Opus) | 49% | 74% |
+| Metric                         | Without Tool Search | With Tool Search |
+| ------------------------------ | ------------------- | ---------------- |
+| Token consumption              | ~77K                | ~8.7K            |
+| Context preserved              | 62%                 | 95%              |
+| Tool selection accuracy (Opus) | 49%                 | 74%              |
 
 **Key limitation**: Haiku does not support server-side Tool Search. Haiku sub-agents that need MCP tools require pre-loading tools via search before spawning (see [Haiku tool_reference issue](./MCP-TOOL-SEARCH.md#issue-haiku-tool_reference-error-github-14863)).
 
@@ -160,12 +167,12 @@ Mitigations: `run_in_background: true` for isolation, retry with exponential bac
 
 The corpus distinguishes two packaging models for reusable workflows (detailed in [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md) and [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md)):
 
-| Aspect | Slash Commands | Skills |
-|--------|---------------|--------|
-| Files | Single .md file | Directory with supporting files |
+| Aspect     | Slash Commands             | Skills                           |
+| ---------- | -------------------------- | -------------------------------- |
+| Files      | Single .md file            | Directory with supporting files  |
 | Invocation | User-explicit (`/command`) | Manual or auto-invoked by Claude |
-| Complexity | Simple prompt shortcuts | Multi-step workflows |
-| Discovery | Terminal autocomplete | Tool list |
+| Complexity | Simple prompt shortcuts    | Multi-step workflows             |
+| Discovery  | Terminal autocomplete      | Tool list                        |
 
 **Migration signal**: Upgrade a command to a skill when it needs supporting files, multi-step workflow emerges, or auto-invocation is desired (see [migration pattern](./SKILLS-ARCHITECTURE.md#migration-commands--skills)).
 
@@ -177,15 +184,15 @@ The corpus distinguishes two packaging models for reusable workflows (detailed i
 
 The corpus includes [verified local testing](./FEATURES-AND-AVAILABILITY.md#verification-summary-local-testing-2026-01-20) (2026-01-20) of feature availability:
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Skills | GA | Production ready |
-| Custom Commands | GA | Production ready |
-| Context Management | GA | `/compact`, `/context` |
-| Extended Thinking | GA | Min 1,024 token budget |
-| Interleaved Thinking | GA in CLI | Enabled by default, no config needed |
-| Structured Outputs | Beta | `--json-schema` works, use with fallback |
-| Effort Parameter | API-key only | "Custom betas are only available for API key users" |
+| Feature              | Status       | Notes                                               |
+| -------------------- | ------------ | --------------------------------------------------- |
+| Skills               | GA           | Production ready                                    |
+| Custom Commands      | GA           | Production ready                                    |
+| Context Management   | GA           | `/compact`, `/context`                              |
+| Extended Thinking    | GA           | Min 1,024 token budget                              |
+| Interleaved Thinking | GA in CLI    | Enabled by default, no config needed                |
+| Structured Outputs   | Beta         | `--json-schema` works, use with fallback            |
+| Effort Parameter     | API-key only | "Custom betas are only available for API key users" |
 
 **Not applicable to CLI**: Prompt caching (needs repeated identical context), Batch API (async/24h window), RAG (needs vector DB infrastructure).
 
@@ -212,16 +219,16 @@ The corpus repeatedly warns against these patterns across multiple documents (se
 
 The corpus provides several cost reduction strategies ordered by impact (model costs from [Task Spawning Guide](./TASK-SPAWNING-GUIDE.md#cost-optimization), caching/batch from [Haiku guide](./MODEL-OPTIMIZATION-HAIKU.md#rag--batch-processing-optimization), chunking from [Large File Chunking](./LARGE-FILE-CHUNKING.md#cost-performance-trade-offs)):
 
-| Strategy | Savings | Applicability |
-|----------|---------|---------------|
-| Model routing (Haiku for simple tasks) | Up to 15x vs Opus | Universal |
-| MCP Tool Search (lazy loading) | 85% token reduction | MCP-heavy projects |
-| Effort parameter (Opus medium) | 76% fewer output tokens | Opus users with API key |
-| Prompt caching (API) | 90% on cache hits | Repeated context patterns |
-| Parallel file loading | Same cost, 3-5x faster | Multi-file operations |
-| Batch API (async workloads) | 50% output discount | High-volume processing |
-| Semantic chunking (skip sections) | 60-70% fewer input tokens | Large document processing |
-| Shell prefix (`!`) for bash | ~30% token savings | Terminal operations |
+| Strategy                               | Savings                   | Applicability             |
+| -------------------------------------- | ------------------------- | ------------------------- |
+| Model routing (Haiku for simple tasks) | Up to 15x vs Opus         | Universal                 |
+| MCP Tool Search (lazy loading)         | 85% token reduction       | MCP-heavy projects        |
+| Effort parameter (Opus medium)         | 76% fewer output tokens   | Opus users with API key   |
+| Prompt caching (API)                   | 90% on cache hits         | Repeated context patterns |
+| Parallel file loading                  | Same cost, 3-5x faster    | Multi-file operations     |
+| Batch API (async workloads)            | 50% output discount       | High-volume processing    |
+| Semantic chunking (skip sections)      | 60-70% fewer input tokens | Large document processing |
+| Shell prefix (`!`) for bash            | ~30% token savings        | Terminal operations       |
 
 ---
 
@@ -229,14 +236,14 @@ The corpus provides several cost reduction strategies ordered by impact (model c
 
 Extended thinking is available across all three models but should be applied selectively (see [Haiku thinking config](./MODEL-OPTIMIZATION-HAIKU.md#extended-thinking-configuration), [Sonnet thinking budgets](./MODEL-OPTIMIZATION-SONNET.md#optimization-6-extended-thinking-for-complex-logic), [Opus thinking strategy](./MODEL-OPTIMIZATION-OPUS.md#optimization-2-extended-thinking-budget-configuration)):
 
-| Task Type | Thinking Budget | Model |
-|-----------|----------------|-------|
-| Mechanical (template fill, search) | None | Haiku |
-| Simple implementation | None | Sonnet |
-| Gap/edge case detection | 2K-4K | Haiku or Sonnet |
-| Standard feature implementation | 8K-16K | Sonnet |
-| Complex state management, a11y | 16K-32K | Sonnet or Opus |
-| Multi-component refactor, deep debug | 32K-64K | Opus |
+| Task Type                            | Thinking Budget | Model           |
+| ------------------------------------ | --------------- | --------------- |
+| Mechanical (template fill, search)   | None            | Haiku           |
+| Simple implementation                | None            | Sonnet          |
+| Gap/edge case detection              | 2K-4K           | Haiku or Sonnet |
+| Standard feature implementation      | 8K-16K          | Sonnet          |
+| Complex state management, a11y       | 16K-32K         | Sonnet or Opus  |
+| Multi-component refactor, deep debug | 32K-64K         | Opus            |
 
 **Interleaved thinking** (reasoning between tool calls) is GA in Claude Code CLI and enabled by default (see [feature verification](./FEATURES-AND-AVAILABILITY.md#interleaved-thinking-verified-working)). This enables Claude to reason about tool results before deciding next steps, improving multi-step agentic workflows.
 
@@ -294,23 +301,24 @@ The corpus identifies several areas needing further investigation:
 
 ## Source Documents
 
-| Document | Topic |
-|----------|-------|
-| [README.md](./README.md) | Corpus index, model selection quick reference, learning path |
-| [FEATURES-AND-AVAILABILITY.md](./FEATURES-AND-AVAILABILITY.md) | Feature reference with GA/beta status, local verification |
-| [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md) | Slash commands, shell commands, context management, CLAUDE.md |
-| [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md) | Skills vs commands, design patterns, namespacing, auto-invocation |
-| [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md) | Task tool parameters, model selection, parallel execution, error handling |
-| [MCP-TOOL-SEARCH.md](./MCP-TOOL-SEARCH.md) | MCP lazy loading, tool discovery, token savings, known issues |
-| [LARGE-FILE-CHUNKING.md](./LARGE-FILE-CHUNKING.md) | Chunking strategies, cost-performance tradeoffs, anti-patterns |
-| [SKILL-CREATION-CHECKLIST.md](./SKILL-CREATION-CHECKLIST.md) | Skill authoring checklist with large file handling phases |
-| [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md) | Haiku 4.5 prompt patterns, speed/cost optimization, agentic workflows |
-| [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) | Sonnet 4.5 phase-based implementation, TDD, parallel context loading |
-| [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md) | Opus 4.5 effort parameter, first-try correctness, calibrated prompts |
+| Document                                                       | Topic                                                                     |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [README.md](./README.md)                                       | Corpus index, model selection quick reference, learning path              |
+| [FEATURES-AND-AVAILABILITY.md](./FEATURES-AND-AVAILABILITY.md) | Feature reference with GA/beta status, local verification                 |
+| [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md)           | Slash commands, shell commands, context management, CLAUDE.md             |
+| [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md)             | Skills vs commands, design patterns, namespacing, auto-invocation         |
+| [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md)             | Task tool parameters, model selection, parallel execution, error handling |
+| [MCP-TOOL-SEARCH.md](./MCP-TOOL-SEARCH.md)                     | MCP lazy loading, tool discovery, token savings, known issues             |
+| [LARGE-FILE-CHUNKING.md](./LARGE-FILE-CHUNKING.md)             | Chunking strategies, cost-performance tradeoffs, anti-patterns            |
+| [SKILL-CREATION-CHECKLIST.md](./SKILL-CREATION-CHECKLIST.md)   | Skill authoring checklist with large file handling phases                 |
+| [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md)   | Haiku 4.5 prompt patterns, speed/cost optimization, agentic workflows     |
+| [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) | Sonnet 4.5 phase-based implementation, TDD, parallel context loading      |
+| [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md)     | Opus 4.5 effort parameter, first-try correctness, calibrated prompts      |
 
 ### External Sources
 
 The corpus draws from:
+
 - **Anthropic official docs**: platform.claude.com, anthropic.com/engineering, anthropic.com/news
 - **Community guides**: Awesome Claude Code, Cooking with Claude Code, Shipyard cheatsheet
 - **Performance analyses**: SWE-bench comparisons, cost benchmarks, speed tests

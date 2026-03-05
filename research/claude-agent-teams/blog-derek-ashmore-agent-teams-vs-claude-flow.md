@@ -5,11 +5,10 @@
 > Site: Medium
 
 ---
+
 [
 
 ![Derek C. Ashmore](https://miro.medium.com/v2/resize:fill:64:64/1*yWcdKPuEGv_Ufydw49umrQ.jpeg)
-
-
 
 ](https://medium.com/@derekcashmore?source=post_page---byline--97e24f6ca9b9---------------------------------------)
 
@@ -38,9 +37,9 @@ Agent Teams are currently **experimental and disabled by default**. To enable th
 You can do this either in your shell environment or via your Claude Code settings.json, for example:
 
 {  
-  "env": {  
-    "CLAUDE\_CODE\_EXPERIMENTAL\_AGENT\_TEAMS": "1"  
-  }  
+ "env": {  
+ "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"  
+ }  
 }
 
 Once enabled, there’s no additional configuration required. You can literally start your prompt with:
@@ -57,10 +56,10 @@ Rather than giving each system ad hoc prompts, I evaluated both tools the way ma
 
 Both Claude Code Agent Teams and Claude-Flow were given:
 
--   **Identical instructions**  
-    [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/instructions/Instructions.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/instructions/Instructions.md)
--   **Identical application requirements**  
-    [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/requirements/Main.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/requirements/Main.md)
+- **Identical instructions**  
+  [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/instructions/Instructions.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/instructions/Instructions.md)
+- **Identical application requirements**  
+  [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/requirements/Main.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/main/requirements/Main.md)
 
 These documents functioned like a Request for Proposal (RFP) package, as many companies use for vendors, a mix of business context, goals, constraints, and expectations.
 
@@ -74,10 +73,10 @@ This ensured neither system gained an informational advantage, mirroring how rea
 
 After two rounds of research, I compared the resulting artifacts:
 
--   **Agent Teams output**  
-    [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-agent-teams/research/Research\_v2.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-agent-teams/research/Research_v2.md)
--   **Claude-Flow output**  
-    [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-flow/research/Research\_v2.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-flow/research/Research_v2.md)
+- **Agent Teams output**  
+  [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-agent-teams/research/Research_v2.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-agent-teams/research/Research_v2.md)
+- **Claude-Flow output**  
+  [https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-flow/research/Research_v2.md](https://github.com/Derek-Ashmore/technical-analysis-planning/blob/claude-flow/research/Research_v2.md)
 
 ## What Claude Code Agent Teams Does Well
 
@@ -127,9 +126,9 @@ Both systems allow you to micromanage individual agents. In practice, I recommen
 
 Instead, let the system establish a coordinator agent and focus on:
 
--   Clear intent
--   Strong constraints
--   Explicit success criteria
+- Clear intent
+- Strong constraints
+- Explicit success criteria
 
 You’ll get better results and avoid orchestrating work that the system is already designed to handle.
 
@@ -139,19 +138,19 @@ If I had to summarize the trade-offs:
 
 **Claude Code Agent Teams**
 
--   Extremely easy to enable and use
--   Minimal setup
--   Clean workspace
--   Lighter research depth
--   More likely to hit token limits
+- Extremely easy to enable and use
+- Minimal setup
+- Clean workspace
+- Lighter research depth
+- More likely to hit token limits
 
 **Claude-Flow**
 
--   More setup effort
--   Much deeper research output
--   Better token efficiency (in practice)
--   Extensible beyond Anthropic
--   More operational visibility (and noise)
+- More setup effort
+- Much deeper research output
+- Better token efficiency (in practice)
+- Extensible beyond Anthropic
+- More operational visibility (and noise)
 
 Agent Teams feels like Anthropic’s attempt to make agentic workflows **mainstream and accessible**. Claude-Flow still feels like the tool for people who want **maximum depth, control, and extensibility**.
 

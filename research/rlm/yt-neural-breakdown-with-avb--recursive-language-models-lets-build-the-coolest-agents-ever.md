@@ -9,9 +9,10 @@
 
 In this video, we explain how Recursive Language Models or RLMs work, look at actual trajectories on real problems, see how to implement it from scratch using Deno and Pyodide, and discuss what their key features and benefits are.
 
-RLMs are an inference technique where a LLM interacts with arbitrarily long prompts through an external REPL. The LLM can write code to explore, decompose and transform the prompt. It can recursively invoke sub-agents to complete smaller subtasks too! Crucially, the subagent responses do not get automatically loaded into the parent agent's context, it gets returned as symbols or variables inside the parent's REPL. 
- 
+RLMs are an inference technique where a LLM interacts with arbitrarily long prompts through an external REPL. The LLM can write code to explore, decompose and transform the prompt. It can recursively invoke sub-agents to complete smaller subtasks too! Crucially, the subagent responses do not get automatically loaded into the parent agent's context, it gets returned as symbols or variables inside the parent's REPL.
+
 ---
+
 Follow me on Twitter to get next video updates: https://x.com/neural_avb
 
 To join our Patreon and support this channel financially, visit: https://www.patreon.com/NeuralBreakdownwithAVB
@@ -23,7 +24,7 @@ Members get access to everything behind-the-scenes that goes into producing my v
 You can read the RLM paper here on Paper Breakdown:
 https://paperbreakdown.com/abs/2512.24601
 
-Arxiv: 
+Arxiv:
 https://arxiv.org/abs/2512.24601
 
 ---
@@ -42,7 +43,7 @@ https://pypi.org/project/fast-rlm/
 Timestamp:
 0:00 - Intro
 4:36 - What are RLMs
-11:13 - RLM trajectories 
+11:13 - RLM trajectories
 29:30 - Implementation
 45:00 - When to use RLMs and why
 

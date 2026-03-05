@@ -3,6 +3,7 @@
 > Source: [https://alexzhang13.github.io/rlm/](https://alexzhang13.github.io/rlm/)
 
 ---
+
 **⚠️ Work in Progress:** These documentation are highly WIP and subject to large changes. It is helpful for minimally getting started, but will be updated as we go.
 
 [Paper](https://arxiv.org/abs/2512.24601)[GitHub](https://github.com/alexzhang13/rlm)
@@ -61,12 +62,12 @@ RLMs execute LM-generated Python code in a sandboxed REPL environment. We suppor
 
 Run code on the same machine as the RLM process:
 
--   `local` (default) — Same-process execution with sandboxed builtins. Fast but shares memory with host.
--   `docker` — Containerized execution in Docker. Better isolation, reproducible environments.
+- `local` (default) — Same-process execution with sandboxed builtins. Fast but shares memory with host.
+- `docker` — Containerized execution in Docker. Better isolation, reproducible environments.
 
 Run code on completely separate machines, guaranteeing full isolation:
 
--   `modal` — Cloud sandboxes via [Modal](https://modal.com/). Production-ready, fully isolated from host.
+- `modal` — Cloud sandboxes via [Modal](https://modal.com/). Production-ready, fully isolated from host.
 
 ```
 rlm = RLM(
@@ -92,9 +93,9 @@ RLMs indirectly handle contexts by storing them in a persistent REPL environment
 ## Citation
 
 @misc{zhang2025recursivelanguagemodels,
-      title={Recursive Language Models}, 
-      author={Alex L. Zhang and Tim Kraska and Omar Khattab},
-      year={2025},
-      eprint={2512.24601},
-      archivePrefix={arXiv},
+title={Recursive Language Models},
+author={Alex L. Zhang and Tim Kraska and Omar Khattab},
+year={2025},
+eprint={2512.24601},
+archivePrefix={arXiv},
 }

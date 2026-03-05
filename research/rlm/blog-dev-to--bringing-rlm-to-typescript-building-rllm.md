@@ -5,6 +5,7 @@
 > Site: DEV Community
 
 ---
+
 [![Nitay Rabinovich](https://media2.dev.to/dynamic/image/width=50,height=50,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1862772%2F999c9a2a-662c-4e56-bc26-b6d7ec59b88e.jpg)](https://dev.to/nitay_rabinovich_d7cc35f5)
 
 Large Language Models struggle with very large contexts. Long documents or complex data structures quickly exceed token limits or degrade reasoning when everything is placed into a single prompt.
@@ -30,12 +31,12 @@ This approach opens the door to much richer interactions with large and structur
 
 `rllm` is built to work naturally in Node, Bun, and Deno environments:
 
--   Runs model-generated code in V8 isolates for sandboxed execution
--   Uses Zod schemas to describe structured context to the model
--   Avoids Python subprocesses or external services
--   Fits cleanly into existing TypeScript codebases
+- Runs model-generated code in V8 isolates for sandboxed execution
+- Uses Zod schemas to describe structured context to the model
+- Avoids Python subprocesses or external services
+- Fits cleanly into existing TypeScript codebases
 
-**Minimal example**  
+**Minimal example**
 
 ```
 import { createRLLM } from "rllm";

@@ -9,6 +9,7 @@
 **Current State:** Pre-implementation research and design repository.
 
 No production code exists. The `plugins/` directory does not exist. All plugin architecture described in `AGENTS.md` is aspirational. The repository consists of:
+
 - 75 research markdown files across 5 subdirectories
 - Configuration scaffolding (`package.json`, `nx.json`, `tsconfig.base.json`)
 - Planning documents under `.planning/research/`
@@ -20,38 +21,44 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Tech Debt
 
 **No Node.js Version Pin:**
+
 - Issue: No `.nvmrc`, `.node-version`, or `.tool-versions` file in the repo root. `package.json` has no `engines` field.
 - Files: `package.json`
 - Impact: The planned plugin requires Node.js >= 22.17.0 for stable `fs.glob` and Node.js 24 for `vm.constants.DONT_CONTEXTIFY`. Without a pin, contributors may install the wrong version and encounter subtle REPL sandbox failures or missing built-in APIs with no obvious error message.
 - Fix approach: Add `.nvmrc` with `24` (or `lts/krypton`) and add `"engines": { "node": ">=22.17.0" }` to `package.json`.
 
 **No Installed Test Infrastructure:**
+
 - Issue: `package.json` includes `@nx/vitest`, `vitest`, and `@vitest/ui` as devDependencies, but there are zero test files (`*.test.ts`, `*.spec.ts`, `*.test.mjs`) in the repository.
 - Files: `package.json`
 - Impact: The planned scripts (`workspace-indexer.mjs`, `repl-sandbox.mjs`, `handle-store.mjs`) have no test coverage. The research documents explicitly require automated tests for sandbox escape vectors, REPL iteration guards, and Nx CLI encoding edge cases. Without tests present from the start, they will be deferred indefinitely.
 - Fix approach: Create test scaffolding alongside each Foundation Scripts phase. Tests should live at `plugins/<plugin-name>/scripts/__tests__/`.
 
 **`package.json` Has Empty `scripts` Field:**
+
 - Issue: The `scripts` section in `package.json` is empty (`{}`). There are no `test`, `build`, `lint`, or `typecheck` scripts defined at the workspace root.
 - Files: `package.json`
 - Impact: CI pipelines or contributors cannot run checks without knowing the Nx command syntax directly. The Nx plugin configuration in `nx.json` infers targets from file presence (Vite, ESLint), but the root `package.json` has no runnable aliases.
 - Fix approach: Add at minimum `"typecheck": "nx run-many -t typecheck"`, `"lint": "nx run-many -t lint"`, and `"test": "nx run-many -t test"` once plugin projects exist.
 
 **~~ESLint Version Mismatch Risk~~ (Resolved):**
+
 - Resolution: Upgraded `eslint` from `~8.57.0` to `^9.8.0` in `package.json`. ESLint 9 natively supports the flat config format (`eslint.config.mjs`) that `@nx/eslint` 22.x generators produce. No legacy `.eslintrc.json` files exist in the repository.
 
 **`tsconfig.json` Has Empty `references`:**
+
 - Issue: `tsconfig.json` extends `tsconfig.base.json` and has empty `files: []` and `references: []` arrays. This is a valid Nx convention but no plugin projects have been added to references yet.
 - Files: `tsconfig.json`, `tsconfig.base.json`
 - Impact: TypeScript project references will be absent until plugin projects are generated. This is expected at the current stage but will cause type-checking to silently skip new plugin projects if references are not updated when plugins are added.
 - Fix approach: When creating plugin projects, use `nx generate` so Nx automatically manages `tsconfig.json` references.
 
 **Research Corpus Has Incomplete TODO Items:**
+
 - Issue: Three TODO items remain unresolved in `research/prompt-engineering/SKILL-CREATION-CHECKLIST.md` (lines 330-332):
   - "TODO: Explain why operations are section-scoped"
   - "TODO: List cross-section dependencies (if any)"
   - "TODO: Document cost impact"
-  Also `research/rlm/docs-rlm--using-the-rlm-client.md` (line 113): "Note: This is a TODO. Only `max_depth=1` is currently supported."
+    Also `research/rlm/docs-rlm--using-the-rlm-client.md` (line 113): "Note: This is a TODO. Only `max_depth=1` is currently supported."
 - Files: `research/prompt-engineering/SKILL-CREATION-CHECKLIST.md`, `research/rlm/docs-rlm--using-the-rlm-client.md`
 - Impact: The skill creation checklist is a template for writing future skills. Incomplete sections will be copy-pasted into skills with placeholder text still present. The RLM depth limitation gap may affect design choices around recursive sub-call depth.
 - Fix approach: Resolve the skill checklist TODOs before writing the first skill. Research RLM `max_depth > 1` support status before implementing the execution loop.
@@ -61,6 +68,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Security Considerations
 
 **Node.js `vm` Module Provides Scope Isolation, Not Security Isolation:**
+
 - Risk: The planned REPL sandbox (`repl-sandbox.mjs`) uses `vm.createContext()`. This is explicitly documented by Node.js as NOT a security mechanism. Prototype chain traversal escapes are trivial: `this.constructor.constructor("return process")().exit()`. CVE-2026-22709 (vm2) and CVE-2025-68613 (n8n) demonstrate active exploitation.
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/repl-sandbox.mjs` when created.
 - Current mitigation: Architecture documents accept this risk for LLM-generated code. Planned mitigations include `codeGeneration: { strings: false, wasm: false }`, restricted global scope (no `process`, `require`, `child_process`), frozen objects, and `Object.create(null)` context.
@@ -72,10 +80,12 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 - Future mitigation: `@anthropic-ai/sandbox-runtime` (SRT) provides OS-level sandboxing via macOS sandbox-exec and Linux bubblewrap -- kernel-enforced filesystem and network restrictions that make VM escapes harmless even if they succeed. SRT is used by Claude Code itself. **Deferred until Windows support is added** (currently macOS and Linux only). Repo: `https://github.com/anthropic-experimental/sandbox-runtime`. When available on Windows, SRT would wrap the Node.js process running `repl-sandbox.mjs`, adding defense-in-depth: VM scope isolation (fast, in-process) + OS kernel isolation (escape-proof). SRT also mitigates API key exfiltration via proxy-based network filtering with domain allowlists.
 
 **~~`ANTHROPIC_API_KEY` Exposure in Child Processes~~ (Eliminated):**
+
 - Original risk: Direct Anthropic API calls from child processes could leak the API key via environment inheritance or error output.
 - Resolution: The plugin exclusively targets Claude Code flat-rate subscriptions (Team, Max). All LLM calls route through native subagent declarations — no `ANTHROPIC_API_KEY` is needed. This concern is eliminated by design.
 
 **Nx CLI Command Allowlist Not Yet Implemented:**
+
 - Risk: The planned `nx-runner.mjs` uses an allowlist of read-only Nx commands. If the allowlist validation is missing, incomplete, or bypassed via argument injection, the REPL's `nx()` global could execute destructive commands (`nx run`, `nx generate`, `nx migrate`).
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/nx-runner.mjs`.
 - Current mitigation: Architecture specifies allowlist: `show`, `graph`, `list`, `report`, `affected --print`. Block: `run`, `build`, `generate`, `migrate`.
@@ -89,6 +99,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Performance Bottlenecks
 
 **`nx show project <name>` Called Per-Project at Scale:**
+
 - Problem: Building a complete workspace index with per-project target availability requires calling `nx show project <name> --json` for each project. On a 537-project workspace, sequential calls will be prohibitively slow (no benchmark exists yet — measure before optimizing).
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/workspace-indexer.mjs`.
 - Cause: `nx show projects --json` returns only project names. `nx graph --print` provides dependency edges but not target configuration. Getting targets requires per-project queries.
@@ -99,6 +110,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
   4. Benchmark on the target workspace and set a concrete performance budget based on measured results.
 
 **Nx Daemon OOM on Full Project Graph:**
+
 - Problem: `nx graph --print` forces full project graph computation. On large workspaces this risks high memory consumption and potential OOM (no profiling data exists yet — measure on the target workspace). A crashed daemon process blocks subsequent Nx commands until `nx reset`.
 - Files: No implementation yet. Will affect workspace indexing scripts and SessionStart hook.
 - Cause: Nx daemon maintains an in-memory project graph. JSON serialization of the full graph for hundreds of projects can exceed Node.js default `maxBuffer` (1 MiB for `execSync`), causing a `RangeError` and lost output.
@@ -109,6 +121,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
   4. Use `NX_DAEMON=false` for indexing operations to avoid daemon state issues.
 
 **Handle Store Memory Accumulation:**
+
 - Problem: The planned handle store (in-memory `Map`) accumulates large result sets across REPL iterations with no eviction. Over a long session, unbounded accumulation will increase memory usage (actual footprint depends on entry sizes — measure once implemented).
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/scripts/handle-store.mjs`.
 - Cause: Generation-based cleanup or LRU eviction not planned for v0.0.1.
@@ -118,6 +131,7 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
   3. Alternatively, cap the handle store at 50 entries total using LRU eviction.
 
 **Hook Execution Timeout on SessionStart:**
+
 - Problem: Claude Code hooks have a 10-minute default timeout (increased from 60s in v2.1.50). If SessionStart runs workspace indexing that exceeds this timeout, the hook fails. The plugin starts with no workspace index, and all REPL operations that depend on it fail silently.
 - Files: No implementation yet. Will affect `plugins/<plugin-name>/hooks/hooks.json` SessionStart configuration.
 - Cause: First-run Nx daemon startup on large workspaces is slow. Combined with file scanning for component/store/service registries, total time may be significant (no measurements exist yet).
@@ -132,30 +146,35 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Fragile Areas
 
 **`CLAUDE_PLUGIN_ROOT` Path Separator on Windows:**
+
 - Files: Will affect `plugins/<plugin-name>/hooks/hooks.json` when created.
 - Why fragile: On Windows, `${CLAUDE_PLUGIN_ROOT}` is set with backslash separators. When interpolated into bash hook commands, backslashes are stripped or interpreted as escape sequences. This is a known open issue (GitHub issues #18527, #22449) with no official fix as of March 2026.
 - Safe modification: Never use `${CLAUDE_PLUGIN_ROOT}` in bash hook command strings. Use Node.js scripts that resolve their own path via `import.meta.url` or `__dirname`. Node.js accepts both path separator styles on Windows.
 - Test coverage: Zero. No Windows CI configured. No hook files exist yet to test.
 
 **PostToolUse Hook Silent Failures on Windows:**
+
 - Files: Will affect any hook scripts created in `plugins/<plugin-name>/hooks/scripts/`.
 - Why fragile: PostToolUse and PreToolUse hooks have been reported to silently fail to execute on Windows (GitHub issue #6305). The fix (using Git Bash instead of cmd.exe) has been deployed but regressions occur due to multiple open Windows path issues.
 - Safe modification: Test all hooks on Windows explicitly. Add a "hook health check" to the SessionStart hook that verifies all configured hooks are responsive. Log hook invocations to a file for post-hoc diagnosis.
 - Test coverage: Zero. No CI matrix with Windows.
 
 **REPL State Corruption from `const`/`let` Re-Declarations:**
+
 - Files: Will affect `plugins/<plugin-name>/hooks/scripts/repl-sandbox.mjs` when created.
 - Why fragile: The Node.js VM context persists state across REPL iterations. If the LLM declares `const x = 5` in iteration 1 and `const x = 10` in iteration 2, the second declaration throws `SyntaxError: Identifier 'x' has already been declared`. This aborts the iteration silently if not handled.
 - Safe modification: Transform `const`/`let`/`var` declarations to `globalThis.xxx = ...` assignments before execution. Use the regex pattern: `code.replace(/\b(const|let|var)\s+(\w+)\s*=/g, 'globalThis.$2 =')`. Snapshot REPL globals before each iteration and restore any overwritten built-ins after execution.
 - Test coverage: Zero. No test files exist.
 
 **`execSync` with Default `maxBuffer` Truncates Large Nx Output:**
+
 - Files: Will affect `plugins/<plugin-name>/hooks/scripts/workspace-indexer.mjs` when created.
 - Why fragile: `child_process.execSync` has a default `maxBuffer` of 1 MiB (`1024 * 1024`). `nx graph --print` on a large workspace may produce output exceeding this limit (actual size depends on project count and configuration — measure on the target workspace). Truncated output produces invalid JSON that `JSON.parse()` throws on without a clear error indicating truncation.
 - Safe modification: Always pass `{ maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' }` to every `execSync` call. Add a post-parse validation step that checks the JSON structure is complete.
 - Test coverage: Zero.
 
 **Regex-Based `const`/`let` Transformation Fails on Destructuring:**
+
 - Files: Will affect `repl-sandbox.mjs` transformation logic.
 - Why fragile: The simple regex `const x =` fails on destructuring patterns like `const { a, b } = obj` or `const [x, y] = arr`. The transformation would produce `globalThis.{ a, b } = obj` which is a syntax error.
 - Safe modification: Handle destructuring explicitly in the transformation. Either use an AST-level approach (via `acorn`, which is already installed as a transitive dependency) or add special-case regex handling for destructuring patterns.
@@ -166,11 +185,13 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Scaling Limits
 
 **Workspace Index Size at 537+ Projects:**
+
 - Current capacity: Not yet built.
 - Limit: Workspace index size depends on what per-project data is included (names only vs. full target/dependency/tag configuration). Measure the actual JSON size on the target workspace before choosing an indexing strategy. Large indexes should not be loaded wholesale as REPL variables that the LLM must fit in context.
 - Scaling path: Use handle-based result storage for project lists. Expose `workspace.projectCount` and `workspace.domains` as scalar values, not the full project map. Return project details on demand via `projects.get('name')` rather than dumping all entries.
 
 **REPL Output Truncation at 2 KB:**
+
 - Current capacity: Not yet implemented.
 - Limit: The planned 2 KB output truncation per REPL turn prevents context blowup but also prevents the model from seeing complete search results. On a 537-project workspace, even a simple `search("pattern")` may return hundreds of matches that exceed 2 KB.
 - Scaling path: Route all large results through the handle store. The `search()` global should return a stub handle (`"$res1: Array(247) [...]"`) rather than raw results when output exceeds ~50 items.
@@ -180,14 +201,17 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Dependencies at Risk
 
 **`vm2` / `@n8n/vm2` Must Not Be Used:**
+
 - Risk: `vm2` has 8 critical CVEs from 2023, was revived in October 2025, and received a new CVSS 9.8 CVE in January 2026 (CVE-2026-22709). The library is architecturally unfixable -- Node.js intercepts calls from the sandbox, preventing proper proxy wrapping.
 - Impact: If `vm2` is inadvertently introduced as a transitive dependency or considered as an alternative sandbox, it creates a critical security vulnerability.
 - Migration plan: The architecture correctly specifies `node:vm` built-in as the sandbox. Maintain this choice. If stronger isolation is needed, use `isolated-vm` (not `vm2`).
 
 **~~ESLint v8 vs. v9 Configuration Format~~ (Resolved):**
+
 - Resolution: Upgraded `eslint` to `^9.8.0`. Flat config (`eslint.config.mjs`) is now the sole supported format, matching what `@nx/eslint` 22.x generators produce.
 
 **`@nx/vitest` and `vitest` Version Alignment:**
+
 - Risk: `package.json` includes both `@nx/vitest: ^22.5.1` and `vitest: ^4.0.0`. The `^` range on vitest means it can install any 4.x version. Nx plugins typically pin their supported vitest version range internally; a major vitest update can break `@nx/vitest` integration.
 - Impact: Running `npm install` after a vitest 5.0 release (or similar) could break test configuration silently.
 - Migration plan: Use `package-lock.json` (already present, lockfileVersion 3) consistently. Do not run `npm install` without reviewing the lockfile diff. Consider pinning vitest to `~4.0.0` instead of `^4.0.0`.
@@ -197,21 +221,25 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Missing Critical Features
 
 **No Plugin Scaffold Exists:**
+
 - Problem: The `plugins/` directory does not exist. All plugin architecture described in `AGENTS.md` (directory structure, hook formats, skill conventions) is untested against the actual Claude Code plugin system.
 - Blocks: Cannot validate allowed-tools patterns, hook input/output formats, cross-platform script behavior, or `${CLAUDE_PLUGIN_ROOT}` handling until the first plugin scaffold is created.
 - Fix: Create minimal plugin scaffold via `plugin-dev` (documented in `AGENTS.md`) before implementing any feature phases.
 
 **No `llm_query()` Prototype:**
+
 - Problem: The core RLM mechanism -- `llm_query()` spawning sub-LLM calls from within the REPL sandbox -- has no validated implementation path in the Claude Code plugin architecture. The plugin targets flat-rate subscriptions (Team, Max) exclusively, so all LLM calls must route through Claude Code's native subagent system (no direct Anthropic API calls).
 - Blocks: Without a working `llm_query()` proof-of-concept, the plugin may degrade from "true RLM" to "REPL with workspace navigation" at integration time.
 - Fix: Prototype the Task-based subagent delegation pattern in Phase 1 before building the full execution loop. If unfeasible, defer sub-calls to a later milestone to avoid mid-development architecture pivots.
 
 **No CI Pipeline:**
+
 - Problem: No GitHub Actions, CI configuration, or automated test execution exists.
 - Blocks: No regression detection. Cross-platform behavior (Windows vs. Linux vs. macOS) cannot be validated automatically. Hook behavior differences between platforms will only be discovered manually.
 - Fix: Add a minimal CI workflow (`.github/workflows/ci.yml`) running lint + typecheck + test across Node.js 22 and 24, on ubuntu-latest and windows-latest.
 
 **No Workspace for Testing Against:**
+
 - Problem: The research documents reference a target workspace ("ng-app-monolith": Nx 19.8, Angular 18, 537 projects, 1,700 components). The plugin is designed for this scale, but no test workspace exists in the repository.
 - Blocks: Performance benchmarks (indexing time, token usage) cannot be measured. Edge cases in Nx CLI output at scale cannot be tested.
 - Fix: Create a small test fixture workspace (10-20 projects) for unit and integration testing. Document that full-scale testing requires an external workspace and how to configure it.
@@ -221,30 +249,35 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 ## Test Coverage Gaps
 
 **REPL Sandbox Escape Vectors:**
+
 - What is not tested: Prototype chain escape payloads (`this.constructor.constructor('return process')()`), WASM injection, `eval()` via string code generation, cross-realm `instanceof` attacks.
 - Files: `repl-sandbox.mjs` does not exist yet.
 - Risk: A malicious or misbehaving LLM could escape the sandbox and execute arbitrary code on the host machine.
 - Priority: High. Must be added when `repl-sandbox.mjs` is created.
 
 **Execution Loop Guard Conditions:**
+
 - What is not tested: `maxIterations` enforcement, `maxTimeout` wall clock cutoff, `maxConsecutiveErrors` abort, native code timeout evasion (e.g., `BigInt("1".repeat(1e8))`), stale loop detection (LLM producing same code 3 iterations in a row).
 - Files: REPL execution loop scripts do not exist yet.
 - Risk: Without tested guards, the execution loop can hang Claude Code sessions indefinitely, exhaust API token budgets, or silently produce no output.
 - Priority: High. Every guard must ship with a corresponding test.
 
 **Nx CLI Encoding on Windows:**
+
 - What is not tested: Non-ASCII characters in project names or file paths through `execSync` with `encoding: 'utf8'`. Workspace indexer output when `nx show projects --json` returns paths with spaces or Unicode characters.
 - Files: `workspace-indexer.mjs` does not exist yet.
 - Risk: Mojibake or `JSON.parse` failures on international codebases or Windows installations with non-UTF-8 default code pages.
 - Priority: Medium. Add Windows-specific encoding tests in Phase 1.
 
 **Hook Input Format Variations:**
+
 - What is not tested: PostToolUse hook input when `tool_result` vs. `tool_response.stdout` format is used. Hook output `additionalContext` vs. `decision: "block"` behavior differences across hook types.
 - Files: No hook scripts exist yet.
 - Risk: Hooks silently fail to inject context or block actions due to unhandled input format variants. The `AGENTS.md` already documents this ambiguity (line 110-111).
 - Priority: Medium. Document actual formats empirically from first plugin scaffold.
 
 **Cross-Platform Path Separator Handling:**
+
 - What is not tested: `${CLAUDE_PLUGIN_ROOT}` interpolation on Windows. `import.meta.url` -> filesystem path conversion on Windows for `.mjs` scripts. `node:fs/promises` glob behavior on Windows ReFS Dev Drive with symlinks.
 - Files: No scripts exist yet.
 - Risk: All hook scripts fail on Windows due to backslash path corruption.
@@ -252,4 +285,4 @@ No production code exists. The `plugins/` directory does not exist. All plugin a
 
 ---
 
-*Concerns audit: 2026-03-03*
+_Concerns audit: 2026-03-03_

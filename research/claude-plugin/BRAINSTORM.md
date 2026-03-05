@@ -77,11 +77,13 @@ The paradigm shift: from "how do we fit more code into context?" to "how do we n
 - **Strict patterns** (AGENTS.md: ComponentStore conventions, Testing Library, SIFERS, etc.) mean code generation needs to reference multiple example files
 
 Traditional Claude Code workflows at this scale:
+
 - Spawn Explore agent (20K system tokens) -> multiple git grep calls (3-5K each) -> read files (2-5K each) -> answer
 - A single "find where X is implemented" query: 35-70K tokens
 - A session with 5-10 such queries: 175-700K tokens, severe context rot by query 5
 
 RLM-managed workflows:
+
 - Workspace index lookup (0 LLM tokens) -> REPL navigation (isolated, discarded) -> distilled answer (2-5K tokens)
 - Same query: 12-20K tokens
 - Same 10-query session: 50-80K tokens, context stays clean
@@ -109,22 +111,22 @@ Output: .claude/workspace-index.json (~50-100KB structured representation)
 
 **Core data:**
 
-| Data | Source | Purpose |
-|------|--------|---------|
-| Project names -> source roots, types, tags | `nx show projects --json` | Route searches to specific project roots |
-| Dependency edges (adjacency list) | `nx graph --print` | Impact analysis, dependency tracing |
-| Path aliases | `tsconfig.base.json` | Import path resolution |
-| Target availability per project | `nx show project <name>` | Know which projects have build/test/lint/serve/e2e |
-| File counts and last-modified per project root | `fast-glob` + `fs.stat` | Incremental index rebuild |
+| Data                                           | Source                    | Purpose                                            |
+| ---------------------------------------------- | ------------------------- | -------------------------------------------------- |
+| Project names -> source roots, types, tags     | `nx show projects --json` | Route searches to specific project roots           |
+| Dependency edges (adjacency list)              | `nx graph --print`        | Impact analysis, dependency tracing                |
+| Path aliases                                   | `tsconfig.base.json`      | Import path resolution                             |
+| Target availability per project                | `nx show project <name>`  | Know which projects have build/test/lint/serve/e2e |
+| File counts and last-modified per project root | `fast-glob` + `fs.stat`   | Incremental index rebuild                          |
 
 **Scale-specific data (for 1,700-component monolith):**
 
-| Data | Build Method | Purpose | Approximate Size |
-|------|--------------|---------|-----------------|
-| Component registry (selector -> file path) | Regex scan of `@Component({ selector: '...' })` | Find components without searching 537 projects | ~80KB |
-| Store registry (store class -> file path) | Regex scan of `extends ComponentStore` | Trace state management | ~15KB |
-| Route map (route path -> lazy-loaded library) | Parse `app.routes.ts` + `loadChildren` | Understand routing structure | ~10KB |
-| Service registry (providedIn root -> file path) | Regex scan of `providedIn: 'root'` | Find singleton services | ~20KB |
+| Data                                            | Build Method                                    | Purpose                                        | Approximate Size |
+| ----------------------------------------------- | ----------------------------------------------- | ---------------------------------------------- | ---------------- |
+| Component registry (selector -> file path)      | Regex scan of `@Component({ selector: '...' })` | Find components without searching 537 projects | ~80KB            |
+| Store registry (store class -> file path)       | Regex scan of `extends ComponentStore`          | Trace state management                         | ~15KB            |
+| Route map (route path -> lazy-loaded library)   | Parse `app.routes.ts` + `loadChildren`          | Understand routing structure                   | ~10KB            |
+| Service registry (providedIn root -> file path) | Regex scan of `providedIn: 'root'`              | Find singleton services                        | ~20KB            |
 
 **Token savings:** Replaces the typical "let me explore the workspace" phase (5-10 Explore/Bash calls at ~3-5K tokens each = 15-50K) with a single Read call on a structured index (~4-8K tokens for the summary).
 
@@ -133,7 +135,7 @@ Output: .claude/workspace-index.json (~50-100KB structured representation)
 ```javascript
 // Instead of: git grep "selector: 'app-achievement-dialog'" across 2M LOC
 // The REPL does:
-let loc = components.get("app-achievement-dialog")
+let loc = components.get('app-achievement-dialog');
 // -> { path: "libs/connect/ufa/level-up/feature-achievement-dialog/src/lib/...",
 //      project: "connect-ufa-level-up-feature-achievement-dialog" }
 ```
@@ -186,25 +188,25 @@ The REPL environment using Node.js `vm.createContext()` following the Hampton-io
 
 **REPL globals:**
 
-| Global | Purpose | Implementation |
-|--------|---------|----------------|
-| `workspace` | The workspace index as navigable object | Loaded from `workspace-index.json` |
-| `projects` | Shorthand for `workspace.projects` (Map) | Direct reference |
-| `components` | Component selector -> file path registry | Loaded from index |
-| `stores` | Store class -> file path registry | Loaded from index |
-| `services` | Service -> file path registry | Loaded from index |
-| `deps(name)` | Get dependency tree for a project | Walks adjacency list |
-| `dependents(name)` | Get reverse dependency tree | Walks reverse adjacency list |
-| `read(path, start?, end?)` | Read file content (or slice) | `fs.readFileSync` with bounds |
-| `files(glob)` | Find files matching pattern | `fast-glob` or Node.js `fs.glob` |
-| `search(pattern, paths?)` | Search file contents (git grep primary, Node.js built-in fallback) | `child_process.spawnSync('git', ['grep', ...], { shell: false })` |
-| `nx(command)` | Run Nx CLI command, return parsed output | `execSync('npx nx ...')` + JSON parse |
-| `llm_query(prompt, model?)` | Sub-LLM call (routes to Haiku/Sonnet) | Claude API via subagent |
-| `llm_batch(prompts, model?)` | Parallel sub-LLM calls | Concurrent subagents |
-| `FINAL(answer)` | Mark final answer (string) | Sets completion flag |
-| `FINAL_VAR(name)` | Mark final answer (from variable) | Sets completion flag + variable ref |
-| `print(...args)` | Capture output (truncated at 2K chars) | Appended to turn history |
-| `SHOW_VARS()` | List user-created variables | Enumerates `globalThis` additions |
+| Global                       | Purpose                                                            | Implementation                                                    |
+| ---------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `workspace`                  | The workspace index as navigable object                            | Loaded from `workspace-index.json`                                |
+| `projects`                   | Shorthand for `workspace.projects` (Map)                           | Direct reference                                                  |
+| `components`                 | Component selector -> file path registry                           | Loaded from index                                                 |
+| `stores`                     | Store class -> file path registry                                  | Loaded from index                                                 |
+| `services`                   | Service -> file path registry                                      | Loaded from index                                                 |
+| `deps(name)`                 | Get dependency tree for a project                                  | Walks adjacency list                                              |
+| `dependents(name)`           | Get reverse dependency tree                                        | Walks reverse adjacency list                                      |
+| `read(path, start?, end?)`   | Read file content (or slice)                                       | `fs.readFileSync` with bounds                                     |
+| `files(glob)`                | Find files matching pattern                                        | `fast-glob` or Node.js `fs.glob`                                  |
+| `search(pattern, paths?)`    | Search file contents (git grep primary, Node.js built-in fallback) | `child_process.spawnSync('git', ['grep', ...], { shell: false })` |
+| `nx(command)`                | Run Nx CLI command, return parsed output                           | `execSync('npx nx ...')` + JSON parse                             |
+| `llm_query(prompt, model?)`  | Sub-LLM call (routes to Haiku/Sonnet)                              | Claude API via subagent                                           |
+| `llm_batch(prompts, model?)` | Parallel sub-LLM calls                                             | Concurrent subagents                                              |
+| `FINAL(answer)`              | Mark final answer (string)                                         | Sets completion flag                                              |
+| `FINAL_VAR(name)`            | Mark final answer (from variable)                                  | Sets completion flag + variable ref                               |
+| `print(...args)`             | Capture output (truncated at 2K chars)                             | Appended to turn history                                          |
+| `SHOW_VARS()`                | List user-created variables                                        | Enumerates `globalThis` additions                                 |
 
 **Sandbox security:**
 
@@ -215,16 +217,16 @@ The REPL environment using Node.js `vm.createContext()` following the Hampton-io
 
 **Execution loop:**
 
-```typescript
+````typescript
 for (let i = 0; i < maxIterations; i++) {
-  const response = await llm.complete(messages)       // Root LLM generates code
-  const code = parseCodeBlocks(response, 'repl')      // Extract ```repl blocks
-  const result = await sandbox.execute(code)           // Run in VM (<5ms)
-  const final = sandbox.getFinalAnswer()
-  if (final) return final                              // Done
-  messages.push(formatResult(result))                  // Append truncated output
+  const response = await llm.complete(messages); // Root LLM generates code
+  const code = parseCodeBlocks(response, 'repl'); // Extract ```repl blocks
+  const result = await sandbox.execute(code); // Run in VM (<5ms)
+  const final = sandbox.getFinalAnswer();
+  if (final) return final; // Done
+  messages.push(formatResult(result)); // Append truncated output
 }
-```
+````
 
 **Why Node.js VM, not Python:**
 
@@ -275,7 +277,15 @@ class TokenBenchmark {
   // Not a budget enforcer -- purely for measuring whether RLM
   // actually reduces tokens vs. baseline Claude Code workflows.
   record(operation, { model, inputTokens, outputTokens, depth, iterations }) {
-    this.log.push({ timestamp: Date.now(), operation, model, inputTokens, outputTokens, depth, iterations })
+    this.log.push({
+      timestamp: Date.now(),
+      operation,
+      model,
+      inputTokens,
+      outputTokens,
+      depth,
+      iterations,
+    });
   }
   summarize() {
     // Group by operation type, compare against baseline estimates
@@ -305,10 +315,10 @@ The guardrails that matter are `maxIterations`, `maxDepth`, `maxErrors`, and `ma
 
 **Token savings projection for "find where X is implemented":**
 
-| Approach | System overhead | Work tokens | Total |
-|----------|----------------|-------------|-------|
-| Current (Explore agent) | ~20K | 5-10 calls x 3-5K | 35-70K |
-| RLM (Sonnet root) | ~8K | 3-5 iterations x 2K + 1-2 Haiku sub-calls x 1K | 16-20K |
+| Approach                | System overhead | Work tokens                                    | Total  |
+| ----------------------- | --------------- | ---------------------------------------------- | ------ |
+| Current (Explore agent) | ~20K            | 5-10 calls x 3-5K                              | 35-70K |
+| RLM (Sonnet root)       | ~8K             | 3-5 iterations x 2K + 1-2 Haiku sub-calls x 1K | 16-20K |
 
 ### 3b. `/rlm:impact` -- Nx-Aware Impact Analysis
 
@@ -325,10 +335,10 @@ The guardrails that matter are `maxIterations`, `maxDepth`, `maxErrors`, and `ma
 **Nx CLI integration in REPL:**
 
 ```javascript
-let affected = nx("affected -t build --base=main --print")  // JSON output
-let graph = deps("connect-shared-users-data-access")
-print(`Direct dependents: ${graph.direct.length}`)
-print(`Transitive: ${graph.transitive.length}`)
+let affected = nx('affected -t build --base=main --print'); // JSON output
+let graph = deps('connect-shared-users-data-access');
+print(`Direct dependents: ${graph.direct.length}`);
+print(`Transitive: ${graph.transitive.length}`);
 ```
 
 ### 3c. `/rlm:analyze` -- Large Context Analysis
@@ -537,7 +547,7 @@ The agent that runs the RLM execution loop. Separated from the root conversation
 
 ```yaml
 subagent_type: general-purpose
-model: sonnet  # or configurable
+model: sonnet # or configurable
 ```
 
 This agent receives:
@@ -573,7 +583,7 @@ Before context compaction occurs, this hook:
 
 ```yaml
 event: PreToolUse
-tool: Task  # Intercept Explore-type tasks
+tool: Task # Intercept Explore-type tasks
 ```
 
 When Claude is about to spawn an Explore task, this hook checks whether the query could be answered with fewer tokens:
@@ -586,7 +596,7 @@ When Claude is about to spawn an Explore task, this hook checks whether the quer
 
 ```yaml
 event: PostToolUse
-tool: Bash  # After git grep, nx commands
+tool: Bash # After git grep, nx commands
 ```
 
 Caches frequently-used search results and Nx command outputs in `.claude/rlm-state/cache/`. Subsequent identical queries return cached results without re-executing. TTL based on file modification times.
@@ -625,12 +635,12 @@ Strategy hints for Connect ng-app-monolith (Nx 19.8, Angular 18):
 
 The RLM REPL is the primary defense against context rot. All intermediate analysis results live in the REPL sandbox, not in the conversation.
 
-| Without RLM | With RLM |
-|-------------|----------|
-| Search results (5K tokens) added to conversation | Search executed in REPL, only handle returned (~50 tokens) |
-| File contents (3K tokens) read into context | File read in REPL, only relevant lines extracted (~200 tokens) |
-| Dependency graph (10K tokens) dumped to conversation | Graph traversed in REPL code, only answer returned (~100 tokens) |
-| After 10 operations: ~80K tokens of accumulated noise | After 10 operations: ~3K tokens of distilled results |
+| Without RLM                                           | With RLM                                                         |
+| ----------------------------------------------------- | ---------------------------------------------------------------- |
+| Search results (5K tokens) added to conversation      | Search executed in REPL, only handle returned (~50 tokens)       |
+| File contents (3K tokens) read into context           | File read in REPL, only relevant lines extracted (~200 tokens)   |
+| Dependency graph (10K tokens) dumped to conversation  | Graph traversed in REPL code, only answer returned (~100 tokens) |
+| After 10 operations: ~80K tokens of accumulated noise | After 10 operations: ~3K tokens of distilled results             |
 
 The conversation stays clean. The REPL is the scratch space that gets discarded.
 
@@ -702,18 +712,18 @@ This keeps the main conversation context lean throughout the session.
 
 ### 8a. Complete Script Inventory
 
-| Script | Purpose | LLM Tokens | Trigger |
-|--------|---------|------------|---------|
-| `workspace-indexer.mjs` | Build workspace JSON index (537 projects + registries) | 0 | SessionStart hook |
-| `path-resolver.mjs` | Resolve tsconfig path aliases | 0 | Import resolution |
-| `deps-tree.mjs` | Print dependency tree from Nx graph | 0 | `/rlm:nx-deps` command |
-| `affected-analyzer.mjs` | Parse `nx affected` output | 0 | `/rlm:impact` skill |
-| `repl-sandbox.mjs` | Node.js VM REPL environment | 0 (host) | `/rlm:explore`, `/rlm:analyze` |
-| `handle-store.mjs` | Handle-based result storage | 0 | REPL infrastructure |
-| `token-benchmark.mjs` | Token counting for RLM vs. baseline comparison | 0 | All RLM operations (opt-in) |
-| `cache-manager.mjs` | Result caching with file-mtime TTL | 0 | PostToolUse hook |
-| `nx-runner.mjs` | Safe Nx CLI command wrapper | 0 | REPL `nx()` global |
-| `file-scanner.mjs` | Fast file counting/sizing for index | 0 | Workspace indexer |
+| Script                  | Purpose                                                | LLM Tokens | Trigger                        |
+| ----------------------- | ------------------------------------------------------ | ---------- | ------------------------------ |
+| `workspace-indexer.mjs` | Build workspace JSON index (537 projects + registries) | 0          | SessionStart hook              |
+| `path-resolver.mjs`     | Resolve tsconfig path aliases                          | 0          | Import resolution              |
+| `deps-tree.mjs`         | Print dependency tree from Nx graph                    | 0          | `/rlm:nx-deps` command         |
+| `affected-analyzer.mjs` | Parse `nx affected` output                             | 0          | `/rlm:impact` skill            |
+| `repl-sandbox.mjs`      | Node.js VM REPL environment                            | 0 (host)   | `/rlm:explore`, `/rlm:analyze` |
+| `handle-store.mjs`      | Handle-based result storage                            | 0          | REPL infrastructure            |
+| `token-benchmark.mjs`   | Token counting for RLM vs. baseline comparison         | 0          | All RLM operations (opt-in)    |
+| `cache-manager.mjs`     | Result caching with file-mtime TTL                     | 0          | PostToolUse hook               |
+| `nx-runner.mjs`         | Safe Nx CLI command wrapper                            | 0          | REPL `nx()` global             |
+| `file-scanner.mjs`      | Fast file counting/sizing for index                    | 0          | Workspace indexer              |
 
 ### 8b. `nx-runner.mjs` -- Safe Nx CLI Wrapper
 
@@ -726,7 +736,7 @@ Wraps Nx CLI commands with:
 
 ```javascript
 // In REPL
-let affected = nx("show projects --affected --json")
+let affected = nx('show projects --affected --json');
 // Executes: npx nx show projects --affected --json
 // Returns: parsed JSON array of project names
 ```
@@ -737,37 +747,37 @@ For more precise queries, the REPL can invoke `tsc --declaration --emitDeclarati
 
 ```javascript
 // In REPL -- find all implementations of an interface
-let libs = nx("show projects --type lib --json")
-let implementors = libs.filter(p =>
-  search(`implements UserService`, [`libs/${p}/src`]).length > 0
-)
+let libs = nx('show projects --type lib --json');
+let implementors = libs.filter(
+  (p) => search(`implements UserService`, [`libs/${p}/src`]).length > 0,
+);
 ```
 
 ---
 
 ## 9. Model Routing Summary
 
-| Operation | Model | Rationale |
-|-----------|-------|-----------|
-| Workspace indexing | None (Node.js) | Pure data transformation |
-| Search classification | Haiku | Bounded, mechanical decision |
-| Pattern search execution | None (git grep) | Deterministic |
-| Individual file summarization | Haiku | Bounded, mechanical |
-| REPL root orchestration | Sonnet | Moderate reasoning, code generation |
-| Complex analysis synthesis | Sonnet | Multi-step reasoning |
-| Deep debugging / architecture | Opus | Complex judgment, first-try critical |
-| Test generation sub-calls | Haiku | Template-filling per test case |
-| Impact risk classification | Haiku | Bounded classification |
-| Pattern audit per component | Haiku | Mechanical scanning |
-| Data flow trace verification | Haiku | Link-by-link confirmation |
+| Operation                     | Model           | Rationale                            |
+| ----------------------------- | --------------- | ------------------------------------ |
+| Workspace indexing            | None (Node.js)  | Pure data transformation             |
+| Search classification         | Haiku           | Bounded, mechanical decision         |
+| Pattern search execution      | None (git grep) | Deterministic                        |
+| Individual file summarization | Haiku           | Bounded, mechanical                  |
+| REPL root orchestration       | Sonnet          | Moderate reasoning, code generation  |
+| Complex analysis synthesis    | Sonnet          | Multi-step reasoning                 |
+| Deep debugging / architecture | Opus            | Complex judgment, first-try critical |
+| Test generation sub-calls     | Haiku           | Template-filling per test case       |
+| Impact risk classification    | Haiku           | Bounded classification               |
+| Pattern audit per component   | Haiku           | Mechanical scanning                  |
+| Data flow trace verification  | Haiku           | Link-by-link confirmation            |
 
 **Token projection for typical session:**
 
-| Session type | Current (baseline) | With RLM plugin | Reduction |
-|--------------|--------------------|-----------------|-----------|
-| Single exploration query | 35-70K tokens | 12-20K tokens | 2-5x |
-| 10-query session | 175-700K tokens (rot by query 5) | 50-80K tokens (clean throughout) | 3-9x |
-| Full pattern audit (1,700 components) | Not feasible (exceeds context) | ~850K Haiku tokens (isolated, never in conversation) | N/A |
+| Session type                          | Current (baseline)               | With RLM plugin                                      | Reduction |
+| ------------------------------------- | -------------------------------- | ---------------------------------------------------- | --------- |
+| Single exploration query              | 35-70K tokens                    | 12-20K tokens                                        | 2-5x      |
+| 10-query session                      | 175-700K tokens (rot by query 5) | 50-80K tokens (clean throughout)                     | 3-9x      |
+| Full pattern audit (1,700 components) | Not feasible (exceeds context)   | ~850K Haiku tokens (isolated, never in conversation) | N/A       |
 
 The pattern audit is a special case: 850K tokens sounds large, but those are Haiku sub-call tokens in isolated contexts that never enter the main conversation. The conversation itself only receives the ~2-5K token summary.
 
@@ -872,16 +882,16 @@ Output: Structured report with violating files grouped by library
 
 ## 11. Token Savings Projections
 
-| Operation | Without Plugin (current) | With Plugin | Savings |
-|-----------|------------------------|-------------|---------|
-| "Find component X" | 20-40K (Explore + multi-grep) | 0-200 (index lookup) | ~99% |
-| "What depends on library Y" | 30-60K (Explore + graph tracing) | 2-5K (deps-tree.mjs + handle) | 85-95% |
-| "How does feature Z work" | 50-100K (Explore + multi-file reads) | 15-25K (RLM with targeted reads) | 50-75% |
-| "Write tests for component W" | 30-50K (read patterns + examples + generate) | 10-18K (REPL finds examples + Haiku) | 50-70% |
-| "Impact of changing service V" | 60-100K (multi-agent exploration) | 8-15K (script + REPL + Haiku) | 75-90% |
-| "Pattern audit across workspace" | Not feasible (exceeds context) | ~850K Haiku (isolated) + ~3K conversation | N/A |
-| "Trace data flow A -> B -> C" | 40-60K (multi-file reads in context) | 10-15K (REPL traversal + Haiku verify) | 70-80% |
-| 10-query exploration session | 175-700K (severe rot by query 5) | 50-80K (clean context throughout) | 60-90% |
+| Operation                        | Without Plugin (current)                     | With Plugin                               | Savings |
+| -------------------------------- | -------------------------------------------- | ----------------------------------------- | ------- |
+| "Find component X"               | 20-40K (Explore + multi-grep)                | 0-200 (index lookup)                      | ~99%    |
+| "What depends on library Y"      | 30-60K (Explore + graph tracing)             | 2-5K (deps-tree.mjs + handle)             | 85-95%  |
+| "How does feature Z work"        | 50-100K (Explore + multi-file reads)         | 15-25K (RLM with targeted reads)          | 50-75%  |
+| "Write tests for component W"    | 30-50K (read patterns + examples + generate) | 10-18K (REPL finds examples + Haiku)      | 50-70%  |
+| "Impact of changing service V"   | 60-100K (multi-agent exploration)            | 8-15K (script + REPL + Haiku)             | 75-90%  |
+| "Pattern audit across workspace" | Not feasible (exceeds context)               | ~850K Haiku (isolated) + ~3K conversation | N/A     |
+| "Trace data flow A -> B -> C"    | 40-60K (multi-file reads in context)         | 10-15K (REPL traversal + Haiku verify)    | 70-80%  |
+| 10-query exploration session     | 175-700K (severe rot by query 5)             | 50-80K (clean context throughout)         | 60-90%  |
 
 ---
 
@@ -966,14 +976,14 @@ Output: Structured report with violating files grouped by library
 
 ## Source Material References
 
-| Reference | Document |
-|-----------|----------|
-| RLM paper | [[paper]](../rlm/paper-arxiv--recursive-language-models.md) |
-| RLM synthesis | [[SYNTHESIS]](../rlm/SYNTHESIS.md) |
-| Prompt engineering synthesis | [[PE-SYNTHESIS]](../prompt-engineering/SYNTHESIS.md) |
-| Nx CLI research | [[NX-CLI]](../nx/nx-cli.md) |
-| Hampton-io/RLM (Node.js VM) | [repo-hampton](D:/projects/github/hampton-io/RLM) |
-| code-rabi/rllm (Node.js VM) | [repo-rllm](D:/projects/github/code-rabi/rllm) |
-| Matryoshka (handle storage) | [repo-matryoshka](D:/projects/github/yogthos/Matryoshka) |
-| rand/rlm-claude-code (guardrails, depth control) | [repo-rand](D:/projects/github/rand/rlm-claude-code) |
-| Prime Intellect (strategy hints) | [[blog-pi]](../rlm/blog-prime-intellect--recursive-language-models-the-paradigm-of-2026.md) |
+| Reference                                        | Document                                                                                    |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| RLM paper                                        | [[paper]](../rlm/paper-arxiv--recursive-language-models.md)                                 |
+| RLM synthesis                                    | [[SYNTHESIS]](../rlm/SYNTHESIS.md)                                                          |
+| Prompt engineering synthesis                     | [[PE-SYNTHESIS]](../prompt-engineering/SYNTHESIS.md)                                        |
+| Nx CLI research                                  | [[NX-CLI]](../nx/nx-cli.md)                                                                 |
+| Hampton-io/RLM (Node.js VM)                      | [repo-hampton](D:/projects/github/hampton-io/RLM)                                           |
+| code-rabi/rllm (Node.js VM)                      | [repo-rllm](D:/projects/github/code-rabi/rllm)                                              |
+| Matryoshka (handle storage)                      | [repo-matryoshka](D:/projects/github/yogthos/Matryoshka)                                    |
+| rand/rlm-claude-code (guardrails, depth control) | [repo-rand](D:/projects/github/rand/rlm-claude-code)                                        |
+| Prime Intellect (strategy hints)                 | [[blog-pi]](../rlm/blog-prime-intellect--recursive-language-models-the-paradigm-of-2026.md) |

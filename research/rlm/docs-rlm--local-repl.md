@@ -3,6 +3,7 @@
 > Source: [https://alexzhang13.github.io/rlm/environments/local/](https://alexzhang13.github.io/rlm/environments/local/)
 
 ---
+
 ## LocalREPL
 
 **LocalREPL** is the default execution environment for RLM. It runs Python code in the **same process** as the RLM host application, using Python's built-in `exec()` function with a sandboxed namespace. The REPL shares the same virtual environment and memory space as the host process, but restricts access to dangerous builtins like `eval`,`exec`, and`compile`. This provides fast execution with minimal overhead, making it ideal for development and trusted code execution, but offers no process-level isolation from the host system.
@@ -18,17 +19,17 @@ rlm = RLM(
 )
 ```
 
-* * *
+---
 
 ## Arguments
 
-| Argument | Type | Default | Description |
-| --- | --- | --- | --- |
-| `setup_code` | `str` | `None` | Code to run at initialization |
-| `context_payload` | `str | dict | list` | Auto | Initial context (set by RLM) |
-| `lm_handler_address` | `tuple` | Auto | Socket address (set by RLM) |
+| Argument             | Type    | Default | Description                   |
+| -------------------- | ------- | ------- | ----------------------------- | ---- | ---------------------------- |
+| `setup_code`         | `str`   | `None`  | Code to run at initialization |
+| `context_payload`    | `str    | dict    | list`                         | Auto | Initial context (set by RLM) |
+| `lm_handler_address` | `tuple` | Auto    | Socket address (set by RLM)   |
 
-* * *
+---
 
 ## How It Works
 
@@ -38,7 +39,7 @@ rlm = RLM(
 4.  `llm_query()` sends TCP requests to LM Handler
 5.  Variables persist across code blocks in `locals`
 
-* * *
+---
 
 ## Sandboxed Builtins
 
@@ -46,10 +47,10 @@ rlm = RLM(
 
 **Blocked:** `eval`, `exec`, `compile`, `input`, `globals`, `locals`
 
-* * *
+---
 
 ## Limitations
 
--   Shares process memory with host
--   No network isolation
--   Dependencies must be installed in host virtualenv
+- Shares process memory with host
+- No network isolation
+- Dependencies must be installed in host virtualenv

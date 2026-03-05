@@ -3,6 +3,7 @@
 > Source: [https://yogthos.net/posts/2026-01-12-recursive-language-model.html](https://yogthos.net/posts/2026-01-12-recursive-language-model.html)
 
 ---
+
 Despite context windows expanding to millions of tokens, LLMs still struggle with the fundamental task of precision. When you ask an LLM to "analyze this report," it often glances at the text and simply hallucinates a plausible-sounding answer based on probability.
 
 A good example of the problem can be seen when asking a model to sum sales figures from a financial report. Left to its own devices, it will likely not bother reading the whole document and simply give you a made-up answer. This is especially a problem with smaller models that you can run locally.
@@ -20,9 +21,9 @@ The process works as follows:
 1.  1\. The document is loaded into a secure, isolated Node.js environment as a read-only `context` variable.
 2.  2\. The model is given exploration tools: `text_stats()`, `fuzzy_search()`, and `slice()`.
 3.  3\. The Loop:
-    -    • The model writes TypeScript to probe the text.
-    -    • The Sandbox executes it and returns the output.
-    -    • The model reads the result and refines its next step.
+    -  • The model writes TypeScript to probe the text.
+    -  • The Sandbox executes it and returns the output.
+    -  • The model reads the result and refines its next step.
 4.  4\. The loop iterates until the model has enough proven data to answer `FINAL("...")`.
 
 ![RLM execution model](https://yogthos.net/img/rlm/rlm.jpg)

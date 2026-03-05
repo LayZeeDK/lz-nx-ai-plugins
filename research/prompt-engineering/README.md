@@ -19,38 +19,38 @@ This directory contains standalone documents covering Claude Code optimization s
 
 ## Document Index
 
-| Document | Description | When to Use |
-|----------|-------------|-------------|
-| [FEATURES-AND-AVAILABILITY.md](./FEATURES-AND-AVAILABILITY.md) | Feature reference with GA/beta status | Checking feature availability, verification |
-| [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md) | Slash commands, context management, CLAUDE.md | Setting up projects, optimizing context usage |
-| [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md) | Skills vs commands, design patterns, namespacing | Building custom skills, workflow automation |
-| [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md) | Task tool, model selection, parallel execution | Multi-agent workflows, parallel processing |
-| [MCP-TOOL-SEARCH.md](./MCP-TOOL-SEARCH.md) | MCP lazy loading, tool discovery, token savings | Working with MCP servers, large tool libraries |
-| [LARGE-FILE-CHUNKING.md](./LARGE-FILE-CHUNKING.md) | Chunking strategies for files >25K tokens | Processing large documents, specs, logs |
-| [SKILL-CREATION-CHECKLIST.md](./SKILL-CREATION-CHECKLIST.md) | Checklist for creating skills with large file handling | Skill development, code review |
-| [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md) | Haiku 4.5 optimization (speed, cost, agentic) | Fast, cheap tasks; parallel sub-agents |
-| [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) | Sonnet 4.5 patterns (TDD, parallel context) | Standard implementation, daily development |
-| [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md) | Opus 4.5 patterns (effort param, first-try) | Complex reasoning, critical implementations |
+| Document                                                       | Description                                            | When to Use                                    |
+| -------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------- |
+| [FEATURES-AND-AVAILABILITY.md](./FEATURES-AND-AVAILABILITY.md) | Feature reference with GA/beta status                  | Checking feature availability, verification    |
+| [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md)           | Slash commands, context management, CLAUDE.md          | Setting up projects, optimizing context usage  |
+| [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md)             | Skills vs commands, design patterns, namespacing       | Building custom skills, workflow automation    |
+| [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md)             | Task tool, model selection, parallel execution         | Multi-agent workflows, parallel processing     |
+| [MCP-TOOL-SEARCH.md](./MCP-TOOL-SEARCH.md)                     | MCP lazy loading, tool discovery, token savings        | Working with MCP servers, large tool libraries |
+| [LARGE-FILE-CHUNKING.md](./LARGE-FILE-CHUNKING.md)             | Chunking strategies for files >25K tokens              | Processing large documents, specs, logs        |
+| [SKILL-CREATION-CHECKLIST.md](./SKILL-CREATION-CHECKLIST.md)   | Checklist for creating skills with large file handling | Skill development, code review                 |
+| [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md)   | Haiku 4.5 optimization (speed, cost, agentic)          | Fast, cheap tasks; parallel sub-agents         |
+| [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) | Sonnet 4.5 patterns (TDD, parallel context)            | Standard implementation, daily development     |
+| [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md)     | Opus 4.5 patterns (effort param, first-try)            | Complex reasoning, critical implementations    |
 
 ---
 
 ## Quick Model Selection Guide
 
-| Task Type | Recommended Model | Key Advantage |
-|-----------|-------------------|---------------|
-| Simple/mechanical tasks | **Haiku 4.5** | 2-3x faster, 66% cheaper than Sonnet |
-| Standard implementation | **Sonnet 4.5** | Best balance of speed/quality/cost |
-| Complex reasoning | **Opus 4.5** | 80.9% SWE-bench, highest first-try success |
-| Large context (>200K) | **Sonnet 4.5** | Only model with 1M context window |
-| Parallel sub-agents | **Haiku 4.5** | Low latency enables massive parallelization |
+| Task Type               | Recommended Model | Key Advantage                               |
+| ----------------------- | ----------------- | ------------------------------------------- |
+| Simple/mechanical tasks | **Haiku 4.5**     | 2-3x faster, 66% cheaper than Sonnet        |
+| Standard implementation | **Sonnet 4.5**    | Best balance of speed/quality/cost          |
+| Complex reasoning       | **Opus 4.5**      | 80.9% SWE-bench, highest first-try success  |
+| Large context (>200K)   | **Sonnet 4.5**    | Only model with 1M context window           |
+| Parallel sub-agents     | **Haiku 4.5**     | Low latency enables massive parallelization |
 
 ### Cost Comparison
 
-| Model | Input (per 1M tokens) | Output (per 1M tokens) | Relative Cost |
-|-------|----------------------|------------------------|---------------|
-| Haiku 4.5 | $1 | $5 | 1x (baseline) |
-| Sonnet 4.5 | $3 | $15 | 3x |
-| Opus 4.5 | $5 | $25 | 5x |
+| Model      | Input (per 1M tokens) | Output (per 1M tokens) | Relative Cost |
+| ---------- | --------------------- | ---------------------- | ------------- |
+| Haiku 4.5  | $1                    | $5                     | 1x (baseline) |
+| Sonnet 4.5 | $3                    | $15                    | 3x            |
+| Opus 4.5   | $5                    | $25                    | 5x            |
 
 **Rule of thumb**: Use the cheapest model that can reliably complete the task.
 
@@ -131,13 +131,13 @@ This directory contains standalone documents covering Claude Code optimization s
 
 ### Terminology
 
-| Term | Meaning |
-|------|---------|
-| **Slash command** | `/command` - Intent-specific AI action |
-| **Shell command** | `!command` - Direct bash execution |
-| **Skill** | Multi-file workflow package in `.claude/skills/` |
-| **Task** | Ephemeral worker agent spawned via Task tool |
-| **MCP** | Model Context Protocol - external tool integration |
+| Term              | Meaning                                            |
+| ----------------- | -------------------------------------------------- |
+| **Slash command** | `/command` - Intent-specific AI action             |
+| **Shell command** | `!command` - Direct bash execution                 |
+| **Skill**         | Multi-file workflow package in `.claude/skills/`   |
+| **Task**          | Ephemeral worker agent spawned via Task tool       |
+| **MCP**           | Model Context Protocol - external tool integration |
 
 ### Code Examples
 
@@ -147,7 +147,9 @@ All code examples in these documents use generic patterns:
 // Generic component example
 export class Component {
   readonly state = signal(false);
-  toggle() { this.state.update(s => !s); }
+  toggle() {
+    this.state.update((s) => !s);
+  }
 }
 ```
 

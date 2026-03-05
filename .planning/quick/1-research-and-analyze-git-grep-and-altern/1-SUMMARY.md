@@ -7,37 +7,37 @@ tags: [git-grep, ripgrep, cross-platform, search, repl, vm-sandbox]
 # Dependency graph
 requires: []
 provides:
-  - "Comparative analysis of 5 search tools for search() REPL function"
-  - "Recommended invocation pattern for git grep with spawnSync"
-  - "Fallback strategy using Node.js built-in fs.globSync + readFileSync"
-  - "Output parser implementation for git grep results"
+  - 'Comparative analysis of 5 search tools for search() REPL function'
+  - 'Recommended invocation pattern for git grep with spawnSync'
+  - 'Fallback strategy using Node.js built-in fs.globSync + readFileSync'
+  - 'Output parser implementation for git grep results'
 affects: [phase-2-repl-core, search-function-implementation]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "spawnSync with shell:false for cross-platform child_process"
-    - "MSYS_NO_PATHCONV env var for Windows path munging prevention"
-    - "git grep -n --no-color -I -e pattern for structured search output"
+    - 'spawnSync with shell:false for cross-platform child_process'
+    - 'MSYS_NO_PATHCONV env var for Windows path munging prevention'
+    - 'git grep -n --no-color -I -e pattern for structured search output'
 
 key-files:
   created:
-    - ".planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md"
+    - '.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md'
   modified: []
 
 key-decisions:
-  - "git grep is the primary search tool for search() REPL function"
-  - "Node.js built-in (fs.globSync + readFileSync) is the zero-dep fallback"
-  - "ripgrep disqualified due to extra dependency and arm64 QEMU penalty"
-  - "POSIX grep disqualified due to unreliable Windows MSYS2 behavior"
-  - "Claude Code Grep tool disqualified as unavailable from Node.js scripts"
+  - 'git grep is the primary search tool for search() REPL function'
+  - 'Node.js built-in (fs.globSync + readFileSync) is the zero-dep fallback'
+  - 'ripgrep disqualified due to extra dependency and arm64 QEMU penalty'
+  - 'POSIX grep disqualified due to unreliable Windows MSYS2 behavior'
+  - 'Claude Code Grep tool disqualified as unavailable from Node.js scripts'
 
 patterns-established:
   - "spawnSync('git', [...args]) with shell:false avoids Pitfall 7 and 8"
-  - "Parse git grep output by splitting on first two colons per line"
-  - "Detect git availability at sandbox init, cache result for session"
-  - "Auto-detect literal vs regex patterns for -F/-E flag optimization"
+  - 'Parse git grep output by splitting on first two colons per line'
+  - 'Detect git availability at sandbox init, cache result for session'
+  - 'Auto-detect literal vs regex patterns for -F/-E flag optimization'
 
 requirements-completed: []
 
@@ -109,5 +109,6 @@ None - no external service configuration required.
 - [x] Task 1 commit `d2c7f42` found in git log
 
 ---
-*Phase: quick*
-*Completed: 2026-03-04*
+
+_Phase: quick_
+_Completed: 2026-03-04_

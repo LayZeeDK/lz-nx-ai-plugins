@@ -5,6 +5,7 @@
 > Site: InfoQ
 
 ---
+
 Researchers at [MIT's CSAIL](https://www.csail.mit.edu/) published a design for [Recursive Language Models](https://arxiv.org/abs/2512.24601) (RLM), a technique for improving LLM performance on long-context tasks. RLMs use a programming environment to recursively decompose and process inputs, and can handle prompts up to 100x longer than base LLMs.
 
 A current challenge with LLMs is that they have a limited input size (aka _context window_) and often struggle with tasks that require a long context. The key idea of RLMs is, instead of passing the prompt directly to the LLM, to give the LLM access to a programming language such as Python. The LLM then generates code to manipulate the prompt and perform preprocessing such as breaking it into chunks or searching for regular expressions. These programming tasks are performed recursively: part of the generated code is to invoke another RLM call. On a wide range of long-context benchmarks, the MIT team found that their RLM outperformed other strategies such as context compaction. According to MIT, 

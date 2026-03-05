@@ -10,12 +10,12 @@ autonomous: true
 requirements: []
 must_haves:
   truths:
-    - "Each candidate tool is evaluated on the same 6 dimensions"
-    - "Cross-platform behavior is verified against real platform constraints, not assumed"
+    - 'Each candidate tool is evaluated on the same 6 dimensions'
+    - 'Cross-platform behavior is verified against real platform constraints, not assumed'
     - "A clear winner is recommended with rationale tied to the search() REPL function's specific constraints"
   artifacts:
-    - path: ".planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md"
-      provides: "Comparative analysis and recommendation for search() implementation tool"
+    - path: '.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md'
+      provides: 'Comparative analysis and recommendation for search() implementation tool'
       min_lines: 100
   key_links: []
 ---
@@ -68,11 +68,12 @@ D. **Git-awareness** -- Does the tool inherently respect `.gitignore` and only s
 E. **Dependency footprint** -- Does it add external dependencies beyond Node.js LTS + git? The plugin constraint (PROJECT.md) is "Node.js LTS only, no native modules." git grep: requires git (already assumed available per AGENTS.md). rg: requires ripgrep binary (not guaranteed). Grep tool: only available inside Claude Code agent context, not from Node.js scripts. Node.js built-in: zero external deps.
 
 F. **Known pitfalls for this specific use case** -- Reference PITFALLS.md:
-   - Pitfall 7: MSYS2 path munging corrupts regex patterns containing `/` when passed via shell
-   - Pitfall 8: `cmd.exe` default shell breaks Unix syntax in `execSync`
-   - Pitfall 9: `fs.glob` returns backslash paths on Windows
-   - For git grep specifically: using `spawnSync('git', ['grep', ...args])` with `shell: false` avoids both Pitfall 7 and Pitfall 8
-   - For Node.js built-in: must normalize paths (Pitfall 9) and implement .gitignore exclusion
+
+- Pitfall 7: MSYS2 path munging corrupts regex patterns containing `/` when passed via shell
+- Pitfall 8: `cmd.exe` default shell breaks Unix syntax in `execSync`
+- Pitfall 9: `fs.glob` returns backslash paths on Windows
+- For git grep specifically: using `spawnSync('git', ['grep', ...args])` with `shell: false` avoids both Pitfall 7 and Pitfall 8
+- For Node.js built-in: must normalize paths (Pitfall 9) and implement .gitignore exclusion
 
 **Structure the document as:**
 
@@ -82,11 +83,15 @@ F. **Known pitfalls for this specific use case** -- Reference PITFALLS.md:
 4. **Detailed Analysis** -- One section per candidate with specifics on each dimension
 5. **Recommendation** -- Clear winner with rationale. If git grep wins (likely given the constraints), note the specific invocation pattern:
    ```javascript
-   spawnSync('git', ['grep', '-n', '--no-color', '-e', pattern, '--', ...paths], {
-     cwd: workspaceRoot,
-     encoding: 'utf8',
-     env: { ...process.env, MSYS_NO_PATHCONV: '1' },
-   });
+   spawnSync(
+     'git',
+     ['grep', '-n', '--no-color', '-e', pattern, '--', ...paths],
+     {
+       cwd: workspaceRoot,
+       encoding: 'utf8',
+       env: { ...process.env, MSYS_NO_PATHCONV: '1' },
+     },
+   );
    ```
    Also note the fallback strategy: if git is not available, fall back to Node.js built-in (zero-dep, slower but works everywhere).
 6. **Implementation Notes** -- Key patterns for the recommended tool: output parsing, error handling, result capping (100 results per FEATURES.md), path normalization on Windows.
@@ -94,11 +99,11 @@ F. **Known pitfalls for this specific use case** -- Reference PITFALLS.md:
 Do NOT just restate what is in the research files. Add new analysis specific to the search() function's constraints: synchronous execution, called from within a VM sandbox's controlled wrapper, result cap at 100, must return structured `{ file, line, match }` objects.
 
 Important: The Claude Code Grep tool is NOT available from Node.js scripts -- it is a tool that Claude agents use during conversation, not a programmatic API. Disqualify it early but explain why.
-  </action>
-  <verify>
-    <automated>test -f ".planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md" && wc -l ".planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md" | awk '{if ($1 >= 100) print "[OK] Analysis document exists with " $1 " lines"; else print "[ERROR] Document too short: " $1 " lines"}'</automated>
-  </verify>
-  <done>ANALYSIS.md exists with 100+ lines, contains comparison matrix, detailed analysis of all 5 candidates, and a clear recommendation with implementation notes for the search() REPL function</done>
+</action>
+<verify>
+<automated>test -f ".planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md" && wc -l ".planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md" | awk '{if ($1 >= 100) print "[OK] Analysis document exists with " $1 " lines"; else print "[ERROR] Document too short: " $1 " lines"}'</automated>
+</verify>
+<done>ANALYSIS.md exists with 100+ lines, contains comparison matrix, detailed analysis of all 5 candidates, and a clear recommendation with implementation notes for the search() REPL function</done>
 </task>
 
 </tasks>
@@ -113,11 +118,12 @@ Important: The Claude Code Grep tool is NOT available from Node.js scripts -- it
 </verification>
 
 <success_criteria>
+
 - A developer reading ANALYSIS.md can implement search() without further research
 - The recommendation accounts for all 4 target platforms (macOS, Linux, Win x64, Win arm64)
 - Known pitfalls are addressed with specific prevention patterns
 - The fallback strategy is documented
-</success_criteria>
+  </success_criteria>
 
 <output>
 After completion, create `.planning/quick/1-research-and-analyze-git-grep-and-altern/1-SUMMARY.md`

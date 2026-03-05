@@ -24,6 +24,7 @@ Node.js 24 LTS).
 **Config:** No config file needed -- runs directly via `node --test`
 
 **Run Commands:**
+
 ```bash
 # Run all tests for a plugin script directory
 node --test plugins/lz-nx.rlm/scripts/**/*.test.mjs
@@ -49,6 +50,7 @@ scaffolded with `@nx/js` or `@nx/node`.
 **Nx plugin:** `@nx/vite/plugin` (configured in `nx.json`)
 
 **Run Commands:**
+
 ```bash
 # Run tests for a specific Nx project
 npm exec nx test <project-name>
@@ -101,6 +103,7 @@ libs/<lib-name>/
 ```
 
 **Naming:**
+
 - Plugin script tests: `<source-file-name>.test.mjs` (same name + `.test.`)
 - Nx library tests: `<source-file-name>.spec.ts` (`.spec.ts` convention)
 
@@ -149,6 +152,7 @@ describe('WorkspaceIndexer', () => {
 ```
 
 **Patterns:**
+
 - Setup: `before()` for async setup, `beforeEach()` for per-test reset
 - Teardown: `after()` for async cleanup, `afterEach()` for per-test cleanup
 - Assertions: `assert.strictEqual`, `assert.deepStrictEqual`, `assert.ok`,
@@ -194,12 +198,14 @@ it('reads workspace index from disk', async (t) => {
 ```
 
 **What to mock:**
+
 - `node:child_process` `execSync`/`spawnSync` calls (Nx CLI via `execSync`, git grep via `spawnSync` with `shell: false`) -- too slow and
   require real workspaces in unit tests
 - `node:fs` `readFileSync`/`writeFileSync` -- when testing logic, not I/O
 - Time-based functions (`Date.now`) -- for consistent timestamp assertions
 
 **What NOT to mock:**
+
 - The `node:vm` sandbox itself -- test with real VM execution to catch
   real sandbox behavior and edge cases
 - The handle store Map operations -- test with real in-memory Map
@@ -220,8 +226,20 @@ export const WORKSPACE_INDEX_FIXTURE = {
   generated: '2026-03-03T00:00:00.000Z',
   root: '/workspace',
   projects: {
-    'proj-a': { name: 'proj-a', root: 'libs/proj-a', type: 'lib', tags: [], targets: ['build', 'test'] },
-    'proj-b': { name: 'proj-b', root: 'apps/proj-b', type: 'app', tags: [], targets: ['build', 'serve'] },
+    'proj-a': {
+      name: 'proj-a',
+      root: 'libs/proj-a',
+      type: 'lib',
+      tags: [],
+      targets: ['build', 'test'],
+    },
+    'proj-b': {
+      name: 'proj-b',
+      root: 'apps/proj-b',
+      type: 'app',
+      tags: [],
+      targets: ['build', 'serve'],
+    },
   },
   deps: { 'proj-a': [], 'proj-b': ['proj-a'] },
   reverseDeps: { 'proj-a': ['proj-b'], 'proj-b': [] },
@@ -242,6 +260,7 @@ function createSandbox(overrides = {}) {
 ```
 
 **Location:**
+
 - Fixtures: `plugins/lz-nx.rlm/scripts/__fixtures__/`
 - Factory helpers: inline in the test file unless shared across multiple test files
 
@@ -251,6 +270,7 @@ function createSandbox(overrides = {}) {
 Per `.planning/research/STACK.md`, coverage is opt-in during development.
 
 **View coverage:**
+
 ```bash
 # node:test experimental coverage
 node --test --experimental-test-coverage plugins/lz-nx.rlm/scripts/**/*.test.mjs
@@ -261,37 +281,41 @@ npm exec nx -- test <project-name> --coverage
 
 **Coverage priorities** (by component risk level, from `.planning/research/PITFALLS.md`):
 
-| Component | Risk | Priority |
-|-----------|------|----------|
-| `repl-sandbox.mjs` | HIGH (VM escape, state corruption) | Must test sandbox escape vectors |
-| Execution loop | HIGH (infinite loops, guardrails) | Must test all four guardrails |
-| `workspace-indexer.mjs` | HIGH (Nx daemon timeouts) | Must test timeout handling |
-| `handle-store.mjs` | MEDIUM (memory leaks) | Test eviction logic |
-| `nx-runner.mjs` | LOW (allowlist logic) | Test allowlist enforcement |
-| `path-resolver.mjs` | LOW (bidirectional logic) | Test round-trip accuracy |
-| `rlm-config.mjs` | LOW (config merging) | Test default override |
+| Component               | Risk                               | Priority                         |
+| ----------------------- | ---------------------------------- | -------------------------------- |
+| `repl-sandbox.mjs`      | HIGH (VM escape, state corruption) | Must test sandbox escape vectors |
+| Execution loop          | HIGH (infinite loops, guardrails)  | Must test all four guardrails    |
+| `workspace-indexer.mjs` | HIGH (Nx daemon timeouts)          | Must test timeout handling       |
+| `handle-store.mjs`      | MEDIUM (memory leaks)              | Test eviction logic              |
+| `nx-runner.mjs`         | LOW (allowlist logic)              | Test allowlist enforcement       |
+| `path-resolver.mjs`     | LOW (bidirectional logic)          | Test round-trip accuracy         |
+| `rlm-config.mjs`        | LOW (config merging)               | Test default override            |
 
 ## Test Types
 
 **Unit Tests:**
+
 - Scope: Individual script functions in isolation
 - Mocking: Mock all I/O (`execSync`, `readFileSync`)
 - Location: Co-located `.test.mjs` files
 - Framework: `node:test` + `node:assert/strict`
 
 **Integration Tests:**
+
 - Scope: Full script execution with real file I/O against fixture workspaces
 - Mocking: No mocking -- use temp directories with real fixture `nx.json`/`project.json`
 - Location: `plugins/lz-nx.rlm/scripts/__tests__/` (separate subdirectory)
 - Framework: `node:test` + `node:assert/strict`
 
 **Sandbox Security Tests (critical):**
+
 - Scope: Known VM escape payloads against `repl-sandbox.mjs`
 - Purpose: Verify `codeGeneration: { strings: false, wasm: false }` blocks eval attacks
 - Location: `plugins/lz-nx.rlm/scripts/repl-sandbox.security.test.mjs`
 - Run on every change to `repl-sandbox.mjs` per `.planning/research/PITFALLS.md`
 
 **E2E Tests:**
+
 - Framework: Not configured (manual verification for plugin invocation from Claude Code)
 - Verification checklist from `AGENTS.md`:
   1. Scripts execute correctly on the current platform
@@ -302,6 +326,7 @@ npm exec nx -- test <project-name> --coverage
 ## Common Patterns
 
 **Async testing with node:test:**
+
 ```javascript
 it('resolves path alias to filesystem path', async () => {
   const result = await resolveAlias('@proj-a', WORKSPACE_INDEX_FIXTURE);
@@ -311,6 +336,7 @@ it('resolves path alias to filesystem path', async () => {
 ```
 
 **Error testing:**
+
 ```javascript
 it('rejects disallowed Nx commands', async () => {
   const runner = new NxRunner({ allowlist: ['show', 'graph'] });
@@ -327,6 +353,7 @@ it('rejects disallowed Nx commands', async () => {
 ```
 
 **RLM guardrail testing:**
+
 ```javascript
 it('halts execution after maxConsecutiveErrors', async () => {
   const sandbox = createSandbox({ maxConsecutiveErrors: 2 });
@@ -338,11 +365,14 @@ it('halts execution after maxConsecutiveErrors', async () => {
   const result3 = await sandbox.execute(failingCode);
 
   assert.ok(result3.halted);
-  assert.ok(result3.error.includes('[ERROR] Aborted after 2 consecutive errors'));
+  assert.ok(
+    result3.error.includes('[ERROR] Aborted after 2 consecutive errors'),
+  );
 });
 ```
 
 **Sandbox variable persistence across iterations:**
+
 ```javascript
 it('persists globalThis assignments across REPL turns', async () => {
   const sandbox = createSandbox();
@@ -358,14 +388,19 @@ it('persists globalThis assignments across REPL turns', async () => {
 ```
 
 **Platform-specific test skipping:**
-```javascript
-it('normalizes Windows backslash paths to forward slashes', {
-  skip: process.platform !== 'win32' ? 'Windows-only test' : false,
-}, () => {
-  const normalized = normalizePath('plugins\\lz-nx.rlm\\scripts');
 
-  assert.strictEqual(normalized, 'plugins/lz-nx.rlm/scripts');
-});
+```javascript
+it(
+  'normalizes Windows backslash paths to forward slashes',
+  {
+    skip: process.platform !== 'win32' ? 'Windows-only test' : false,
+  },
+  () => {
+    const normalized = normalizePath('plugins\\lz-nx.rlm\\scripts');
+
+    assert.strictEqual(normalized, 'plugins/lz-nx.rlm/scripts');
+  },
+);
 ```
 
 ## Nx Target Configuration
@@ -384,6 +419,7 @@ The `nx.json` configures caching for the `@nx/vitest:test` target:
 ```
 
 The `production` named input excludes test files from production build caching:
+
 ```json
 {
   "production": [
@@ -406,4 +442,4 @@ Before considering any plugin modification complete, verify:
 
 ---
 
-*Testing analysis: 2026-03-03*
+_Testing analysis: 2026-03-03_

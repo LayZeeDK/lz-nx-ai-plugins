@@ -12,12 +12,12 @@ Agent teams let multiple Claude Code instances work together as a coordinated te
 
 The architecture has four components:
 
-| Component | Role |
-|-----------|------|
+| Component     | Role                                                                   |
+| ------------- | ---------------------------------------------------------------------- |
 | **Team lead** | Creates the team, spawns teammates, assigns tasks, synthesizes results |
-| **Teammates** | Separate Claude Code instances working on assigned tasks |
-| **Task list** | Shared work items with dependency tracking and auto-unblocking |
-| **Mailbox** | Messaging system for peer-to-peer communication between agents |
+| **Teammates** | Separate Claude Code instances working on assigned tasks               |
+| **Task list** | Shared work items with dependency tracking and auto-unblocking         |
+| **Mailbox**   | Messaging system for peer-to-peer communication between agents         |
 
 Teams and their state are stored locally at `~/.claude/teams/{team-name}/config.json` and `~/.claude/tasks/{team-name}/` ([agent-teams.md], [blog-alexop-from-tasks-to-swarms.md]).
 
@@ -27,13 +27,13 @@ Agent teams are **experimental** and disabled by default. Enable with `CLAUDE_CO
 
 The corpus consistently identifies this as the critical architectural decision ([features-overview.md], [blog-claudefast-complete-guide.md], [blog-codewithseb-subagents-performance.md]).
 
-| Dimension | Subagents | Agent Teams |
-|-----------|-----------|-------------|
-| **Context** | Own window; results return to caller | Own window; fully independent |
-| **Communication** | Report results back to main agent only (hub-and-spoke) | Teammates message each other directly (mesh) |
-| **Coordination** | Main agent manages all work | Shared task list with self-coordination |
-| **Best for** | Focused tasks where only the result matters | Complex work requiring discussion and collaboration |
-| **Token cost** | Lower: results summarized back to main context | Higher: each teammate is a separate Claude instance |
+| Dimension         | Subagents                                              | Agent Teams                                         |
+| ----------------- | ------------------------------------------------------ | --------------------------------------------------- |
+| **Context**       | Own window; results return to caller                   | Own window; fully independent                       |
+| **Communication** | Report results back to main agent only (hub-and-spoke) | Teammates message each other directly (mesh)        |
+| **Coordination**  | Main agent manages all work                            | Shared task list with self-coordination             |
+| **Best for**      | Focused tasks where only the result matters            | Complex work requiring discussion and collaboration |
+| **Token cost**    | Lower: results summarized back to main context         | Higher: each teammate is a separate Claude instance |
 
 The claudefast guide offers a useful analogy: "subagents are contractors you send on separate errands. Agent Teams is a project team sitting in the same room" ([blog-claudefast-complete-guide.md]).
 
@@ -107,15 +107,15 @@ The most ambitious publicly documented agent team project: 16 parallel Claude ag
 
 The corpus reports varying cost multipliers depending on the source:
 
-| Source | Reported multiplier |
-|--------|-------------------|
-| Anthropic official docs | "significantly more tokens" / "roughly proportional to team size" ([agent-teams.md], [costs.md]) |
-| claudefast guide | "3-4x for 3 teammates" ([blog-claudefast-complete-guide.md]) |
-| alexop blog (measured) | Solo: ~200k, 3 subagents: ~440k, 3-person team: ~800k ([blog-alexop-from-tasks-to-swarms.md]) |
-| marc0 blog | "~5x per teammate" ([blog-marc0-parallel-agents-setup.md]) |
-| codewithseb blog | "~15x more tokens than chat" for multi-agent vs single chat ([blog-codewithseb-subagents-performance.md]) |
-| Anthropic multi-agent blog | "3-10x more tokens" than single-agent for equivalent tasks ([blog-building-multi-agent-systems.md]) |
-| Anthropic costs page | "~7x more tokens in plan mode" for agent teams ([costs.md]) |
+| Source                     | Reported multiplier                                                                                       |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Anthropic official docs    | "significantly more tokens" / "roughly proportional to team size" ([agent-teams.md], [costs.md])          |
+| claudefast guide           | "3-4x for 3 teammates" ([blog-claudefast-complete-guide.md])                                              |
+| alexop blog (measured)     | Solo: ~200k, 3 subagents: ~440k, 3-person team: ~800k ([blog-alexop-from-tasks-to-swarms.md])             |
+| marc0 blog                 | "~5x per teammate" ([blog-marc0-parallel-agents-setup.md])                                                |
+| codewithseb blog           | "~15x more tokens than chat" for multi-agent vs single chat ([blog-codewithseb-subagents-performance.md]) |
+| Anthropic multi-agent blog | "3-10x more tokens" than single-agent for equivalent tasks ([blog-building-multi-agent-systems.md])       |
+| Anthropic costs page       | "~7x more tokens in plan mode" for agent teams ([costs.md])                                               |
 
 ### 6.2 Cost optimization strategies
 
@@ -130,11 +130,11 @@ The corpus converges on several patterns:
 
 ### 6.3 Cost comparison (codewithseb benchmarks)
 
-| Agent Config | Time | Cost | Accuracy |
-|-------------|------|------|----------|
-| Haiku | 8s | $0.03 | 60% |
-| Sonnet | 45s | $0.24 | 85% |
-| Opus | 2min | $1.20 | 95% |
+| Agent Config | Time | Cost  | Accuracy |
+| ------------ | ---- | ----- | -------- |
+| Haiku        | 8s   | $0.03 | 60%      |
+| Sonnet       | 45s  | $0.24 | 85%      |
+| Opus         | 2min | $1.20 | 95%      |
 
 Use Haiku for high-volume pattern-matching (searching, linting), Sonnet for balanced reasoning (default worker), Opus for architecture and novel problems ([blog-codewithseb-subagents-performance.md]).
 
@@ -210,30 +210,30 @@ Custom agents can use `isolation: worktree` in frontmatter to always run in a te
 
 The corpus consistently reports these limitations:
 
-| Limitation | Impact | Mitigation |
-|-----------|--------|------------|
-| **No session resumption** for in-process teammates | `/resume` and `/rewind` don't restore teammates. Lead may message teammates that no longer exist | Spawn fresh teammates after resuming ([agent-teams.md]) |
-| **Task status can lag** | Teammates sometimes fail to mark tasks completed, blocking dependent tasks | Check manually and nudge the lead or update status ([agent-teams.md]) |
-| **One team per session** | Clean up before starting a new team | Design work to fit one team lifecycle ([agent-teams.md]) |
-| **No nested teams** | Teammates cannot spawn their own teams. Only the lead manages the team | Deliberate design to prevent infinite recursion and runaway costs ([agent-teams.md]) |
-| **Lead implements instead of delegating** | The lead gets distracted and does work itself | Use delegate mode (`Shift+Tab`) or explicitly instruct "wait for teammates" ([blog-addy-osmani-claude-code-swarms.md]) |
-| **File conflicts** | No built-in file locking between teammates | Structure work so each teammate owns different files. Use worktrees for isolation ([agent-teams.md], [blog-marc0-parallel-agents-setup.md]) |
-| **Split panes require tmux/iTerm2** | Not supported in VS Code terminal, Windows Terminal, or Ghostty | Use in-process mode (default, works everywhere) ([agent-teams.md]) |
-| **Permissions propagate from lead** | All teammates start with lead's permission settings. Can't set per-teammate modes at spawn time | Change individual modes after spawning ([agent-teams.md]) |
-| **Shutdown can be slow** | Teammates finish their current request before shutting down | Expected behavior, budget for it ([agent-teams.md]) |
-| **Token throughput limits** | Agent teams hit API rate limits faster | Budget for rate limits; use Sonnet for workers ([blog-derek-ashmore-agent-teams-vs-claude-flow.md]) |
+| Limitation                                         | Impact                                                                                           | Mitigation                                                                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No session resumption** for in-process teammates | `/resume` and `/rewind` don't restore teammates. Lead may message teammates that no longer exist | Spawn fresh teammates after resuming ([agent-teams.md])                                                                                     |
+| **Task status can lag**                            | Teammates sometimes fail to mark tasks completed, blocking dependent tasks                       | Check manually and nudge the lead or update status ([agent-teams.md])                                                                       |
+| **One team per session**                           | Clean up before starting a new team                                                              | Design work to fit one team lifecycle ([agent-teams.md])                                                                                    |
+| **No nested teams**                                | Teammates cannot spawn their own teams. Only the lead manages the team                           | Deliberate design to prevent infinite recursion and runaway costs ([agent-teams.md])                                                        |
+| **Lead implements instead of delegating**          | The lead gets distracted and does work itself                                                    | Use delegate mode (`Shift+Tab`) or explicitly instruct "wait for teammates" ([blog-addy-osmani-claude-code-swarms.md])                      |
+| **File conflicts**                                 | No built-in file locking between teammates                                                       | Structure work so each teammate owns different files. Use worktrees for isolation ([agent-teams.md], [blog-marc0-parallel-agents-setup.md]) |
+| **Split panes require tmux/iTerm2**                | Not supported in VS Code terminal, Windows Terminal, or Ghostty                                  | Use in-process mode (default, works everywhere) ([agent-teams.md])                                                                          |
+| **Permissions propagate from lead**                | All teammates start with lead's permission settings. Can't set per-teammate modes at spawn time  | Change individual modes after spawning ([agent-teams.md])                                                                                   |
+| **Shutdown can be slow**                           | Teammates finish their current request before shutting down                                      | Expected behavior, budget for it ([agent-teams.md])                                                                                         |
+| **Token throughput limits**                        | Agent teams hit API rate limits faster                                                           | Budget for rate limits; use Sonnet for workers ([blog-derek-ashmore-agent-teams-vs-claude-flow.md])                                         |
 
 ## 10. Third-Party Ecosystem
 
 The corpus documents several external tools and orchestrators:
 
-| Tool | Approach | Notes |
-|------|----------|-------|
-| **Claude-Flow** | External orchestrator for Claude Code agent teams | More setup effort but deeper research output, better token efficiency, extensible beyond Anthropic models ([blog-derek-ashmore-agent-teams-vs-claude-flow.md]) |
-| **Gas Town** | Steve Yegge's "Kubernetes for AI agents" | Structured agent hierarchy with "mayor" agent. Better for solo devs, more agents in parallel ([blog-shipyard-multi-agent-orchestration.md]) |
-| **Multiclaude** | Dan Lorenc's multi-agent orchestrator | "Brownian ratchet" philosophy: auto-merge if CI passes. Supports team review in "multiplayer" mode ([blog-shipyard-multi-agent-orchestration.md]) |
-| **Compound Engineering Plugin** | Every Inc's Claude Code plugin | Adds `/workflows:plan`, `/workflows:review`, `/workflows:compound` cycle. Philosophy: 80% planning/review, 20% execution ([blog-addy-osmani-claude-code-swarms.md]) |
-| **ClaudeFast Code Kit** | Pre-configured agent definitions | 18 specialist agents with 5-tier complexity routing between subagents and agent teams ([blog-claudefast-complete-guide.md]) |
+| Tool                            | Approach                                          | Notes                                                                                                                                                               |
+| ------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Claude-Flow**                 | External orchestrator for Claude Code agent teams | More setup effort but deeper research output, better token efficiency, extensible beyond Anthropic models ([blog-derek-ashmore-agent-teams-vs-claude-flow.md])      |
+| **Gas Town**                    | Steve Yegge's "Kubernetes for AI agents"          | Structured agent hierarchy with "mayor" agent. Better for solo devs, more agents in parallel ([blog-shipyard-multi-agent-orchestration.md])                         |
+| **Multiclaude**                 | Dan Lorenc's multi-agent orchestrator             | "Brownian ratchet" philosophy: auto-merge if CI passes. Supports team review in "multiplayer" mode ([blog-shipyard-multi-agent-orchestration.md])                   |
+| **Compound Engineering Plugin** | Every Inc's Claude Code plugin                    | Adds `/workflows:plan`, `/workflows:review`, `/workflows:compound` cycle. Philosophy: 80% planning/review, 20% execution ([blog-addy-osmani-claude-code-swarms.md]) |
+| **ClaudeFast Code Kit**         | Pre-configured agent definitions                  | 18 specialist agents with 5-tier complexity routing between subagents and agent teams ([blog-claudefast-complete-guide.md])                                         |
 
 ### 10.1 Agent Teams vs Claude-Flow (bake-off)
 
@@ -325,25 +325,25 @@ Key constraints for Connect:
 
 All references point to files in the [research corpus](./).
 
-| Reference | File |
-|-----------|------|
-| [agent-teams.md] | Official agent teams documentation |
-| [sub-agents.md] | Official subagents documentation |
-| [costs.md] | Official cost management documentation |
-| [features-overview.md] | Official feature comparison and decision matrix |
-| [blog-building-multi-agent-systems.md] | Anthropic: When and how to use multi-agent systems |
-| [blog-anthropic-building-c-compiler.md] | Anthropic: Building a C compiler with parallel Claudes |
-| [blog-addy-osmani-claude-code-swarms.md] | Addy Osmani: Claude Code Swarms overview |
-| [blog-claudefast-complete-guide.md] | claudefast: Complete 2026 guide to agent teams |
-| [blog-claudefast-worktree-guide.md] | claudefast: Worktree guide for parallel sessions |
-| [blog-codewithseb-subagents-performance.md] | codewithseb: 90% performance gain with Opus+Sonnet pattern |
-| [blog-alexop-from-tasks-to-swarms.md] | alexop: Architecture walkthrough from tasks to swarms |
-| [blog-dandoescode-parallel-worktrees.md] | dandoescode: Parallel coding with git worktrees |
-| [blog-derek-ashmore-agent-teams-vs-claude-flow.md] | Derek Ashmore: Agent Teams vs Claude-Flow bake-off |
-| [blog-devto-multi-agent-orchestration-10-instances.md] | dev.to: Running 10+ Claude instances in parallel |
-| [blog-shipyard-multi-agent-orchestration.md] | Shipyard: Multi-agent orchestration patterns |
-| [blog-sitepoint-agent-teams-guide.md] | SitePoint: Running a team of AI developers |
-| [blog-marc0-parallel-agents-setup.md] | marc0: Practical setup guide for agent teams |
-| [blog-towardsai-agent-teams-comparison.md] | Towards AI: Claude agent teams vs Kimi K2.5 (paywall) |
-| [blog-joe-njenga-tried-agent-teams.md] | Joe Njenga: First-hand experience report (paywall) |
-| [blog-devgenius-claude-code-team-setup.md] | Dev Genius: How the Claude Code team uses the tool (paywall) |
+| Reference                                              | File                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------ |
+| [agent-teams.md]                                       | Official agent teams documentation                           |
+| [sub-agents.md]                                        | Official subagents documentation                             |
+| [costs.md]                                             | Official cost management documentation                       |
+| [features-overview.md]                                 | Official feature comparison and decision matrix              |
+| [blog-building-multi-agent-systems.md]                 | Anthropic: When and how to use multi-agent systems           |
+| [blog-anthropic-building-c-compiler.md]                | Anthropic: Building a C compiler with parallel Claudes       |
+| [blog-addy-osmani-claude-code-swarms.md]               | Addy Osmani: Claude Code Swarms overview                     |
+| [blog-claudefast-complete-guide.md]                    | claudefast: Complete 2026 guide to agent teams               |
+| [blog-claudefast-worktree-guide.md]                    | claudefast: Worktree guide for parallel sessions             |
+| [blog-codewithseb-subagents-performance.md]            | codewithseb: 90% performance gain with Opus+Sonnet pattern   |
+| [blog-alexop-from-tasks-to-swarms.md]                  | alexop: Architecture walkthrough from tasks to swarms        |
+| [blog-dandoescode-parallel-worktrees.md]               | dandoescode: Parallel coding with git worktrees              |
+| [blog-derek-ashmore-agent-teams-vs-claude-flow.md]     | Derek Ashmore: Agent Teams vs Claude-Flow bake-off           |
+| [blog-devto-multi-agent-orchestration-10-instances.md] | dev.to: Running 10+ Claude instances in parallel             |
+| [blog-shipyard-multi-agent-orchestration.md]           | Shipyard: Multi-agent orchestration patterns                 |
+| [blog-sitepoint-agent-teams-guide.md]                  | SitePoint: Running a team of AI developers                   |
+| [blog-marc0-parallel-agents-setup.md]                  | marc0: Practical setup guide for agent teams                 |
+| [blog-towardsai-agent-teams-comparison.md]             | Towards AI: Claude agent teams vs Kimi K2.5 (paywall)        |
+| [blog-joe-njenga-tried-agent-teams.md]                 | Joe Njenga: First-hand experience report (paywall)           |
+| [blog-devgenius-claude-code-team-setup.md]             | Dev Genius: How the Claude Code team uses the tool (paywall) |

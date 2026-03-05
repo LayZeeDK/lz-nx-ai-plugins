@@ -4,6 +4,7 @@
 > Author: Addy Osmani
 
 ---
+
 **Claude Code now supports [agent teams](https://code.claude.com/docs/en/agent-teams)** (swarms). Instead of a single agent working through a task sequentially, a lead agent can delegate to multiple teammates that work in parallel - researching, debugging, and building while coordinating with each other. Enable agent teams in your `settings.json` to give it a spin. If you’ve been playing with multi-agent orchestration via Conductor, Gas Town or similar, this news will be exciting to you.
 
 ![A diagram showing a lead agent delegating tasks to multiple teammates, each working in parallel on different aspects of a project.](https://addyosmani.com/assets/images/agent-teams-1.webp)
@@ -28,31 +29,31 @@ The caveat is that this only works when tasks are properly scoped. “Build me a
 
 The architecture is straightforward. One Claude Code session becomes the **team lead**. It spawns **teammates** - each a full, independent Claude Code instance with its own large token context window. There’s a shared task list with dependency tracking, an inbox-based messaging system for inter-agent communication, and teammates can self-claim work as they finish tasks.
 
-| Component | Role |
-| --- | --- |
-| **Team lead** | Creates the team, spawns teammates, coordinates work |
-| **Teammates** | Separate Claude Code instances working on assigned tasks |
-| **Task list** | Shared work items with dependency tracking and auto-unblocking |
-| **Mailbox** | Direct messaging between agents - not just reporting back to lead |
+| Component     | Role                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **Team lead** | Creates the team, spawns teammates, coordinates work              |
+| **Teammates** | Separate Claude Code instances working on assigned tasks          |
+| **Task list** | Shared work items with dependency tracking and auto-unblocking    |
+| **Mailbox**   | Direct messaging between agents - not just reporting back to lead |
 
 This is different from Claude Code’s existing subagents. Subagents are focused workers that report results back to a single parent - they can’t talk to each other. Agent teams are actual collaboration - teammates share findings, challenge each other’s approaches, and coordinate independently. The tradeoff is token cost - each teammate is a separate Claude instance.
 
-|   | Subagents | Agent teams |
-| --- | --- | --- |
-| **Context** | Own window; results return to caller | Own window; fully independent |
-| **Communication** | Report back to main agent only | Teammates message each other directly |
-| **Coordination** | Main agent manages everything | Shared task list with self-coordination |
-| **Best for** | Focused tasks where only the result matters | Complex work requiring discussion and collaboration |
-| **Token cost** | Lower | Higher - each teammate is a separate instance |
+|                   | Subagents                                   | Agent teams                                         |
+| ----------------- | ------------------------------------------- | --------------------------------------------------- |
+| **Context**       | Own window; results return to caller        | Own window; fully independent                       |
+| **Communication** | Report back to main agent only              | Teammates message each other directly               |
+| **Coordination**  | Main agent manages everything               | Shared task list with self-coordination             |
+| **Best for**      | Focused tasks where only the result matters | Complex work requiring discussion and collaboration |
+| **Token cost**    | Lower                                       | Higher - each teammate is a separate instance       |
 
 Use subagents when you need quick, focused workers. Use agent teams when teammates need to share findings, challenge each other, and coordinate on their own.
 
 > Claude Code now supports agent teams (in research preview)
-> 
+>
 > Instead of a single agent working through a task sequentially, a lead agent can delegate to multiple teammates that work in parallel to research, debug, and build while coordinating with each other.
-> 
+>
 > Try it out today by… [pic.twitter.com/vi7lUJDOTi](https://t.co/vi7lUJDOTi)
-> 
+>
 > — Lydia Hallie ✨ (@lydiahallie) [February 5, 2026](https://twitter.com/lydiahallie/status/2019469032844587505?ref_src=twsrc%5Etfw)
 
 ## Getting started
@@ -232,6 +233,6 @@ This is what [agentic engineering](https://addyosmani.com/blog/agentic-engineeri
 
 The full [Claude Code agent teams documentation](https://code.claude.com/docs/en/agent-teams) has the complete setup and usage guide.
 
-* * *
+---
 
 _I write about the evolution of agentic coding workflows in my [Elevate newsletter](https://addyo.substack.com/) and in my O’Reilly book [Beyond Vibe Coding](https://beyond.addy.ie/). If you’re experimenting with agent teams or multi-agent workflows, I’d love to hear what’s working for you._

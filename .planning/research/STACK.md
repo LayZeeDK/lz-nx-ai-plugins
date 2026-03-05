@@ -36,9 +36,25 @@ Object.assign(sandbox, {
   print: printFunction,
   SHOW_VARS: showVarsFunction,
   // Safe builtins
-  JSON, Math, Date, Array, Object, String, Number, Boolean,
-  Map, Set, RegExp, Error, TypeError, RangeError, SyntaxError,
-  parseInt, parseFloat, isNaN, isFinite,
+  JSON,
+  Math,
+  Date,
+  Array,
+  Object,
+  String,
+  Number,
+  Boolean,
+  Map,
+  Set,
+  RegExp,
+  Error,
+  TypeError,
+  RangeError,
+  SyntaxError,
+  parseInt,
+  parseFloat,
+  isNaN,
+  isFinite,
   Promise, // Required for async IIFE pattern
   console: sandboxConsole,
 });
@@ -47,7 +63,7 @@ const context = createContext(sandbox, {
   name: 'rlm-repl',
   codeGeneration: {
     strings: false, // Blocks eval(), new Function()
-    wasm: false,    // Blocks WebAssembly.compile()
+    wasm: false, // Blocks WebAssembly.compile()
   },
   microtaskMode: undefined, // DO NOT use 'afterEvaluate' -- see section 1.3
 });
@@ -55,12 +71,12 @@ const context = createContext(sandbox, {
 
 **Why this configuration:**
 
-| Option | Value | Rationale |
-|--------|-------|-----------|
-| `name` | `'rlm-repl'` | Identifies the context in Node.js Inspector/debugging output |
-| `codeGeneration.strings` | `false` | Prevents `eval()` and `new Function('...')` -- blocks code injection attacks from LLM-generated code. Throws `EvalError` if attempted. |
-| `codeGeneration.wasm` | `false` | Prevents WebAssembly compilation -- unnecessary for REPL and blocks a potential attack surface. Throws `WebAssembly.CompileError` if attempted. |
-| `microtaskMode` | `undefined` (default) | See section 1.3 for the critical reason to avoid `'afterEvaluate'` |
+| Option                   | Value                 | Rationale                                                                                                                                       |
+| ------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                   | `'rlm-repl'`          | Identifies the context in Node.js Inspector/debugging output                                                                                    |
+| `codeGeneration.strings` | `false`               | Prevents `eval()` and `new Function('...')` -- blocks code injection attacks from LLM-generated code. Throws `EvalError` if attempted.          |
+| `codeGeneration.wasm`    | `false`               | Prevents WebAssembly compilation -- unnecessary for REPL and blocks a potential attack surface. Throws `WebAssembly.CompileError` if attempted. |
+| `microtaskMode`          | `undefined` (default) | See section 1.3 for the critical reason to avoid `'afterEvaluate'`                                                                              |
 
 **Confidence:** HIGH -- Options verified against [Node.js v24.x vm docs](https://nodejs.org/docs/latest-v24.x/api/vm.html).
 
@@ -91,6 +107,7 @@ const context = createContext(sandbox, {
 There is a [known Node.js bug (#55546)](https://github.com/nodejs/node/issues/55546) where `microtaskMode: 'afterEvaluate'` causes `async`/`await` code to **hang indefinitely**. The issue is open and unresolved as of Node.js 24.x. The mechanism: `afterEvaluate` gives the context its own microtask queue, but `await` suspends execution and hands control back to the event loop. Since the context's microtask queue only drains after evaluation completes, and evaluation is suspended waiting for the `await`, a deadlock occurs.
 
 This is fatal for our REPL because:
+
 - Both reference implementations (hampton-io/RLM, code-rabi/rllm) wrap code in `async` IIFEs
 - Our `llm_query()` global returns a Promise that the LLM code `await`s
 - Every REPL iteration would hang
@@ -147,19 +164,22 @@ const resultPromise = script.runInContext(this.context, { timeout: 5000 });
 **Hampton-io's regex approach:**
 
 ```javascript
-const transformedCode = code.replace(/\b(const|let)\s+(\w+)\s*=/g, 'globalThis.$2 =');
+const transformedCode = code.replace(
+  /\b(const|let)\s+(\w+)\s*=/g,
+  'globalThis.$2 =',
+);
 ```
 
 **Known edge cases this regex FAILS on:**
 
-| Pattern | Input | Broken Output | Correct Behavior |
-|---------|-------|---------------|-----------------|
-| Destructuring | `const { a, b } = obj;` | `globalThis.{ a, b } = obj;` | Should become `const _tmp = obj; globalThis.a = _tmp.a; globalThis.b = _tmp.b;` |
-| Array destructuring | `const [x, y] = arr;` | `globalThis.[x, y] = arr;` | Should assign x and y separately |
-| Multi-declaration | `const a = 1, b = 2;` | `globalThis.a = 1, b = 2;` | Only captures first variable |
-| `for` loop | `for (let i = 0; ...)` | `for (globalThis.i = 0; ...)` | Loop variables should NOT be global |
-| Nested in string | `"const x = 5"` | `"globalThis.x = 5"` | Should not transform strings |
-| Comments | `// const x = 5` | `// globalThis.x = 5` | Should not transform comments |
+| Pattern             | Input                   | Broken Output                 | Correct Behavior                                                                |
+| ------------------- | ----------------------- | ----------------------------- | ------------------------------------------------------------------------------- |
+| Destructuring       | `const { a, b } = obj;` | `globalThis.{ a, b } = obj;`  | Should become `const _tmp = obj; globalThis.a = _tmp.a; globalThis.b = _tmp.b;` |
+| Array destructuring | `const [x, y] = arr;`   | `globalThis.[x, y] = arr;`    | Should assign x and y separately                                                |
+| Multi-declaration   | `const a = 1, b = 2;`   | `globalThis.a = 1, b = 2;`    | Only captures first variable                                                    |
+| `for` loop          | `for (let i = 0; ...)`  | `for (globalThis.i = 0; ...)` | Loop variables should NOT be global                                             |
+| Nested in string    | `"const x = 5"`         | `"globalThis.x = 5"`          | Should not transform strings                                                    |
+| Comments            | `// const x = 5`        | `// globalThis.x = 5`         | Should not transform comments                                                   |
 
 **Our approach: simple regex with documented limitations.**
 
@@ -231,14 +251,14 @@ async execute(code) {
 
 **Additional cross-realm considerations:**
 
-| API | Cross-realm safe? | Notes |
-|-----|-------------------|-------|
-| `Error.isError(err)` | Yes (Node.js 24+) | Checks `[[ErrorData]]` slot |
-| `err instanceof Error` | NO | Different Error constructors per realm |
-| `err.stack` | Yes (getter on builtins only) | Returns `undefined` for non-builtin error objects |
-| `structuredClone(obj)` | Partial | Uses outer realm's constructors ([nodejs/node#55554](https://github.com/nodejs/node/issues/55554)) |
-| `Array.isArray(arr)` | Yes | Has worked cross-realm since ES5 |
-| `typeof err === 'object'` | Yes | Primitive check, realm-independent |
+| API                       | Cross-realm safe?             | Notes                                                                                              |
+| ------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------- |
+| `Error.isError(err)`      | Yes (Node.js 24+)             | Checks `[[ErrorData]]` slot                                                                        |
+| `err instanceof Error`    | NO                            | Different Error constructors per realm                                                             |
+| `err.stack`               | Yes (getter on builtins only) | Returns `undefined` for non-builtin error objects                                                  |
+| `structuredClone(obj)`    | Partial                       | Uses outer realm's constructors ([nodejs/node#55554](https://github.com/nodejs/node/issues/55554)) |
+| `Array.isArray(arr)`      | Yes                           | Has worked cross-realm since ES5                                                                   |
+| `typeof err === 'object'` | Yes                           | Primitive check, realm-independent                                                                 |
 
 **Confidence:** HIGH -- Verified against [MDN Error.isError()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/isError), [TC39 proposal](https://github.com/tc39/proposal-is-error), [Node.js 24 docs](https://nodejs.org/docs/latest-v24.x/api/errors.html).
 
@@ -329,11 +349,11 @@ const entries = await Array.fromAsync(glob(pattern, options));
 
 **Options:**
 
-| Option | Type | Default | Purpose |
-|--------|------|---------|---------|
-| `cwd` | `string` or `URL` | `process.cwd()` | Working directory for relative patterns. URL support added in v24.1.0. |
-| `exclude` | `Function` | `undefined` | Filter function: `(path) => boolean`. Return `true` to exclude. In Node.js 25+, also accepts `string[]` glob patterns. |
-| `withFileTypes` | `boolean` | `false` | When `true`, yields `Dirent` objects instead of strings. |
+| Option          | Type              | Default         | Purpose                                                                                                                |
+| --------------- | ----------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `cwd`           | `string` or `URL` | `process.cwd()` | Working directory for relative patterns. URL support added in v24.1.0.                                                 |
+| `exclude`       | `Function`        | `undefined`     | Filter function: `(path) => boolean`. Return `true` to exclude. In Node.js 25+, also accepts `string[]` glob patterns. |
+| `withFileTypes` | `boolean`         | `false`         | When `true`, yields `Dirent` objects instead of strings.                                                               |
 
 **Recommended usage for our `files()` REPL global:**
 
@@ -351,7 +371,9 @@ async function filesGlobal(pattern, projectRoot) {
       // Skip node_modules and dist
       const normalized = path.replace(/\\/g, '/');
 
-      return normalized.includes('/node_modules/') || normalized.includes('/dist/');
+      return (
+        normalized.includes('/node_modules/') || normalized.includes('/dist/')
+      );
     },
   })) {
     // Normalize to forward slashes for consistent cross-platform output
@@ -366,11 +388,11 @@ async function filesGlobal(pattern, projectRoot) {
 
 **Critical cross-platform issue: glob patterns MUST use forward slashes.** Backslashes are interpreted as escape characters in glob patterns, not path separators. This is consistent across both the built-in `fs.glob` and the userland `glob` package.
 
-| Aspect | Behavior |
-|--------|----------|
-| Pattern input | MUST use forward slashes (`**/*.ts`, not `**\\*.ts`) |
-| Returned paths on Windows | MAY use backslashes (`src\app\foo.ts`) |
-| Returned paths on macOS/Linux | Always forward slashes (`src/app/foo.ts`) |
+| Aspect                        | Behavior                                             |
+| ----------------------------- | ---------------------------------------------------- |
+| Pattern input                 | MUST use forward slashes (`**/*.ts`, not `**\\*.ts`) |
+| Returned paths on Windows     | MAY use backslashes (`src\app\foo.ts`)               |
+| Returned paths on macOS/Linux | Always forward slashes (`src/app/foo.ts`)            |
 
 **Workaround:** Always normalize returned paths:
 
@@ -386,28 +408,29 @@ const normalized = entry.replace(/\\/g, '/');
 
 ReFS (Resilient File System) used by Windows Dev Drives supports the same file system APIs as NTFS through NTFS reparse points. The key differences relevant to our use case:
 
-| Concern | NTFS | ReFS Dev Drive | Impact |
-|---------|------|----------------|--------|
-| Symlinks | Supported (may need Developer Mode) | Supported (same) | None -- we don't create symlinks |
-| Junctions | Supported | Likely supported (docs say "NTFS volumes") | LOW risk -- Nx workspaces rarely use junctions |
-| `fs.glob` traversal | Works | Works (no reported issues) | None |
-| Performance | Baseline | Generally faster for many small files | Positive |
-| Path separators | Backslashes | Backslashes (same as NTFS) | Same normalization needed |
+| Concern             | NTFS                                | ReFS Dev Drive                             | Impact                                         |
+| ------------------- | ----------------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| Symlinks            | Supported (may need Developer Mode) | Supported (same)                           | None -- we don't create symlinks               |
+| Junctions           | Supported                           | Likely supported (docs say "NTFS volumes") | LOW risk -- Nx workspaces rarely use junctions |
+| `fs.glob` traversal | Works                               | Works (no reported issues)                 | None                                           |
+| Performance         | Baseline                            | Generally faster for many small files      | Positive                                       |
+| Path separators     | Backslashes                         | Backslashes (same as NTFS)                 | Same normalization needed                      |
 
 **Recommendation:** No special handling needed for ReFS Dev Drive. If issues arise, they will manifest as the same path separator problems that affect NTFS.
 
 ### 2.4 `fs.glob` vs Userland `glob` Package
 
-| Feature | Built-in `fs.glob` | `glob` npm package |
-|---------|---------------------|--------------------|
-| Zero dependencies | Yes | No (depends on minimatch, etc.) |
-| `exclude` option | Function only (v24), Function or string[] (v25+) | `ignore` option (glob patterns) |
-| `posix` output option | No | Yes -- forces forward-slash output |
-| `windowsPathsNoEscape` | No | Yes -- treats backslashes as separators |
-| Returns directories | Yes | Configurable (`nodir: true`) |
-| `withFileTypes` | Yes (Dirent) | Yes |
+| Feature                | Built-in `fs.glob`                               | `glob` npm package                      |
+| ---------------------- | ------------------------------------------------ | --------------------------------------- |
+| Zero dependencies      | Yes                                              | No (depends on minimatch, etc.)         |
+| `exclude` option       | Function only (v24), Function or string[] (v25+) | `ignore` option (glob patterns)         |
+| `posix` output option  | No                                               | Yes -- forces forward-slash output      |
+| `windowsPathsNoEscape` | No                                               | Yes -- treats backslashes as separators |
+| Returns directories    | Yes                                              | Configurable (`nodir: true`)            |
+| `withFileTypes`        | Yes (Dirent)                                     | Yes                                     |
 
 **Decision:** Use built-in `fs.glob`. The missing `posix` and `nodir` options are easily handled:
+
 - **posix paths:** `.replace(/\\/g, '/')` on results
 - **files only:** Filter with `exclude: (path) => statSync(path).isDirectory()` or check `Dirent.isFile()` with `withFileTypes: true`
 
@@ -421,18 +444,19 @@ ReFS (Resilient File System) used by Windows Dev Drives supports the same file s
 
 **Decision: Use `execSync` with `shell: true` (default) for all Nx CLI calls.**
 
-| Criterion | `execSync` | `execFileSync` |
-|-----------|------------|----------------|
-| Shell spawning | Yes (default) | No (default) |
-| `.cmd`/`.bat` files on Windows | Works | FAILS without `shell: true` |
-| `npx` resolution | Works | FAILS without `shell: true` |
-| Pipes/redirects | Supported | Not supported |
-| Security | Shell injection risk | Safer (no shell metacharacters) |
-| Performance | Slightly slower (shell overhead) | Slightly faster |
+| Criterion                      | `execSync`                       | `execFileSync`                  |
+| ------------------------------ | -------------------------------- | ------------------------------- |
+| Shell spawning                 | Yes (default)                    | No (default)                    |
+| `.cmd`/`.bat` files on Windows | Works                            | FAILS without `shell: true`     |
+| `npx` resolution               | Works                            | FAILS without `shell: true`     |
+| Pipes/redirects                | Supported                        | Not supported                   |
+| Security                       | Shell injection risk             | Safer (no shell metacharacters) |
+| Performance                    | Slightly slower (shell overhead) | Slightly faster                 |
 
 **Why `execSync` wins:** On Windows, `npx` (and `pnpm exec`) resolve to `.cmd` files. `execFileSync` cannot execute `.cmd` files without `shell: true`. Since we'd need `shell: true` on Windows anyway, we lose `execFileSync`'s security advantage while gaining platform-specific branching complexity.
 
 **The security trade-off is acceptable because:**
+
 1. We control the command strings (they come from our code, not user input)
 2. We use an allowlist of Nx commands (no arbitrary command execution)
 3. Project names from the workspace index could theoretically contain shell metacharacters, but Nx project names are constrained to `[a-zA-Z0-9._-]`
@@ -470,7 +494,9 @@ function nxRun(command, workspaceRoot, options = {}) {
   const baseCommand = command.split(/\s+/).slice(0, 2).join(' ');
 
   if (!ALLOWED_COMMANDS.has(baseCommand)) {
-    throw new Error(`Nx command not allowed: "${baseCommand}". Allowed: ${[...ALLOWED_COMMANDS].join(', ')}`);
+    throw new Error(
+      `Nx command not allowed: "${baseCommand}". Allowed: ${[...ALLOWED_COMMANDS].join(', ')}`,
+    );
   }
 
   // Detect package manager for the workspace
@@ -489,19 +515,23 @@ function nxRun(command, workspaceRoot, options = {}) {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        NX_DAEMON: 'false',        // Avoid daemon startup overhead in one-shot commands
+        NX_DAEMON: 'false', // Avoid daemon startup overhead in one-shot commands
         NX_SKIP_NX_CACHE: 'false', // Allow cache hits
-        FORCE_COLOR: '0',          // Prevent ANSI color codes in JSON output
+        FORCE_COLOR: '0', // Prevent ANSI color codes in JSON output
       },
     });
 
     return stdout.trim();
   } catch (err) {
     if (err.killed) {
-      throw new Error(`Nx command timed out after ${timeout}ms: ${fullCommand}`);
+      throw new Error(
+        `Nx command timed out after ${timeout}ms: ${fullCommand}`,
+      );
     }
 
-    throw new Error(`Nx command failed: ${fullCommand}\n${err.stderr || err.message}`);
+    throw new Error(
+      `Nx command failed: ${fullCommand}\n${err.stderr || err.message}`,
+    );
   }
 }
 
@@ -529,15 +559,15 @@ function detectNxBin(workspaceRoot) {
 
 ### 3.3 Cross-Platform Gotchas
 
-| Gotcha | Platform | Impact | Workaround |
-|--------|----------|--------|------------|
-| `npx` resolves to `.cmd` file | Windows | `execFileSync` fails with ENOENT | Use `execSync` (shell: true by default) |
-| Paths with spaces in CWD | Windows | `execSync` fails if CWD path has spaces | Quote the CWD path in the command, or pass via `cwd` option (handles quoting internally) |
-| ANSI color codes in output | All | JSON.parse fails on colored output | Set `FORCE_COLOR=0` in env |
-| Nx daemon process | All | Slow first invocation, port conflicts | Set `NX_DAEMON=false` for one-shot commands |
-| `nx graph --print` output size | All (large workspaces) | Default `maxBuffer` (1MB) may overflow with 500+ projects | Set `maxBuffer: 10 * 1024 * 1024` |
-| Line endings | Windows | `\r\n` in stdout | `.trim()` handles trailing; `JSON.parse` ignores line endings |
-| `ComSpec` env variable | Windows | `execSync` uses `%ComSpec%` (usually `cmd.exe`) | This is correct behavior; no workaround needed |
+| Gotcha                         | Platform               | Impact                                                    | Workaround                                                                               |
+| ------------------------------ | ---------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `npx` resolves to `.cmd` file  | Windows                | `execFileSync` fails with ENOENT                          | Use `execSync` (shell: true by default)                                                  |
+| Paths with spaces in CWD       | Windows                | `execSync` fails if CWD path has spaces                   | Quote the CWD path in the command, or pass via `cwd` option (handles quoting internally) |
+| ANSI color codes in output     | All                    | JSON.parse fails on colored output                        | Set `FORCE_COLOR=0` in env                                                               |
+| Nx daemon process              | All                    | Slow first invocation, port conflicts                     | Set `NX_DAEMON=false` for one-shot commands                                              |
+| `nx graph --print` output size | All (large workspaces) | Default `maxBuffer` (1MB) may overflow with 500+ projects | Set `maxBuffer: 10 * 1024 * 1024`                                                        |
+| Line endings                   | Windows                | `\r\n` in stdout                                          | `.trim()` handles trailing; `JSON.parse` ignores line endings                            |
+| `ComSpec` env variable         | Windows                | `execSync` uses `%ComSpec%` (usually `cmd.exe`)           | This is correct behavior; no workaround needed                                           |
 
 ### 3.4 Nx Command Output Parsing
 
@@ -580,6 +610,7 @@ const graph = JSON.parse(nxRun('graph --print', root));
 **Cross-realm issue:** `structuredClone()` called inside a VM context [uses the outer (host) context's realm](https://github.com/nodejs/node/issues/55554) to construct the cloned object. This means cloned objects have the host's prototypes, not the sandbox's.
 
 **Practical impact for our REPL:** Minimal. We don't need deep cloning across the boundary -- we either:
+
 - Read values from the sandbox context directly (already in the host realm)
 - Write values into the sandbox context (host objects in sandbox context -- works fine)
 
@@ -591,15 +622,15 @@ const graph = JSON.parse(nxRun('graph --print', root));
 
 Node.js 24 ships V8 13.6 with full ECMAScript 2025 support. Features usable in sandboxed code:
 
-| Feature | Usable in VM? | Benefit for REPL |
-|---------|---------------|------------------|
-| `Array.fromAsync()` | Yes | Collect async iterators in REPL code |
-| `Set` methods (union, intersection, difference) | Yes | Set operations on project collections |
-| `Promise.withResolvers()` | Yes | Cleaner promise construction in REPL |
-| `RegExp` v flag (set notation) | Yes | Advanced pattern matching in search |
-| Iterator helpers (`.map()`, `.filter()`, `.take()`) | Yes | Chain operations on large collections lazily |
-| `Object.groupBy()` | Yes | Group projects by tag, type, etc. |
-| `Temporal` | No (still Stage 3) | Not available |
+| Feature                                             | Usable in VM?      | Benefit for REPL                             |
+| --------------------------------------------------- | ------------------ | -------------------------------------------- |
+| `Array.fromAsync()`                                 | Yes                | Collect async iterators in REPL code         |
+| `Set` methods (union, intersection, difference)     | Yes                | Set operations on project collections        |
+| `Promise.withResolvers()`                           | Yes                | Cleaner promise construction in REPL         |
+| `RegExp` v flag (set notation)                      | Yes                | Advanced pattern matching in search          |
+| Iterator helpers (`.map()`, `.filter()`, `.take()`) | Yes                | Chain operations on large collections lazily |
+| `Object.groupBy()`                                  | Yes                | Group projects by tag, type, etc.            |
+| `Temporal`                                          | No (still Stage 3) | Not available                                |
 
 **Recommendation:** Do NOT explicitly add these to the sandbox globals -- they are automatically available on the built-in objects (`Array`, `Set`, etc.) that we already expose. LLM-generated code can use them naturally.
 
@@ -758,12 +789,15 @@ import { execSync } from 'node:child_process';
 
 // Test 1: VM async IIFE + timeout
 console.log('[TEST 1] VM async IIFE with Promise.race timeout...');
-const ctx = createContext({
-  print: (...args) => console.log('  [SANDBOX]', ...args),
-  Promise,
-}, {
-  codeGeneration: { strings: false, wasm: false },
-});
+const ctx = createContext(
+  {
+    print: (...args) => console.log('  [SANDBOX]', ...args),
+    Promise,
+  },
+  {
+    codeGeneration: { strings: false, wasm: false },
+  },
+);
 
 const code = `(async () => {
   globalThis.x = 42;
@@ -782,16 +816,19 @@ const simpleCode = `(async () => {
 const script = new Script(simpleCode);
 const promise = script.runInContext(ctx);
 const timeout = new Promise((_, reject) =>
-  setTimeout(() => reject(new Error('Timeout')), 5000)
+  setTimeout(() => reject(new Error('Timeout')), 5000),
 );
 await Promise.race([promise, timeout]);
 console.log('  [OK] x persisted:', ctx.x === 42);
 
 // Test 2: Cross-realm Error.isError
 console.log('[TEST 2] Cross-realm Error.isError...');
-const errCtx = createContext({}, {
-  codeGeneration: { strings: false, wasm: false },
-});
+const errCtx = createContext(
+  {},
+  {
+    codeGeneration: { strings: false, wasm: false },
+  },
+);
 
 try {
   new Script('throw new TypeError("test error")').runInContext(errCtx);
@@ -800,7 +837,10 @@ try {
   const isErrorWorks = Error.isError?.(err) ?? false;
   console.log('  [INFO] instanceof TypeError:', !crossRealm);
   console.log('  [INFO] Error.isError():', isErrorWorks);
-  console.log('  [OK] Error.isError correctly detects cross-realm error:', isErrorWorks);
+  console.log(
+    '  [OK] Error.isError correctly detects cross-realm error:',
+    isErrorWorks,
+  );
 }
 
 // Test 3: fs.glob on current directory
@@ -828,32 +868,33 @@ console.log('\n[SUCCESS] All smoke tests passed.');
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| `vm.createContext` mode | Standard (contextified) | `DONT_CONTEXTIFY` | We need mutable globalThis for variable persistence |
-| Microtask handling | `Promise.race` timeout | `microtaskMode: 'afterEvaluate'` | Known deadlock with async/await ([nodejs/node#55546](https://github.com/nodejs/node/issues/55546)) |
-| `const/let` transformation | Simple regex | AST parser (acorn) | Over-engineering for v0.0.1; LLM code rarely uses destructuring |
-| Cross-realm error check | `Error.isError()` | Duck typing (`err.message && err.stack`) | `Error.isError` is reliable, duck typing is fragile |
-| Nx CLI invocation | `execSync` | `execFileSync` | Windows `.cmd` files require shell; `execSync` is simpler |
-| Nx CLI invocation | `execSync` | `spawn` (async) | Synchronous is simpler for one-shot commands; REPL is already async at a higher level |
-| File globbing | `fs.glob` (built-in) | `fast-glob` npm package | Zero dependency policy; built-in is stable in Node.js 24.1+ |
-| Path normalization | `.replace(/\\\\/g, '/')` | `path.posix.normalize()` | `path.posix` does not handle Windows drive letters |
+| Category                   | Recommended              | Alternative                              | Why Not                                                                                            |
+| -------------------------- | ------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `vm.createContext` mode    | Standard (contextified)  | `DONT_CONTEXTIFY`                        | We need mutable globalThis for variable persistence                                                |
+| Microtask handling         | `Promise.race` timeout   | `microtaskMode: 'afterEvaluate'`         | Known deadlock with async/await ([nodejs/node#55546](https://github.com/nodejs/node/issues/55546)) |
+| `const/let` transformation | Simple regex             | AST parser (acorn)                       | Over-engineering for v0.0.1; LLM code rarely uses destructuring                                    |
+| Cross-realm error check    | `Error.isError()`        | Duck typing (`err.message && err.stack`) | `Error.isError` is reliable, duck typing is fragile                                                |
+| Nx CLI invocation          | `execSync`               | `execFileSync`                           | Windows `.cmd` files require shell; `execSync` is simpler                                          |
+| Nx CLI invocation          | `execSync`               | `spawn` (async)                          | Synchronous is simpler for one-shot commands; REPL is already async at a higher level              |
+| File globbing              | `fs.glob` (built-in)     | `fast-glob` npm package                  | Zero dependency policy; built-in is stable in Node.js 24.1+                                        |
+| Path normalization         | `.replace(/\\\\/g, '/')` | `path.posix.normalize()`                 | `path.posix` does not handle Windows drive letters                                                 |
 
 ---
 
 ## Key Version Constraints (Updated)
 
-| Constraint | Minimum Version | Reason |
-|------------|-----------------|--------|
-| Node.js | 24.1.0 | `fs.glob` ExperimentalWarning fix. `Error.isError()` available. `codeGeneration` options stable. |
-| Nx CLI | 19.8.0 | Target workspace version. `show projects --json` and `graph --print` available. |
-| V8 | 13.4+ (ships with Node.js 24) | `Error.isError()`, ECMAScript 2025 features |
+| Constraint | Minimum Version               | Reason                                                                                           |
+| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| Node.js    | 24.1.0                        | `fs.glob` ExperimentalWarning fix. `Error.isError()` available. `codeGeneration` options stable. |
+| Nx CLI     | 19.8.0                        | Target workspace version. `show projects --json` and `graph --print` available.                  |
+| V8         | 13.4+ (ships with Node.js 24) | `Error.isError()`, ECMAScript 2025 features                                                      |
 
 ---
 
 ## Sources
 
 ### Official Documentation
+
 - [Node.js v24.x vm module docs](https://nodejs.org/docs/latest-v24.x/api/vm.html) -- `createContext` options, `DONT_CONTEXTIFY`, `microtaskMode`, timeout behavior
 - [Node.js v24.x fs module docs](https://nodejs.org/docs/latest-v24.x/api/fs.html) -- `fs.glob` API, stability status
 - [Node.js v24.x child_process docs](https://nodejs.org/docs/latest-v24.x/api/child_process.html) -- `execSync` vs `execFileSync`, shell defaults, Windows behavior
@@ -861,6 +902,7 @@ console.log('\n[SUCCESS] All smoke tests passed.');
 - [MDN Error.isError()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/isError) -- Cross-realm error detection
 
 ### Node.js Issues and PRs
+
 - [nodejs/node#55546](https://github.com/nodejs/node/issues/55546) -- `microtaskMode: 'afterEvaluate'` hangs with async/await (OPEN, affects Node.js 22-25)
 - [nodejs/node#55554](https://github.com/nodejs/node/issues/55554) -- `structuredClone()` uses wrong context in `vm.runInContext()`
 - [nodejs/node#58343](https://github.com/nodejs/node/issues/58343) -- `fsPromises.glob` ExperimentalWarning in Node.js 24.0.0 (FIXED in 24.1.0)
@@ -869,13 +911,16 @@ console.log('\n[SUCCESS] All smoke tests passed.');
 - [nodejs/node commit 2d90340](https://github.com/nodejs/node/commit/2d90340cb3) -- Introducing `vm.constants.DONT_CONTEXTIFY`
 
 ### TC39 Proposals
+
 - [tc39/proposal-is-error](https://github.com/tc39/proposal-is-error) -- Stage 4, ES2026
 
 ### Implementation References
+
 - [hampton-io/RLM vm-sandbox.ts](https://github.com/hampton-io/RLM) -- v0.3.0 VM sandbox implementation (createContext, toString patch, const/let transform, async IIFE)
 - [code-rabi/rllm sandbox.ts](https://github.com/code-rabi/rllm) -- v1.1.0 VM sandbox implementation (error handling, variable capture)
 
 ### Windows / Cross-Platform
+
 - [spawn npx ENOENT Windows fix](https://fransiscuss.com/2025/04/22/fix-spawn-npx-enoent-windows11-mcp-server/) -- Why `npx` needs shell on Windows
 - [Nx issue #27331](https://github.com/nrwl/nx/issues/27331) -- `nx init` script fails on Windows with `execSync`
 - [Cross-realm error checking guide](https://allthingssmitty.com/2026/02/23/from-instanceof-to-error-iserror-safer-error-checking-in-javascript/) -- Practical `Error.isError()` usage patterns

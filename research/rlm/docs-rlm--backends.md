@@ -3,11 +3,12 @@
 > Source: [https://alexzhang13.github.io/rlm/backends/](https://alexzhang13.github.io/rlm/backends/)
 
 ---
+
 ## Backends
 
 RLMs natively support a wide range of language model providers, including `OpenAI`, `Anthropic`, `Portkey`, `OpenRouter`, and `LiteLLM`. Additional providers can be supported with minimal effort. The `backend_kwargs` are named arguments passed directly to the backend client.
 
-* * *
+---
 
 ## OpenAI
 
@@ -22,7 +23,7 @@ rlm = RLM(
 )
 ```
 
-* * *
+---
 
 ## Anthropic
 
@@ -36,7 +37,7 @@ rlm = RLM(
 )
 ```
 
-* * *
+---
 
 ## Portkey
 
@@ -52,7 +53,7 @@ rlm = RLM(
 )
 ```
 
-* * *
+---
 
 ## OpenRouter
 
@@ -68,7 +69,7 @@ rlm = RLM(
 )
 ```
 
-* * *
+---
 
 ## LiteLLM
 
@@ -84,7 +85,7 @@ rlm = RLM(
 # Set provider API keys in environment
 ```
 
-* * *
+---
 
 ## vLLM (Local)
 
@@ -107,7 +108,7 @@ rlm = RLM(
 )
 ```
 
-* * *
+---
 
 ## Multiple Backends (Experimental)
 
@@ -131,6 +132,6 @@ Inside REPL (future releases):
 
 ```
 llm_query("prompt")  # Uses default(gpt-5-mini)
-llm_query("prompt", model="claude-sonnet-4-20250514")  # Uses Claude 
+llm_query("prompt", model="claude-sonnet-4-20250514")  # Uses Claude
 llm_query("prompt", model="gpt-4o-mini")  # Uses GPT-4o-mini
 ```

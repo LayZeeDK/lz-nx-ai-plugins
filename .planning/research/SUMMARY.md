@@ -22,6 +22,7 @@ The stack is fully validated at the API level. Node.js 24.1+ is the runtime, wit
 API-level research surfaced several implementation-critical constraints: `microtaskMode: 'afterEvaluate'` must not be used (open deadlock bug nodejs/node#55546), `vm.constants.DONT_CONTEXTIFY` must not be used (conflicts with mutable globalThis requirement for variable persistence), `execSync` with `shell: true` (default) is correct for Windows `.cmd` file resolution, and `fs.glob` requires Node.js 24.1+ to avoid the spurious ExperimentalWarning from 24.0.0. The `Error.isError()` method (TC39 Stage 4, available in Node.js 24+ via V8 13.4) must replace `instanceof Error` for cross-realm error detection across the VM context boundary.
 
 **Core technologies:**
+
 - `node:vm` (Node.js 24.1+): REPL sandbox -- use `codeGeneration: { strings: false, wasm: false }` and standard contextify (not DONT_CONTEXTIFY); blocks `eval()` and WASM; does NOT block prototype chain escape
 - `node:fs/promises` `glob`: File discovery -- stable since 24.1.0; normalize all returned paths with `.replace(/\\/g, '/')` on Windows; use forward slashes in patterns
 - `node:child_process` `execSync`: Nx CLI integration -- use `shell: true` (default) for Windows `.cmd` support; pass env vars via `env` option; never embed env vars in shell syntax
@@ -34,6 +35,7 @@ API-level research surfaced several implementation-critical constraints: `microt
 All P0 features must ship together as v0.0.1 -- they form a single dependency chain, and omitting any one breaks the core validation hypothesis.
 
 **Must have (table stakes -- v0.0.1):**
+
 - Workspace indexer -- builds `workspace-index.json` from Nx CLI; foundation for all other features
 - Path resolver -- bidirectional tsconfig alias resolution; required for `read()` global
 - REPL sandbox -- Node.js VM with 12 workspace-aware globals (`workspace`, `projects`, `deps()`, `dependents()`, `read()`, `files()`, `search()`, `nx()`, `FINAL()`, `FINAL_VAR()`, `print()`, `SHOW_VARS()`)
@@ -47,6 +49,7 @@ All P0 features must ship together as v0.0.1 -- they form a single dependency ch
 - Deterministic commands -- `/deps`, `/find`, `/alias` (zero LLM tokens)
 
 **Should have (competitive -- later milestone):**
+
 - `llm_query()` via direct Anthropic API script -- deferred due to subagent nesting constraint; implement as a Node.js script calling the Anthropic API directly (ANTHROPIC_API_KEY is available from Claude Code)
 - haiku-searcher agent -- cost optimization target for `llm_query()`
 - Strategy hints injection -- workspace-specific REPL tips; shown by Prime Intellect research to significantly improve model behavior
@@ -54,6 +57,7 @@ All P0 features must ship together as v0.0.1 -- they form a single dependency ch
 - Impact analysis skill (`/impact`)
 
 **Defer (later milestones):**
+
 - Angular-specific component registries -- framework lock-in risk; `search()` covers the workspace navigation use cases
 - Agent teams / parallel sub-LLM processing
 - Token benchmarking and `/status` command
@@ -69,6 +73,7 @@ The system has four layers: User Layer (skill/command invocation), Agent Layer (
 The handle store is not a separate component. It is the combination of `globalThis` persistence (via `const/let` transformation) and smart truncation in `print()`. The LLM navigates large collections (537 projects, 1700 file paths) via JavaScript code that filters and reads selectively -- the truncated stub in `print()` output shows what is available without flooding context. Only the print output is truncated; the full data remains in `globalThis` and the session state JSON.
 
 **Major components (in build dependency order):**
+
 1. `rlm-config.mjs` -- guardrails configuration with defaults; no dependencies; build first
 2. `nx-runner.mjs` -- Nx CLI wrapper with allowlist, timeout, package-manager detection; depends on rlm-config
 3. `workspace-indexer.mjs` -- builds JSON index from Nx CLI; depends on nx-runner
@@ -104,6 +109,7 @@ The component dependency graph is a strict linear chain that dictates phase orde
 **Addresses (from FEATURES.md):** Workspace indexer, path resolver, Nx CLI wrapper, RLM configuration, deterministic commands -- all P0, all LOW-MEDIUM implementation complexity.
 
 **Avoids (from PITFALLS.md):**
+
 - Pitfall 7: Git Bash MSYS2 path munging -- use `spawnSync` with `shell: false` and argument arrays for `git grep` (confirmed by cross-platform search analysis in `.planning/quick/1-research-and-analyze-git-grep-and-altern/ANALYSIS.md`)
 - Pitfall 8: `cmd.exe` default shell -- set env vars via the `env` option, never shell syntax
 - Pitfall 9: `fs.glob` backslash paths -- normalize immediately with `.replace(/\\/g, '/')`
@@ -120,6 +126,7 @@ The component dependency graph is a strict linear chain that dictates phase orde
 **Uses (from STACK.md):** `node:vm` with `codeGeneration: { strings: false, wasm: false }`, async IIFE pattern, `Promise.race` timeout (not `microtaskMode`), `Error.isError()` for cross-realm error detection, Object.prototype.toString patch, `const/let -> globalThis` transformation.
 
 **Avoids (from PITFALLS.md):**
+
 - Pitfall 1: `const/let` regex -- document edge cases, add REPL hint, plan AST upgrade if needed
 - Pitfall 2: Async timeout escape -- `Promise.race` pattern; never `microtaskMode: 'afterEvaluate'`
 - Pitfall 3: Prototype chain escape -- `Object.create(null)` base, arrow function globals, deep-freeze injected data
@@ -139,6 +146,7 @@ The component dependency graph is a strict linear chain that dictates phase orde
 **Implements (from ARCHITECTURE.md):** Agent Layer and Skill Layer. Validates the complete data flow from skill invocation through agent spawning, REPL iterations, and FINAL answer return to the main conversation.
 
 **Avoids (from PITFALLS.md):**
+
 - Pitfall 4: FINAL() termination brittleness -- all four guards (maxIterations, maxTimeout, maxErrors, stale-loop detection) must ship together with the loop
 - Pitfall 5: llm_query() subagent nesting -- deferred; Sonnet handles all reasoning
 - Pitfall 11: Subagent context limits -- aggressive output truncation (2KB per print), handle stubs, maxIterations=20
@@ -154,20 +162,22 @@ The component dependency graph is a strict linear chain that dictates phase orde
 ### Research Flags
 
 Phases needing deeper research during planning:
+
 - **Phase 2 (REPL Core):** The `const/let -> globalThis` transformation approach needs a final decision before implementation begins: simple regex (known edge cases, zero dependencies) vs. AST parser (correct, adds acorn dependency). Suggested resolution: run 20+ real LLM-generated REPL samples through the regex and count destructuring failures. If > 5%, add acorn.
 - **Phase 3 (Agent Integration):** The exact REPL system prompt, handle stub format, and mid-loop hint wording require empirical calibration with real Sonnet responses on real Nx workspace queries. Plan for 1-2 iteration cycles (implement -> test -> refine) before Phase 3 is considered done.
 
 Phases with standard patterns (can skip research-phase):
+
 - **Phase 1 (Foundation Scripts):** All components follow documented Node.js API patterns. The workspace indexer follows `nx show projects/project --json`. Path resolver follows standard `tsconfig.base.json` parsing. No unknown territory.
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | All API decisions verified against Node.js v24.x official docs and open issue tracker. Key findings (no DONT_CONTEXTIFY, no microtaskMode, Promise.race timeout, Error.isError) each tied to a specific open issue or official doc section. Minor uncertainty: fs.glob edge cases suggested by the globSync inconsistency bug (nodejs/node#61257). |
-| Features | HIGH | All API contracts derived from direct source code reading of four reference implementations (not secondary documentation). Feature dependencies, anti-features, and the llm_query() deferral decision each confirmed by multiple implementation examples. |
-| Architecture | HIGH | Per-invocation process model, SandboxResult schema, session state JSON, and component build order derived from actual reference implementation source code analysis. The handle-store-as-globalThis insight eliminates the proposed separate handle-store component. All six error boundaries have documented detection and recovery strategies. |
-| Pitfalls | HIGH | 20 documented pitfalls with specific Node.js issue numbers (confirmed open), CVE references (confirmed published), MSYS2 documentation links, and Claude Code GitHub issue numbers. Phase-specific warning table maps each pitfall to where it will be encountered. All four critical pitfalls confirmed across multiple reference implementations. |
+| Area         | Confidence | Notes                                                                                                                                                                                                                                                                                                                                               |
+| ------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stack        | HIGH       | All API decisions verified against Node.js v24.x official docs and open issue tracker. Key findings (no DONT_CONTEXTIFY, no microtaskMode, Promise.race timeout, Error.isError) each tied to a specific open issue or official doc section. Minor uncertainty: fs.glob edge cases suggested by the globSync inconsistency bug (nodejs/node#61257).  |
+| Features     | HIGH       | All API contracts derived from direct source code reading of four reference implementations (not secondary documentation). Feature dependencies, anti-features, and the llm_query() deferral decision each confirmed by multiple implementation examples.                                                                                           |
+| Architecture | HIGH       | Per-invocation process model, SandboxResult schema, session state JSON, and component build order derived from actual reference implementation source code analysis. The handle-store-as-globalThis insight eliminates the proposed separate handle-store component. All six error boundaries have documented detection and recovery strategies.    |
+| Pitfalls     | HIGH       | 20 documented pitfalls with specific Node.js issue numbers (confirmed open), CVE references (confirmed published), MSYS2 documentation links, and Claude Code GitHub issue numbers. Phase-specific warning table maps each pitfall to where it will be encountered. All four critical pitfalls confirmed across multiple reference implementations. |
 
 **Overall confidence:** HIGH
 
@@ -184,49 +194,58 @@ Phases with standard patterns (can skip research-phase):
 ### Primary (HIGH confidence)
 
 **Reference Implementation Source Code (directly read):**
+
 - `hampton-io/RLM/src/sandbox/vm-sandbox.ts` -- VM sandbox, const/let transform, async IIFE, Object.prototype.toString patch, FINAL detection, pending query queue
 - `code-rabi/rllm/src/sandbox.ts` -- SandboxResult format, cross-realm error handling, variable capture
 - `yogthos/Matryoshka/src/engine/nucleus-engine.ts` -- handle store design, RESULTS binding, stale loop detection
 - `alexzhang13/rlm/rlm/core/rlm.py` -- canonical RLM loop, FINAL protocol, consecutive error tracking
 
 **Node.js Official Documentation (verified):**
+
 - [Node.js v24.x vm module](https://nodejs.org/docs/latest-v24.x/api/vm.html) -- createContext options, DONT_CONTEXTIFY, microtaskMode
 - [Node.js v24.x fs module](https://nodejs.org/docs/latest-v24.x/api/fs.html) -- fs.glob API, stability status
 - [Node.js v24.1.0 Release Notes](https://nodejs.org/en/blog/release/v24.1.0) -- fs.glob ExperimentalWarning fix
 
 **Node.js Issue Tracker (verified open issues):**
+
 - [nodejs/node#55546](https://github.com/nodejs/node/issues/55546) -- microtaskMode afterEvaluate deadlocks async/await (OPEN, Node.js 22-25+)
 - [nodejs/node#3020](https://github.com/nodejs/node/issues/3020) -- Promises escape vm.runInContext timeout (OPEN since 2015)
 - [nodejs/node#20982](https://github.com/nodejs/node/issues/20982) -- vm.Script timeout silently ignored on constructor
 
 **TC39 / ECMAScript:**
+
 - [tc39/proposal-is-error](https://github.com/tc39/proposal-is-error) -- Stage 4, ES2026, available in Node.js 24+ via V8 13.4
 
 ### Secondary (MEDIUM confidence)
 
 **RLM Research:**
+
 - [RLM paper (arXiv:2512.24601)](https://arxiv.org/abs/2512.24601) -- theoretical foundation, Section 16 limitations (termination brittleness, training gap)
 - [Prime Intellect: RLM paradigm of 2026](https://www.primeintellect.ai/blog/rlm) -- strategy hints importance, environment tips
 
 **Claude Code Plugin System:**
+
 - [Claude Code subagent docs](https://code.claude.com/docs/en/sub-agents) -- subagent nesting constraint
 - [claude-code#27053](https://github.com/anthropics/claude-code/issues/27053) -- Task tool rate limit bug
 - [claude-code#18527](https://github.com/anthropics/claude-code/issues/18527), [#22449](https://github.com/anthropics/claude-code/issues/22449) -- CLAUDE_PLUGIN_ROOT backslash issues
 
 **Cross-Platform:**
+
 - [MSYS2 Filesystem Paths](https://www.msys2.org/docs/filesystem-paths/) -- MSYS_NO_PATHCONV, argument conversion behavior
 
 **Nx CLI:**
+
 - [Nx daemon OOM (#26786)](https://github.com/nrwl/nx/issues/26786), [hanging tasks (#28487)](https://github.com/nrwl/nx/issues/28487) -- large workspace behavior
 
 ### Tertiary (LOW confidence)
 
 **Subagent context limits:**
+
 - [Claude Code context buffer analysis](https://claudefa.st/blog/guide/mechanics/context-buffer-management) -- auto-compaction behavior; needs empirical validation with real REPL sessions
 
 ---
 
-> **Correction (2026-03-05):** This document uses "zero LLM tokens" when describing deterministic commands (lines 47, 80) and the Script Layer (line 67). The Script Layer description is accurate — the Node.js scripts make no LLM calls. However, the command descriptions conflate two invocation paths: (1) the REPL sandbox path, where script functions are imported as VM globals and called programmatically (genuinely zero model involvement), and (2) the Claude Code command path, where the model reads the command markdown, invokes Bash, and processes output. `disable-model-invocation: true` only prevents Claude from *automatically* invoking commands — it does not bypass model processing when users invoke them. See CLI-01 in REQUIREMENTS.md for standalone CLI tracking.
+> **Correction (2026-03-05):** This document uses "zero LLM tokens" when describing deterministic commands (lines 47, 80) and the Script Layer (line 67). The Script Layer description is accurate — the Node.js scripts make no LLM calls. However, the command descriptions conflate two invocation paths: (1) the REPL sandbox path, where script functions are imported as VM globals and called programmatically (genuinely zero model involvement), and (2) the Claude Code command path, where the model reads the command markdown, invokes Bash, and processes output. `disable-model-invocation: true` only prevents Claude from _automatically_ invoking commands — it does not bypass model processing when users invoke them. See CLI-01 in REQUIREMENTS.md for standalone CLI tracking.
 
-*Research completed: 2026-03-04*
-*Ready for roadmap: yes*
+_Research completed: 2026-03-04_
+_Ready for roadmap: yes_

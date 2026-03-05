@@ -90,61 +90,72 @@ plugins/
 ## Directory Purposes
 
 **`.claude/`:**
+
 - Purpose: Claude Code workspace-level configuration
 - Contains: `settings.json` -- plugin marketplace sources and enabled plugins
 - Key files: `.claude/settings.json`
 
 **`.planning/`:**
+
 - Purpose: GSD workflow planning documents; consumed by `/gsd:plan-phase` and `/gsd:execute-phase`
 - Contains: Project definition, requirements, roadmap, research documents, codebase analysis
 - Key files: `.planning/PROJECT.md` (project definition), `.planning/ROADMAP.md` (phases), `.planning/REQUIREMENTS.md` (formal requirements), `.planning/STATE.md` (current position)
 - Note: `.planning/codebase/` is written by `/gsd:map-codebase`; `.planning/research/` is written by `/gsd:research`
 
 **`research/`:**
+
 - Purpose: Research corpus -- external knowledge synthesized for planning decisions
 - Contains: Markdown documents organized by topic area
 - Key files: `research/rlm/SYNTHESIS.md` (RLM theory and implementations), `research/claude-plugin/BRAINSTORM.md` (detailed plugin design), `research/prompt-engineering/SYNTHESIS.md` (token efficiency patterns)
 - Note: Read-only reference material; do not modify during implementation phases
 
 **`plugins/lz-nx.rlm/scripts/` (planned):**
+
 - Purpose: Foundation layer -- deterministic Node.js scripts with zero npm dependencies
 - Contains: `.mjs` files using only Node.js built-in modules
 - Key files: `workspace-indexer.mjs` (most critical -- converts 537-project workspace to navigable JSON), `repl-sandbox.mjs` (highest-risk component -- vm sandbox)
 
 **`plugins/lz-nx.rlm/agents/` (planned):**
+
 - Purpose: AI agent definitions that drive LLM-powered workflows
 - Contains: Markdown files with YAML frontmatter for Claude Code agent registration
 - Key files: `repl-executor.md` (Sonnet, drives fill/solve loop), `haiku-searcher.md` (Haiku, mechanical search)
 
 **`plugins/lz-nx.rlm/skills/` (planned):**
+
 - Purpose: User-invokable skills that coordinate agents and scripts
 - Contains: Subdirectories per skill, each with `SKILL.md` plus optional `references/` and `examples/`
 - Note: `skills/` is preferred over `commands/` for new LLM-powered interactions per updated Claude Code conventions
 
 **`plugins/lz-nx.rlm/commands/` (planned):**
+
 - Purpose: Slash commands that invoke deterministic Node.js scripts (scripts make no LLM calls; Claude Code still processes the invocation)
 - Contains: Markdown files with `allowed-tools` restricting to `Bash(node *)` and `Read`
 
 ## Key File Locations
 
 **Entry Points:**
+
 - `plugins/lz-nx.rlm/.claude-plugin/plugin.json`: Plugin manifest -- auto-discovery by Claude Code
 - `plugins/lz-nx.rlm/skills/explore/SKILL.md`: Primary user-facing RLM skill
 - `plugins/lz-nx.rlm/commands/deps.md`: Dependency tree command
 
 **Configuration:**
+
 - `nx.json`: Nx workspace plugins (`@nx/js/typescript`, `@nx/vite/plugin`, `@nx/eslint/plugin`), named inputs, target defaults
 - `tsconfig.base.json`: Shared TypeScript options (strict mode, ESM, es2022 target, `nodenext` module resolution)
 - `.claude/settings.json`: Claude Code plugin marketplace registration
 - `plugins/lz-nx.rlm/scripts/rlm-config.mjs`: RLM guardrail defaults (loadable from `.claude/rlm-config.json`)
 
 **Core Logic (planned):**
+
 - `plugins/lz-nx.rlm/scripts/workspace-indexer.mjs`: Workspace index builder (Foundation, Phase 1)
 - `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs`: Node.js vm sandbox with workspace globals (REPL Core, Phase 2)
 - `plugins/lz-nx.rlm/scripts/handle-store.mjs`: Large result handle storage (REPL Core, Phase 2)
 - `plugins/lz-nx.rlm/agents/repl-executor.md`: RLM execution loop agent (Agent Integration, Phase 4)
 
 **Planning Documents:**
+
 - `.planning/PROJECT.md`: Authoritative project definition, constraints, key decisions
 - `.planning/ROADMAP.md`: 5-phase delivery plan with success criteria
 - `.planning/research/ARCHITECTURE.md`: Detailed architecture with code examples and patterns
@@ -152,6 +163,7 @@ plugins/
 ## Naming Conventions
 
 **Files:**
+
 - Plugin scripts: `kebab-case.mjs` (e.g., `workspace-indexer.mjs`, `repl-sandbox.mjs`, `handle-store.mjs`)
 - Agent definitions: `kebab-case.md` (e.g., `repl-executor.md`, `haiku-searcher.md`)
 - Command definitions: `kebab-case.md` (e.g., `deps.md`, `find.md`, `alias.md`)
@@ -160,6 +172,7 @@ plugins/
 - Research documents: `UPPERCASE.md` or `kebab-case--kebab-case.md` (for external source notes)
 
 **Directories:**
+
 - Plugins: `plugins/<plugin-name>/` using dot-notation for namespaced names (e.g., `plugins/lz-nx.rlm/`)
 - Skills: `skills/<skill-name>/` (lowercase, kebab-case)
 - Research topics: `research/<topic>/` (lowercase, kebab-case)
@@ -171,62 +184,74 @@ plugins/
 ## Where to Add New Code
 
 **New plugin (future):**
+
 - Create: `plugins/<namespace>.<feature>/` following the structure in `AGENTS.md`
 - Manifest: `plugins/<namespace>.<feature>/.claude-plugin/plugin.json`
 - Documentation: `plugins/<namespace>.<feature>/README.md`
 
 **New foundation script (Phase 1-2):**
+
 - Location: `plugins/lz-nx.rlm/scripts/<purpose>.mjs`
 - Requirements: ESM format (`import`/`export`), Node.js built-in modules only, cross-platform (no shell-specific syntax), no emojis in output
 
 **New slash command (Phase 3):**
+
 - Location: `plugins/lz-nx.rlm/commands/<command-name>.md`
 - Convention: Use `allowed-tools` to restrict tool access; command scripts are deterministic (no LLM calls in scripts, but Claude Code still processes invocation)
 
 **New skill (Phase 5+):**
+
 - Location: `plugins/lz-nx.rlm/skills/<skill-name>/SKILL.md`
 - Optional: `plugins/lz-nx.rlm/skills/<skill-name>/references/` for injected reference docs
 - Optional: `plugins/lz-nx.rlm/skills/<skill-name>/examples/` for usage examples
 
 **New agent (Phase 4):**
+
 - Location: `plugins/lz-nx.rlm/agents/<agent-name>.md`
 - Convention: `tools: ["Bash", "Read"]` array format (not `allowed-tools`), `model: haiku/sonnet/opus/inherit`
 
 **New research document:**
+
 - Location: `research/<topic>/` for external source notes, `.planning/research/` for synthesized planning docs
 - Note: Research documents are reference material; do not create them during implementation phases
 
 **Hook script (later milestone, deferred):**
+
 - Location: `plugins/lz-nx.rlm/hooks/scripts/<hook-name>.mjs`
 - Config: `plugins/lz-nx.rlm/hooks/hooks.json` (use `${CLAUDE_PLUGIN_ROOT}` for portable paths)
 
 ## Special Directories
 
 **`.nx/`:**
+
 - Purpose: Nx build cache and workspace graph data
 - Generated: Yes (by Nx CLI during tasks)
 - Committed: No (`.gitignore`d: `.nx/cache`, `.nx/workspace-data`)
 
 **`.planning/`:**
+
 - Purpose: GSD workflow state and planning documents
 - Generated: Partially (by `/gsd:` commands)
 - Committed: Yes (project definition and plans are source-controlled)
 
 **`research/`:**
+
 - Purpose: Research corpus -- synthesized external knowledge
 - Generated: No (human/AI authored during research phases)
 - Committed: Yes (research is part of the project record)
 
 **`node_modules/`:**
+
 - Purpose: Nx and tooling dependencies (devDependencies in `package.json`)
 - Generated: Yes (by `npm install`)
 - Committed: No (`.gitignore`d)
 
 **`plugins/` (planned, does not exist yet):**
+
 - Purpose: The actual plugin deliverables of this workspace
 - Generated: No (hand-authored per plugin conventions)
 - Committed: Yes
 
 ---
 
-*Structure analysis: 2026-03-03*
+_Structure analysis: 2026-03-03_

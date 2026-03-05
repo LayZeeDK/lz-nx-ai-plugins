@@ -10,14 +10,14 @@ autonomous: true
 requirements: []
 must_haves:
   truths:
-    - "Each potentially applicable transformers.js task is mapped to specific RLM sub-components with concrete use cases"
-    - "Model size, startup time, and ONNX Runtime compatibility are assessed for the target platform (Node.js LTS, ARM64 Windows, cross-platform)"
-    - "The analysis clearly states whether transformers.js can unblock llm_query() or haiku-searcher, with rationale"
-    - "Node.js VM sandbox integration constraints are evaluated (synchronous execution, no native modules, cross-platform)"
-    - "A concrete recommendation is provided: which tasks (if any) should be adopted and in which milestone"
+    - 'Each potentially applicable transformers.js task is mapped to specific RLM sub-components with concrete use cases'
+    - 'Model size, startup time, and ONNX Runtime compatibility are assessed for the target platform (Node.js LTS, ARM64 Windows, cross-platform)'
+    - 'The analysis clearly states whether transformers.js can unblock llm_query() or haiku-searcher, with rationale'
+    - 'Node.js VM sandbox integration constraints are evaluated (synchronous execution, no native modules, cross-platform)'
+    - 'A concrete recommendation is provided: which tasks (if any) should be adopted and in which milestone'
   artifacts:
-    - path: ".planning/quick/3-analyze-huggingface-transformers-support/ANALYSIS.md"
-      provides: "Applicability analysis of @huggingface/transformers tasks for Nx RLM sub-components"
+    - path: '.planning/quick/3-analyze-huggingface-transformers-support/ANALYSIS.md'
+      provides: 'Applicability analysis of @huggingface/transformers tasks for Nx RLM sub-components'
       min_lines: 150
   key_links: []
 ---
@@ -155,6 +155,7 @@ Write a structured markdown analysis document evaluating `@huggingface/transform
 7. **Source Materials** -- Links to referenced research documents and npm packages.
 
 **Research approach:**
+
 - Check `@huggingface/transformers` npm page for supported backends and model list
 - Check `onnxruntime-node` npm page for platform binary matrix
 - Check `onnxruntime-web` npm page for WASM backend details
@@ -162,6 +163,7 @@ Write a structured markdown analysis document evaluating `@huggingface/transform
 - For model sizes and quality, reference Hugging Face model hub for specific ONNX models (e.g., Xenova/distilgpt2, Xenova/all-MiniLM-L6-v2)
 
 **Formatting requirements:**
+
 - Use tables for comparisons (task mapping, viability ratings)
 - Include a viability summary table: Task | Sub-Component | Viability | Rationale
 - Reference source documents with `[document-name]` citations
@@ -169,10 +171,10 @@ Write a structured markdown analysis document evaluating `@huggingface/transform
 - Clearly distinguish between "technically possible" and "practically viable for this project"
   </action>
   <verify>
-    <automated>test -f ".planning/quick/3-analyze-huggingface-transformers-support/ANALYSIS.md" && wc -l ".planning/quick/3-analyze-huggingface-transformers-support/ANALYSIS.md" | awk '{if ($1 >= 150) print "[OK] Analysis document exists with " $1 " lines"; else print "[ERROR] Document too short: " $1 " lines"}'</automated>
+  <automated>test -f ".planning/quick/3-analyze-huggingface-transformers-support/ANALYSIS.md" && wc -l ".planning/quick/3-analyze-huggingface-transformers-support/ANALYSIS.md" | awk '{if ($1 >= 150) print "[OK] Analysis document exists with " $1 " lines"; else print "[ERROR] Document too short: " $1 " lines"}'</automated>
   </verify>
   <done>ANALYSIS.md exists with 150+ lines, contains all 7 sections (TL;DR, Context, Runtime Viability, Task Mapping with viability ratings for 7 NLP tasks, Impact on Deferred Decisions, Recommendation for v0.0.1 and v0.0.2+, Source Materials), includes a viability summary table, and provides a clear actionable recommendation that accounts for the native module constraint and zero-dependency goal</done>
-</task>
+  </task>
 
 </tasks>
 
@@ -188,11 +190,12 @@ Write a structured markdown analysis document evaluating `@huggingface/transform
 </verification>
 
 <success_criteria>
+
 - A developer reading ANALYSIS.md can decide whether to adopt any transformers.js tasks without further research
 - The recommendation respects existing PROJECT.md constraints (especially "no native modules" and zero-dependency goal)
 - The analysis is honest about the quality gap between local models and Claude Haiku
 - The document serves as a permanent reference for future milestone planning when llm_query() is revisited
-</success_criteria>
+  </success_criteria>
 
 <output>
 After completion, create `.planning/quick/3-analyze-huggingface-transformers-support/3-SUMMARY.md`

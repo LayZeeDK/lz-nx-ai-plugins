@@ -73,18 +73,18 @@ In practice, most RLM plugin operations follow the left branch (no inter-agent c
 
 These components from the RLM brainstorm are inherently incompatible with agent teams. Documenting this prevents future over-engineering.
 
-| Component | Why Not Agent Teams |
-|-----------|-------------------|
-| **Workspace index** (Section 1) | Zero LLM tokens -- pure Node.js scripts |
-| **REPL engine** (Section 2) | Sequential fill-solve loop; each iteration depends on the previous |
-| **`/rlm:explore`** (Section 3a) | REPL + Haiku sub-calls at ~16-20K tokens; agent teams would multiply to 50-200K |
-| **`/rlm:impact`** (Section 3b) | Script + REPL at ~15K tokens; deterministic dependency traversal has no need for discussion |
-| **`/rlm:analyze`** (Section 3c) | Partition+map with Haiku sub-calls is already parallel and cheaper |
-| **`/rlm:test-gen`** (Section 3d) | Haiku generates individual `it()` blocks; no inter-block coordination needed |
-| **`/rlm:search`** (Section 3e) | Classification + deterministic search; too fast for team coordination overhead |
-| **`/rlm:trace`** (Section 3f) | Data flow is inherently sequential (A -> B -> C); parallelization doesn't help |
-| **Commands** (Section 4) | Zero LLM tokens by design |
-| **Hooks** (Section 6) | Fast-path intercepts where team latency is counterproductive |
+| Component                        | Why Not Agent Teams                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Workspace index** (Section 1)  | Zero LLM tokens -- pure Node.js scripts                                                     |
+| **REPL engine** (Section 2)      | Sequential fill-solve loop; each iteration depends on the previous                          |
+| **`/rlm:explore`** (Section 3a)  | REPL + Haiku sub-calls at ~16-20K tokens; agent teams would multiply to 50-200K             |
+| **`/rlm:impact`** (Section 3b)   | Script + REPL at ~15K tokens; deterministic dependency traversal has no need for discussion |
+| **`/rlm:analyze`** (Section 3c)  | Partition+map with Haiku sub-calls is already parallel and cheaper                          |
+| **`/rlm:test-gen`** (Section 3d) | Haiku generates individual `it()` blocks; no inter-block coordination needed                |
+| **`/rlm:search`** (Section 3e)   | Classification + deterministic search; too fast for team coordination overhead              |
+| **`/rlm:trace`** (Section 3f)    | Data flow is inherently sequential (A -> B -> C); parallelization doesn't help              |
+| **Commands** (Section 4)         | Zero LLM tokens by design                                                                   |
+| **Hooks** (Section 6)            | Fast-path intercepts where team latency is counterproductive                                |
 
 **Common thread:** These components either involve zero LLM tokens, inherently sequential logic, or mechanical tasks where Haiku sub-calls provide sufficient parallelism without the coordination overhead of a full team.
 
@@ -119,11 +119,11 @@ These components from the RLM brainstorm are inherently incompatible with agent 
 
 **Token projection:**
 
-| Approach | Tokens | Quality |
-|----------|--------|---------|
-| Single agent, sequential | 60-120K (context rot by theory 3) | Anchoring bias, may miss root cause |
-| RLM sub-calls (Haiku) | 25-40K (cheap, but no inter-theory communication) | Theories investigated independently, no cross-pollination |
-| Agent team (3 Sonnet teammates) | 80-150K | Competing hypotheses, shared findings, adaptive investigation |
+| Approach                        | Tokens                                            | Quality                                                       |
+| ------------------------------- | ------------------------------------------------- | ------------------------------------------------------------- |
+| Single agent, sequential        | 60-120K (context rot by theory 3)                 | Anchoring bias, may miss root cause                           |
+| RLM sub-calls (Haiku)           | 25-40K (cheap, but no inter-theory communication) | Theories investigated independently, no cross-pollination     |
+| Agent team (3 Sonnet teammates) | 80-150K                                           | Competing hypotheses, shared findings, adaptive investigation |
 
 **When to use:** Only for bugs that span multiple Nx library boundaries. For bugs isolated to a single library, `/rlm:explore` is cheaper and sufficient.
 
@@ -157,10 +157,10 @@ The original brainstorm proposes 34 sequential batches of Haiku sub-calls for au
 
 **Token projection:**
 
-| Approach | Tokens | Suitable for |
-|----------|--------|-------------|
-| Haiku sub-calls (original) | ~850K Haiku (isolated, ~$0.21) + ~3K conversation | Mechanical detection (OnPush, constructor injection) |
-| Agent team (4 Sonnet teammates) | ~200-400K Sonnet + Haiku sub-calls within each | Semantic comparison across domains |
+| Approach                        | Tokens                                            | Suitable for                                         |
+| ------------------------------- | ------------------------------------------------- | ---------------------------------------------------- |
+| Haiku sub-calls (original)      | ~850K Haiku (isolated, ~$0.21) + ~3K conversation | Mechanical detection (OnPush, constructor injection) |
+| Agent team (4 Sonnet teammates) | ~200-400K Sonnet + Haiku sub-calls within each    | Semantic comparison across domains                   |
 
 ### 2c. `/rlm:review` -- Multi-Lens Code Review
 
@@ -183,10 +183,10 @@ The original brainstorm proposes 34 sequential batches of Haiku sub-calls for au
 
 **Token projection:**
 
-| Approach | Tokens | Coverage |
-|----------|--------|----------|
-| Single agent review | 30-60K | Attentional bias, may miss cross-cutting issues |
-| Agent team (3 reviewers) | 90-180K | Specialized lenses, systematic coverage |
+| Approach                 | Tokens  | Coverage                                        |
+| ------------------------ | ------- | ----------------------------------------------- |
+| Single agent review      | 30-60K  | Attentional bias, may miss cross-cutting issues |
+| Agent team (3 reviewers) | 90-180K | Specialized lenses, systematic coverage         |
 
 **When to use:** For reviews spanning 5+ files or 3+ Nx libraries. For single-library changes, a single-agent review with the REPL is cheaper.
 
@@ -214,10 +214,10 @@ The original brainstorm proposes 34 sequential batches of Haiku sub-calls for au
 
 **Token projection:**
 
-| Approach | Tokens | Parallelism |
-|----------|--------|-------------|
-| Single agent, sequential | 100-300K (context rot, repeated orientation) | None |
-| Agent team (3 worktree teammates) | 150-350K | 3x parallel, each library refactored in isolation |
+| Approach                          | Tokens                                       | Parallelism                                       |
+| --------------------------------- | -------------------------------------------- | ------------------------------------------------- |
+| Single agent, sequential          | 100-300K (context rot, repeated orientation) | None                                              |
+| Agent team (3 worktree teammates) | 150-350K                                     | 3x parallel, each library refactored in isolation |
 
 **When to use:** For refactorings affecting 10+ Nx libraries. For fewer libraries, a single agent with the REPL is sufficient.
 
@@ -246,10 +246,10 @@ The original brainstorm proposes 34 sequential batches of Haiku sub-calls for au
 
 **Token projection:**
 
-| Approach | Tokens | Risk |
-|----------|--------|------|
-| Single agent | 200-500K (severe rot, inconsistent quality past library 10) | High -- quality degrades as context fills |
-| Agent team (4 worktree teammates) | 300-600K | Low -- each teammate has clean context per library |
+| Approach                          | Tokens                                                      | Risk                                               |
+| --------------------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| Single agent                      | 200-500K (severe rot, inconsistent quality past library 10) | High -- quality degrades as context fills          |
+| Agent team (4 worktree teammates) | 300-600K                                                    | Low -- each teammate has clean context per library |
 
 **When to use:** For migrations affecting 20+ libraries. The token cost is higher, but the quality consistency is worth it because migration errors in library N often go unnoticed until they cascade to library N+10.
 
@@ -321,14 +321,14 @@ team_name: rlm-debug
 description: Adversarial debugging across Nx library boundaries
 
 lead:
-  model: sonnet  # Or opus for complex bugs
+  model: sonnet # Or opus for complex bugs
   mode: default
   context:
     - workspace-index.json
     - REPL sandbox access
 
 teammates:
-  count: 2-3  # One per hypothesis/layer
+  count: 2-3 # One per hypothesis/layer
   model: sonnet
   mode: default
   context:
@@ -340,12 +340,12 @@ teammates:
 task_structure:
   - type: investigate
     per_teammate: true
-    description: "Investigate hypothesis: {description}"
-    done_criteria: "Confirmed or ruled out with evidence (file:line references)"
+    description: 'Investigate hypothesis: {description}'
+    done_criteria: 'Confirmed or ruled out with evidence (file:line references)'
   - type: synthesize
     owner: lead
     blocked_by: all investigate tasks
-    description: "Synthesize findings into root cause and fix proposal"
+    description: 'Synthesize findings into root cause and fix proposal'
 ```
 
 ### 4b. `audit-team` -- Pattern Audit
@@ -363,9 +363,9 @@ lead:
     - Audit criteria
 
 teammates:
-  count: 3-4  # One per product domain
+  count: 3-4 # One per product domain
   model: sonnet
-  mode: default  # plan mode for destructive audits that propose changes
+  mode: default # plan mode for destructive audits that propose changes
   context:
     - workspace-index.json
     - REPL sandbox access
@@ -375,12 +375,12 @@ teammates:
 task_structure:
   - type: scan
     per_teammate: true
-    description: "Audit {domain} against {criteria}"
-    done_criteria: "Structured findings with file:line references and severity"
+    description: 'Audit {domain} against {criteria}'
+    done_criteria: 'Structured findings with file:line references and severity'
   - type: compare
     owner: lead
     blocked_by: all scan tasks
-    description: "Compare patterns across domains, identify inconsistencies"
+    description: 'Compare patterns across domains, identify inconsistencies'
 ```
 
 ### 4c. `review-team` -- Multi-Lens Review
@@ -399,23 +399,23 @@ lead:
 teammates:
   - name: patterns-reviewer
     model: sonnet
-    focus: "Angular patterns per AGENTS.md"
+    focus: 'Angular patterns per AGENTS.md'
   - name: testing-reviewer
     model: sonnet
-    focus: "Test coverage and patterns per AGENTS.md"
+    focus: 'Test coverage and patterns per AGENTS.md'
   - name: architecture-reviewer
-    model: haiku  # Nx boundary checks are mechanical
-    focus: "Nx library boundaries, import rules, public API"
+    model: haiku # Nx boundary checks are mechanical
+    focus: 'Nx library boundaries, import rules, public API'
 
 task_structure:
   - type: review
     per_teammate: true
-    description: "Review changes through {focus} lens"
-    done_criteria: "List of findings with severity, file:line, suggested fix"
+    description: 'Review changes through {focus} lens'
+    done_criteria: 'List of findings with severity, file:line, suggested fix'
   - type: merge
     owner: lead
     blocked_by: all review tasks
-    description: "Merge findings, deduplicate, prioritize"
+    description: 'Merge findings, deduplicate, prioritize'
 ```
 
 ### 4d. `refactor-team` -- Parallel Refactoring
@@ -436,7 +436,7 @@ teammates:
   count: 3-4
   model: sonnet
   mode: default
-  isolation: worktree  # Each teammate gets its own worktree
+  isolation: worktree # Each teammate gets its own worktree
   context:
     - workspace-index.json
     - REPL sandbox access
@@ -445,9 +445,9 @@ teammates:
 
 task_structure:
   - type: refactor
-    per_library: true  # One task per library
-    description: "Apply {refactoring} to {library}"
-    done_criteria: "nx lint {library} && nx test {library} pass"
+    per_library: true # One task per library
+    description: 'Apply {refactoring} to {library}'
+    done_criteria: 'nx lint {library} && nx test {library} pass'
 ```
 
 ---
@@ -508,14 +508,14 @@ Addresses the "early victory problem" from the agent teams research [[synthesis,
 
 All projections use the RLM-equipped teammate baseline (section 3a), not vanilla teammates.
 
-| Operation | RLM Sub-Calls Only | Agent Team (RLM-equipped) | Multiplier | Justification |
-|-----------|-------------------|--------------------------|-----------|---------------|
-| Debug (3 hypotheses) | 25-40K (no cross-pollination) | 80-150K | 3-4x | Anchoring bias avoidance |
-| Pattern audit (semantic) | ~850K Haiku (~$0.21) | 200-400K Sonnet (~$1-2) | 5-10x cost | Cross-domain comparison |
-| Pattern audit (mechanical) | ~850K Haiku (~$0.21) | Not recommended | -- | Haiku sub-calls are sufficient |
-| Code review (3 lenses) | 30-60K (single lens) | 90-180K | 3x | Attentional bias avoidance |
-| Refactoring (15 libraries) | 100-300K (rot by library 10) | 150-350K | 1.2-1.5x | Quality consistency |
-| Migration (30 libraries) | 200-500K (rot by library 10) | 300-600K | 1.5-2x | Quality consistency |
+| Operation                  | RLM Sub-Calls Only            | Agent Team (RLM-equipped) | Multiplier | Justification                  |
+| -------------------------- | ----------------------------- | ------------------------- | ---------- | ------------------------------ |
+| Debug (3 hypotheses)       | 25-40K (no cross-pollination) | 80-150K                   | 3-4x       | Anchoring bias avoidance       |
+| Pattern audit (semantic)   | ~850K Haiku (~$0.21)          | 200-400K Sonnet (~$1-2)   | 5-10x cost | Cross-domain comparison        |
+| Pattern audit (mechanical) | ~850K Haiku (~$0.21)          | Not recommended           | --         | Haiku sub-calls are sufficient |
+| Code review (3 lenses)     | 30-60K (single lens)          | 90-180K                   | 3x         | Attentional bias avoidance     |
+| Refactoring (15 libraries) | 100-300K (rot by library 10)  | 150-350K                  | 1.2-1.5x   | Quality consistency            |
+| Migration (30 libraries)   | 200-500K (rot by library 10)  | 300-600K                  | 1.5-2x     | Quality consistency            |
 
 ### 6b. Break-Even Analysis
 
@@ -617,7 +617,7 @@ vs. Haiku sub-calls only: ~850K Haiku (~$0.21) but no cross-domain comparison
 vs. single agent: Not feasible at 53 stores (context overflow)
 ```
 
-### 7c. "Migrate all templates from *ngIf to @if"
+### 7c. "Migrate all templates from \*ngIf to @if"
 
 ```
 1. User invokes /rlm:migrate "*ngIf to @if control flow"
@@ -716,8 +716,8 @@ New files added to the plugin structure from the [RLM brainstorm, section 12]:
 
 ## Source Material References
 
-| Reference | Document |
-|-----------|----------|
-| RLM plugin brainstorm | [[BRAINSTORM]](BRAINSTORM.md) |
-| Agent teams synthesis | [[SYNTHESIS]](../../claude-agent-teams/SYNTHESIS.md) |
+| Reference                   | Document                                                |
+| --------------------------- | ------------------------------------------------------- |
+| RLM plugin brainstorm       | [[BRAINSTORM]](BRAINSTORM.md)                           |
+| Agent teams synthesis       | [[SYNTHESIS]](../../claude-agent-teams/SYNTHESIS.md)    |
 | Agent teams research corpus | [[corpus]](../../research/claude-agent-teams/README.md) |

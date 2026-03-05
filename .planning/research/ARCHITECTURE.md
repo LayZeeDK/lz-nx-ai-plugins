@@ -6,7 +6,7 @@
 
 ## System Overview
 
-```
+````
 +------------------------------------------------------------------+
 |  USER LAYER                                                      |
 |  /explore "question"  |  /deps project  |  /find pattern         |
@@ -44,7 +44,7 @@
 |  Nx CLI (child_process)  |  filesystem (fs)  |  git (git grep)   |
 |                          |  (fallback search)|                   |
 +------------------------------------------------------------------+
-```
+````
 
 ## Data Flow: Complete Path for `/explore "question"`
 
@@ -291,6 +291,7 @@ Between per-invocation sandbox calls, state persists via a session file:
 ```
 
 Why per-invocation (not persistent process):
+
 1. Claude Code's Bash tool starts a fresh shell for each call -- no IPC channel
 2. No orphaned processes if the agent crashes
 3. Simpler error recovery (process crash = clean next invocation)
@@ -525,18 +526,18 @@ Alternative (stronger enforcement):
 
 ### Error Boundary Summary Table
 
-| Boundary | Detection | Recovery | Severity |
-|----------|-----------|----------|----------|
-| REPL syntax/runtime error | `SandboxResult.error` | Agent generates fix code | LOW -- self-healing |
-| REPL timeout (per block) | vm.Script timeout option | Error in SandboxResult | LOW -- retry with simpler code |
-| Nx CLI timeout | execSync ETIMEDOUT | Return error, agent retries | MEDIUM -- may need fallback |
-| Nx CLI not available | execSync ENOENT | Report to user | HIGH -- plugin non-functional |
-| Index missing | File not found | Rebuild (10-30s) | MEDIUM -- delays first query |
-| Index stale | Mtime check | Rebuild or use stale | LOW -- usually acceptable |
-| Index corrupted | JSON.parse error | Rebuild | LOW -- overwrite fixes it |
-| FINAL() not called | Iteration counter | Force partial answer | MEDIUM -- degraded output |
-| Process crash (OOM) | Non-zero exit code | Retry (fresh process) | LOW -- rare |
-| Wall clock timeout | Agent tracks elapsed | Force FINAL with partial | MEDIUM -- soft guardrail |
+| Boundary                  | Detection                | Recovery                    | Severity                       |
+| ------------------------- | ------------------------ | --------------------------- | ------------------------------ |
+| REPL syntax/runtime error | `SandboxResult.error`    | Agent generates fix code    | LOW -- self-healing            |
+| REPL timeout (per block)  | vm.Script timeout option | Error in SandboxResult      | LOW -- retry with simpler code |
+| Nx CLI timeout            | execSync ETIMEDOUT       | Return error, agent retries | MEDIUM -- may need fallback    |
+| Nx CLI not available      | execSync ENOENT          | Report to user              | HIGH -- plugin non-functional  |
+| Index missing             | File not found           | Rebuild (10-30s)            | MEDIUM -- delays first query   |
+| Index stale               | Mtime check              | Rebuild or use stale        | LOW -- usually acceptable      |
+| Index corrupted           | JSON.parse error         | Rebuild                     | LOW -- overwrite fixes it      |
+| FINAL() not called        | Iteration counter        | Force partial answer        | MEDIUM -- degraded output      |
+| Process crash (OOM)       | Non-zero exit code       | Retry (fresh process)       | LOW -- rare                    |
+| Wall clock timeout        | Agent tracks elapsed     | Force FINAL with partial    | MEDIUM -- soft guardrail       |
 
 ## Workspace Index Sharing Strategy
 
@@ -569,6 +570,7 @@ workspace-indexer.mjs --build
 ### Why NOT Pass as Argument
 
 The workspace index is ~50-100KB. Passing it as a CLI argument (`node repl-sandbox.mjs --index-data '{...}'`) would:
+
 1. Hit shell argument length limits on Windows (32KB for cmd.exe, 8KB for CreateProcess)
 2. Require shell escaping of JSON (fragile)
 3. Appear in process listings (`ps aux`)
@@ -657,20 +659,20 @@ Build order follows arrows (dependency direction):
 
 All components are new (greenfield plugin). No existing code to modify.
 
-| Component | Type | File Count | Complexity | Dependencies |
-|-----------|------|------------|------------|--------------|
-| rlm-config.mjs | Script | 1 | LOW | None |
-| nx-runner.mjs | Script | 1 | LOW | rlm-config |
-| workspace-indexer.mjs | Script | 1 | MEDIUM | nx-runner |
-| path-resolver.mjs | Script | 1 | LOW | workspace index |
-| handle-store.mjs | Script | 1 | MEDIUM | None |
-| repl-sandbox.mjs | Script | 1 | HIGH | handle-store, nx-runner, all globals |
-| repl-executor.md | Agent | 1 | HIGH | repl-sandbox.mjs |
-| explore/SKILL.md | Skill | 1 | MEDIUM | repl-executor agent |
-| deps.md | Command | 1 | LOW | workspace index |
-| find.md | Command | 1 | LOW | workspace index, nx-runner |
-| alias.md | Command | 1 | LOW | path-resolver |
-| plugin.json | Config | 1 | LOW | None |
+| Component             | Type    | File Count | Complexity | Dependencies                         |
+| --------------------- | ------- | ---------- | ---------- | ------------------------------------ |
+| rlm-config.mjs        | Script  | 1          | LOW        | None                                 |
+| nx-runner.mjs         | Script  | 1          | LOW        | rlm-config                           |
+| workspace-indexer.mjs | Script  | 1          | MEDIUM     | nx-runner                            |
+| path-resolver.mjs     | Script  | 1          | LOW        | workspace index                      |
+| handle-store.mjs      | Script  | 1          | MEDIUM     | None                                 |
+| repl-sandbox.mjs      | Script  | 1          | HIGH       | handle-store, nx-runner, all globals |
+| repl-executor.md      | Agent   | 1          | HIGH       | repl-sandbox.mjs                     |
+| explore/SKILL.md      | Skill   | 1          | MEDIUM     | repl-executor agent                  |
+| deps.md               | Command | 1          | LOW        | workspace index                      |
+| find.md               | Command | 1          | LOW        | workspace index, nx-runner           |
+| alias.md              | Command | 1          | LOW        | path-resolver                        |
+| plugin.json           | Config  | 1          | LOW        | None                                 |
 
 ### Recommended Build Phases
 
@@ -736,37 +738,37 @@ The previous research suggested commands before agents (to provide immediate use
 
 ### Internal Boundaries
 
-| Boundary | Communication | Data Format | Error Handling |
-|----------|---------------|-------------|----------------|
-| Skill -> Agent | Agent tool (Claude internal) | Natural language prompt | Agent failure returns error text |
-| Agent -> Sandbox | Bash tool -> stdin/stdout | Code in, SandboxResult JSON out | Non-zero exit = process crash |
-| Sandbox -> Handle Store | In-process function call | JavaScript objects | Throws on invalid handle |
-| Sandbox -> nx-runner | In-process function call | Command string in, parsed JSON out | Throws on timeout/error |
-| Sandbox -> filesystem | In-process fs.readFileSync | File path in, string/Buffer out | Throws on missing file |
-| Sandbox -> git | child_process.spawnSync (shell: false) | Pattern string in, parsed matches out | Returns empty on no matches; Node.js built-in fallback for non-git environments |
-| Command -> workspace index | fs.readFileSync + JSON.parse | File path in, JSON object out | Error if index missing |
-| Indexer -> Nx CLI | child_process.execSync | Nx command in, JSON stdout out | Throws on timeout/failure |
+| Boundary                   | Communication                          | Data Format                           | Error Handling                                                                  |
+| -------------------------- | -------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------- |
+| Skill -> Agent             | Agent tool (Claude internal)           | Natural language prompt               | Agent failure returns error text                                                |
+| Agent -> Sandbox           | Bash tool -> stdin/stdout              | Code in, SandboxResult JSON out       | Non-zero exit = process crash                                                   |
+| Sandbox -> Handle Store    | In-process function call               | JavaScript objects                    | Throws on invalid handle                                                        |
+| Sandbox -> nx-runner       | In-process function call               | Command string in, parsed JSON out    | Throws on timeout/error                                                         |
+| Sandbox -> filesystem      | In-process fs.readFileSync             | File path in, string/Buffer out       | Throws on missing file                                                          |
+| Sandbox -> git             | child_process.spawnSync (shell: false) | Pattern string in, parsed matches out | Returns empty on no matches; Node.js built-in fallback for non-git environments |
+| Command -> workspace index | fs.readFileSync + JSON.parse           | File path in, JSON object out         | Error if index missing                                                          |
+| Indexer -> Nx CLI          | child_process.execSync                 | Nx command in, JSON stdout out        | Throws on timeout/failure                                                       |
 
 ### External Dependencies
 
-| External | How Used | Failure Mode | Graceful Degradation |
-|----------|----------|--------------|----------------------|
-| Nx CLI | workspace-indexer, nx-runner | Missing or incompatible version | Plugin non-functional (Nx is a hard dependency) |
-| Git | search() REPL global | Missing git binary | Falls back to Node.js built-in (fs.globSync + readFileSync + regex); other globals still work |
-| Filesystem | read() REPL global, index I/O | Permission errors, missing files | Error surfaces in SandboxResult |
-| Claude Code subagent system | Agent tool spawning (no direct API calls) | Rate limits, network errors | Claude Code handles retries internally; flat-rate subscriptions (Team, Max) only |
+| External                    | How Used                                  | Failure Mode                     | Graceful Degradation                                                                          |
+| --------------------------- | ----------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------- |
+| Nx CLI                      | workspace-indexer, nx-runner              | Missing or incompatible version  | Plugin non-functional (Nx is a hard dependency)                                               |
+| Git                         | search() REPL global                      | Missing git binary               | Falls back to Node.js built-in (fs.globSync + readFileSync + regex); other globals still work |
+| Filesystem                  | read() REPL global, index I/O             | Permission errors, missing files | Error surfaces in SandboxResult                                                               |
+| Claude Code subagent system | Agent tool spawning (no direct API calls) | Rate limits, network errors      | Claude Code handles retries internally; flat-rate subscriptions (Team, Max) only              |
 
 ## Scalability Considerations
 
-| Concern | 10 projects | 100 projects | 537+ projects |
-|---------|-------------|--------------|---------------|
-| Index build time | <1s | ~3s | 10-30s (full), <2s (incremental) |
-| Index file size | ~2KB | ~10KB | ~50-100KB |
-| Index parse time | <1ms | ~5ms | ~15ms |
-| search() scope | Global OK | Scope to project roots | Must scope to project roots |
-| Agent context usage | ~5K tokens (index summary) | ~8K tokens | ~15-25K tokens (summary only) |
-| Handle store entries | Rarely needed | Occasionally | Frequently (search returns 100+ results) |
-| Session state file | <1KB | ~5KB | ~20KB (with handles) |
+| Concern              | 10 projects                | 100 projects           | 537+ projects                            |
+| -------------------- | -------------------------- | ---------------------- | ---------------------------------------- |
+| Index build time     | <1s                        | ~3s                    | 10-30s (full), <2s (incremental)         |
+| Index file size      | ~2KB                       | ~10KB                  | ~50-100KB                                |
+| Index parse time     | <1ms                       | ~5ms                   | ~15ms                                    |
+| search() scope       | Global OK                  | Scope to project roots | Must scope to project roots              |
+| Agent context usage  | ~5K tokens (index summary) | ~8K tokens             | ~15-25K tokens (summary only)            |
+| Handle store entries | Rarely needed              | Occasionally           | Frequently (search returns 100+ results) |
+| Session state file   | <1KB                       | ~5KB                   | ~20KB (with handles)                     |
 
 ### First Bottleneck: Index Build Time
 
@@ -806,5 +808,6 @@ Mitigation: Output truncation (2KB per turn), handle store (large results compre
 - Previous Architecture: `.planning/research/ARCHITECTURE.md` (this file, prior version) -- layered system, component boundaries, build order
 
 ---
-*Architecture research for: RLM-powered Nx Claude Code plugin*
-*Researched: 2026-03-03*
+
+_Architecture research for: RLM-powered Nx Claude Code plugin_
+_Researched: 2026-03-03_

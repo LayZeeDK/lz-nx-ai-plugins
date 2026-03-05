@@ -29,10 +29,10 @@
 
 **Context Availability by Platform**:
 
-| Platform           | 200K Context | 1M Context       | Recommendation                                |
-| ------------------ | ------------ | ---------------- | --------------------------------------------- |
-| **Claude Code**    | ✅ Available | ✅ **Available** | Use 1M for large features (>200K tokens)      |
-| **API Standard**   | ✅ Available | ❌ Not Available | Use progressive disclosure for large features |
+| Platform         | 200K Context | 1M Context       | Recommendation                                |
+| ---------------- | ------------ | ---------------- | --------------------------------------------- |
+| **Claude Code**  | ✅ Available | ✅ **Available** | Use 1M for large features (>200K tokens)      |
+| **API Standard** | ✅ Available | ❌ Not Available | Use progressive disclosure for large features |
 
 **For Claude Code Users**:
 

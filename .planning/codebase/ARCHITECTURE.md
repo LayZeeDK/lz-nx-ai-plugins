@@ -7,6 +7,7 @@
 **Overall:** Layered Claude Code plugin system with RLM (Recursive Language Model) execution core
 
 **Key Characteristics:**
+
 - "Scripts at the bottom, agents at the top": deterministic Node.js scripts form the foundation; Claude Code agents drive LLM-powered workflows on top
 - Zero external npm dependencies -- all components use Node.js 24 LTS built-in modules only
 - Context externalization pattern: intermediate exploration results never enter the main conversation; only distilled `FINAL()` answers cross the boundary
@@ -17,6 +18,7 @@
 ## Layers
 
 **User Layer (Claude Code conversation):**
+
 - Purpose: Entry points for user interaction -- slash commands and skills exposed by the plugin
 - Location: `plugins/lz-nx.rlm/commands/` (deterministic commands -- scripts make no LLM calls, but Claude Code still processes the invocation), `plugins/lz-nx.rlm/skills/` (RLM-powered skills)
 - Contains: Markdown files with frontmatter that Claude Code parses for command/skill registration
@@ -24,6 +26,7 @@
 - Used by: End users typing slash commands in Claude Code
 
 **Agent Layer:**
+
 - Purpose: Drive LLM execution loops and perform model-routed work
 - Location: `plugins/lz-nx.rlm/agents/`
 - Contains: `repl-executor.md` (Sonnet agent, drives fill/solve loop), `haiku-searcher.md` (Haiku agent, mechanical search sub-calls)
@@ -31,6 +34,7 @@
 - Used by: Skills (skills instruct Claude to spawn agents as subagents)
 
 **REPL Sandbox:**
+
 - Purpose: Execute LLM-generated JavaScript in an isolated Node.js VM context; keep intermediate results out of conversation context
 - Location: `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs`
 - Contains: `node:vm` context with workspace-aware globals; handle store integration; variable persistence via `const/let` -> `globalThis` transformation
@@ -38,6 +42,7 @@
 - Used by: Agent layer (repl-executor agent invokes sandbox per REPL turn)
 
 **Foundation Scripts:**
+
 - Purpose: Deterministic Node.js scripts that build and query the workspace index (no LLM calls in scripts)
 - Location: `plugins/lz-nx.rlm/scripts/`
 - Contains: `workspace-indexer.mjs`, `path-resolver.mjs`, `nx-runner.mjs`, `handle-store.mjs`, `rlm-config.mjs`
@@ -45,6 +50,7 @@
 - Used by: REPL sandbox (as injected globals), commands (directly via Bash tool), agents
 
 **External:**
+
 - Nx CLI (`nx show projects --json`, `nx graph --print`, `nx show project <name>`)
 - Filesystem (file reading, glob matching)
 - Git (`git grep` via `spawnSync` with `shell: false` for `search()` REPL global; Node.js built-in fallback for non-git environments)
@@ -85,6 +91,7 @@
 7. Only materialized preview data enters LLM context
 
 **State Management:**
+
 - Workspace index: JSON file (`workspace-index.json`) built once per session by `workspace-indexer.mjs`; read-only during REPL execution
 - Handle store: in-memory `Map<string, unknown[]>` scoped to one REPL session; discarded when sandbox is reset
 - REPL variable state: `globalThis` properties on the vm context; persisted across turns within one execution loop
@@ -93,6 +100,7 @@
 ## Key Abstractions
 
 **WorkspaceIndex:**
+
 - Purpose: Structured representation of the entire Nx monorepo as a JSON-serializable object; the primary navigable variable in the REPL
 - Examples: `plugins/lz-nx.rlm/scripts/workspace-indexer.mjs` (builder), loaded as `workspace` REPL global
 - Schema:
@@ -110,22 +118,26 @@
   ```
 
 **REPL Globals (Sandbox API):**
+
 - Purpose: Workspace-aware functions injected into the vm context; the interface between LLM-generated code and the underlying data
 - Examples: defined in `plugins/lz-nx.rlm/scripts/repl-sandbox.mjs`
 - Key globals: `workspace`, `projects`, `deps(name)`, `dependents(name)`, `read(path, start?, end?)`, `files(glob)`, `search(pattern, paths?)`, `nx(command)`, `llm_query(prompt)`, `FINAL(answer)`, `FINAL_VAR(name)`, `print(...args)`, `SHOW_VARS()`
 
 **Handle:**
+
 - Purpose: Lightweight reference to a large result set stored server-side; prevents large arrays from entering LLM context
 - Examples: defined in `plugins/lz-nx.rlm/scripts/handle-store.mjs`
 - Pattern: auto-incrementing names (`$res1`, `$res2`); stub format `"$res1: Array(537) [preview...]"`
 - Operations: `store(data)`, `get(handle)`, `stub(handle)`, `preview(handle, n)`, `filter(handle, predicate)`, `count(handle)`
 
 **RLM Execution Loop:**
+
 - Purpose: The fill/solve cycle -- LLM generates code (fill), sandbox executes and appends result (solve), repeat until `FINAL()` or guardrail
 - Examples: implemented in `repl-executor` agent (`plugins/lz-nx.rlm/agents/repl-executor.md`) using Bash tool to invoke `repl-sandbox.mjs`
 - Guardrails: `maxIterations` (default 20), `maxConsecutiveErrors` (default 3), `maxTimeout` (default 120s), `maxDepth` (default 2)
 
 **Claude Code Plugin Manifest:**
+
 - Purpose: Declares plugin identity, version, and auto-registration metadata for Claude Code discovery
 - Examples: `plugins/lz-nx.rlm/.claude-plugin/plugin.json`
 - Pattern: Standard Claude Code plugin structure per `AGENTS.md` conventions
@@ -133,26 +145,31 @@
 ## Entry Points
 
 **`/lz-nx.rlm:explore` skill:**
+
 - Location: `plugins/lz-nx.rlm/skills/explore/SKILL.md` (planned)
 - Triggers: User invokes `/lz-nx.rlm:explore "question"` in Claude Code
 - Responsibilities: Accept natural language question, instruct Claude to spawn `repl-executor` subagent, surface only the `FINAL()` answer to conversation
 
 **`/lz-nx.rlm:deps` command:**
+
 - Location: `plugins/lz-nx.rlm/commands/deps.md` (planned)
 - Triggers: User invokes `/lz-nx.rlm:deps <project-name>`
 - Responsibilities: Run `node scripts/deps-tree.mjs <project>`, print dependency tree from workspace index (deterministic script)
 
 **`/lz-nx.rlm:find` command:**
+
 - Location: `plugins/lz-nx.rlm/commands/find.md` (planned)
 - Triggers: User invokes `/lz-nx.rlm:find <pattern>`
 - Responsibilities: Search files scoped to Nx project source roots using workspace index (deterministic script)
 
 **`/lz-nx.rlm:alias` command:**
+
 - Location: `plugins/lz-nx.rlm/commands/alias.md` (planned)
 - Triggers: User invokes `/lz-nx.rlm:alias <input>`
 - Responsibilities: Bidirectional tsconfig path alias resolution (alias <-> filesystem path) (deterministic script)
 
 **`repl-executor` agent:**
+
 - Location: `plugins/lz-nx.rlm/agents/repl-executor.md` (planned)
 - Triggers: Spawned by `explore` skill (and future skills) as a Claude Code subagent
 - Responsibilities: Drive RLM fill/solve execution loop on Sonnet; isolate intermediate exploration from parent conversation
@@ -163,6 +180,7 @@
 **Strategy:** Errors returned to LLM for self-correction; consecutive error counter halts on repeated failures
 
 **Patterns:**
+
 - Sandbox execution errors are appended as user messages: `"Error: <message>\nFix the error and try again."` -- allows LLM to self-correct
 - `maxConsecutiveErrors` (default 3) aborts loop after N back-to-back failures: `"[ERROR] Aborted after 3 consecutive errors."`
 - `maxIterations` (default 20) halts loop with: `"[ERROR] Max iterations reached without FINAL answer."`
@@ -190,4 +208,4 @@
 
 ---
 
-*Architecture analysis: 2026-03-03*
+_Architecture analysis: 2026-03-03_

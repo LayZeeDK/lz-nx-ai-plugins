@@ -108,17 +108,17 @@ Three cooperating pieces [[docs-main], [docs-client], [repo-rlm]]:
 
 **REPL globals available to model code:**
 
-| Global | Purpose |
-|--------|---------|
-| `context` | The input prompt as a string variable |
-| `llm_query(prompt, model=None)` | Single LM completion, returns string |
-| `llm_query_batched(prompts, model=None)` | Parallel LM completions |
-| `rlm_query(prompt, model=None)` | Recursive sub-call (child gets own REPL) |
-| `rlm_query_batched(prompts, model=None)` | Concurrent recursive sub-calls |
-| `FINAL(answer)` | Mark final answer (direct string) |
-| `FINAL_VAR(var_name)` | Mark final answer (from REPL variable) |
-| `SHOW_VARS()` | List user-created variables |
-| `custom_tools` | User-provided functions/data |
+| Global                                   | Purpose                                  |
+| ---------------------------------------- | ---------------------------------------- |
+| `context`                                | The input prompt as a string variable    |
+| `llm_query(prompt, model=None)`          | Single LM completion, returns string     |
+| `llm_query_batched(prompts, model=None)` | Parallel LM completions                  |
+| `rlm_query(prompt, model=None)`          | Recursive sub-call (child gets own REPL) |
+| `rlm_query_batched(prompts, model=None)` | Concurrent recursive sub-calls           |
+| `FINAL(answer)`                          | Mark final answer (direct string)        |
+| `FINAL_VAR(var_name)`                    | Mark final answer (from REPL variable)   |
+| `SHOW_VARS()`                            | List user-created variables              |
+| `custom_tools`                           | User-provided functions/data             |
 
 **Wire protocol (LMHandler):** 4-byte big-endian length prefix + UTF-8 JSON payload over TCP socket. Each `completion()` call spawns a fresh handler on an OS-assigned port [[repo-rlm]].
 
@@ -137,30 +137,35 @@ The transition is learned implicitly by the model based on the task.
 Without explicit training, RLMs naturally develop these patterns [[paper], [blog-zhang], [blog-tds]]:
 
 **Peeking:** Look at the first N characters to understand structure.
+
 ```python
 peek = context[:2000]
 print(peek)
 ```
 
 **Grepping:** Use regex to filter context without loading all of it.
+
 ```python
 import re
 matches = re.findall(r"keyword.*", context)
 ```
 
 **Partition + Map:** Chunk context and sub-call for semantic work on each chunk.
+
 ```python
 chunks = [context[i:i+10000] for i in range(0, len(context), 10000)]
 results = [llm_query(f"Classify: {chunk}") for chunk in chunks]
 ```
 
 **Summarization:** Compress subsets for final aggregation.
+
 ```python
 summaries = [llm_query(f"Summarize: {doc}") for doc in documents]
 final = llm_query(f"Combine: {summaries}")
 ```
 
 **Long output construction:** Build unbounded output in a REPL variable.
+
 ```python
 output_buffer = ""
 for chunk in context_chunks:
@@ -216,11 +221,11 @@ The current paper explores only `max_depth=1`. Deeper recursion is architectural
 
 Detailed in [[docs-repl], [docs-local], [docs-docker], [docs-modal]].
 
-| Environment | Isolation | Speed | Use Case |
-|-------------|-----------|-------|----------|
-| **LocalREPL** | Soft sandbox (shared process, restricted builtins) | Fastest | Development, trusted code |
-| **DockerREPL** | Process-level (container on host) | Medium | CI/CD, reproducibility |
-| **ModalREPL** | Full isolation (cloud VM) | Slowest | Production, untrusted code |
+| Environment    | Isolation                                          | Speed   | Use Case                   |
+| -------------- | -------------------------------------------------- | ------- | -------------------------- |
+| **LocalREPL**  | Soft sandbox (shared process, restricted builtins) | Fastest | Development, trusted code  |
+| **DockerREPL** | Process-level (container on host)                  | Medium  | CI/CD, reproducibility     |
+| **ModalREPL**  | Full isolation (cloud VM)                          | Slowest | Production, untrusted code |
 
 ### LocalREPL
 
@@ -259,6 +264,7 @@ rlm = RLM(
 ```
 
 Model code can then specify:
+
 ```python
 result1 = llm_query(prompt)                        # Uses default (gpt-5)
 result2 = llm_query(prompt, model="claude-haiku-4") # Uses cheaper model
@@ -270,24 +276,24 @@ The LMHandler routes based on depth + explicit model override, enabling expensiv
 
 Key parameters from the official `RLM` constructor [[docs-client], [repo-rlm]]:
 
-| Parameter | Default | Purpose |
-|-----------|---------|---------|
-| `backend` | `"openai"` | LM provider |
-| `environment` | `"local"` | Execution environment |
-| `max_depth` | `1` | Max recursion depth |
-| `max_iterations` | `30` | Max REPL iterations per completion |
-| `max_budget` | `None` | Max USD cost |
-| `max_timeout` | `None` | Max wall-clock seconds |
-| `max_tokens` | `None` | Max total tokens (input + output) |
-| `max_errors` | `None` | Max consecutive REPL errors |
-| `persistent` | `False` | Reuse environment across completions |
-| `compaction` | `False` | Auto-summarize when context fills |
-| `compaction_threshold_pct` | `0.85` | Fraction that triggers compaction |
-| `custom_tools` | `None` | Functions/data injected into REPL |
-| `on_subcall_start` | `None` | Callback: (depth, model, prompt_preview) |
-| `on_subcall_complete` | `None` | Callback: (depth, model, duration, error) |
-| `verbose` | `False` | Enable console output |
-| `logger` | `None` | Trajectory capture (RLMLogger) |
+| Parameter                  | Default    | Purpose                                   |
+| -------------------------- | ---------- | ----------------------------------------- |
+| `backend`                  | `"openai"` | LM provider                               |
+| `environment`              | `"local"`  | Execution environment                     |
+| `max_depth`                | `1`        | Max recursion depth                       |
+| `max_iterations`           | `30`       | Max REPL iterations per completion        |
+| `max_budget`               | `None`     | Max USD cost                              |
+| `max_timeout`              | `None`     | Max wall-clock seconds                    |
+| `max_tokens`               | `None`     | Max total tokens (input + output)         |
+| `max_errors`               | `None`     | Max consecutive REPL errors               |
+| `persistent`               | `False`    | Reuse environment across completions      |
+| `compaction`               | `False`    | Auto-summarize when context fills         |
+| `compaction_threshold_pct` | `0.85`     | Fraction that triggers compaction         |
+| `custom_tools`             | `None`     | Functions/data injected into REPL         |
+| `on_subcall_start`         | `None`     | Callback: (depth, model, prompt_preview)  |
+| `on_subcall_complete`      | `None`     | Callback: (depth, model, duration, error) |
+| `verbose`                  | `False`    | Enable console output                     |
+| `logger`                   | `None`     | Trajectory capture (RLMLogger)            |
 
 ## 11. Performance and Benchmarks
 
@@ -320,14 +326,14 @@ Key parameters from the official `RLM` constructor [[docs-client], [repo-rlm]]:
 
 ## 12. RLM vs. Other Paradigms
 
-| Approach | Context Handling | Decomposition | Expressiveness |
-|----------|-----------------|---------------|----------------|
-| **Standard LLM** | Full prompt in window | None | Single pass |
-| **RAG** | Pre-retrieval, passive | Embedding similarity | Limited to retrieved chunks |
-| **ReAct/CodeAct agents** | Full context + action verbalization | Hand-engineered tool calls | ~10-100 explicit actions |
-| **MemGPT** | Deferred context management within single window | LM-driven but single-level | Same window constraints |
-| **Context folding/summarization** | Upfront compression | Lossy | Information loss |
-| **RLM** | External variable, never in window | Code-driven, recursive | Omega(|P|) or Omega(|P|^2) processes |
+| Approach                          | Context Handling                                 | Decomposition              | Expressiveness              |
+| --------------------------------- | ------------------------------------------------ | -------------------------- | --------------------------- | --- | ----------- | --- | ------------- |
+| **Standard LLM**                  | Full prompt in window                            | None                       | Single pass                 |
+| **RAG**                           | Pre-retrieval, passive                           | Embedding similarity       | Limited to retrieved chunks |
+| **ReAct/CodeAct agents**          | Full context + action verbalization              | Hand-engineered tool calls | ~10-100 explicit actions    |
+| **MemGPT**                        | Deferred context management within single window | LM-driven but single-level | Same window constraints     |
+| **Context folding/summarization** | Upfront compression                              | Lossy                      | Information loss            |
+| **RLM**                           | External variable, never in window               | Code-driven, recursive     | Omega(                      | P   | ) or Omega( | P   | ^2) processes |
 
 Key differentiator: RLMs enable **symbolic recursion inside code** — the model can write loops that spawn hundreds or thousands of sub-calls, while agents can only verbally specify a few actions per turn.
 
@@ -357,12 +363,12 @@ Yogthos's Matryoshka project [[blog-yogthos], [repo-matryoshka]] highlights an u
 
 Prime Intellect ran comprehensive ablations across GPT-5-mini, GLM 4.6, GLM 4.5 Air, and INTELLECT-3:
 
-| Task Type | RLM Effect | Notes |
-|-----------|------------|-------|
-| **DeepDive (web research)** | Strong improvement | Sub-LLMs handle verbose content, root stays clean |
-| **Oolong (long-context classification)** | Strong improvement | Real D&D data up to ~1.5M chars; maintains performance |
-| **Verbatim copy** | Moderate improvement | Iterative refinement helps; higher token cost |
-| **Math-python** | **Regression** | Models not trained to use sub-LLMs for verification |
+| Task Type                                | RLM Effect           | Notes                                                  |
+| ---------------------------------------- | -------------------- | ------------------------------------------------------ |
+| **DeepDive (web research)**              | Strong improvement   | Sub-LLMs handle verbose content, root stays clean      |
+| **Oolong (long-context classification)** | Strong improvement   | Real D&D data up to ~1.5M chars; maintains performance |
+| **Verbatim copy**                        | Moderate improvement | Iterative refinement helps; higher token cost          |
+| **Math-python**                          | **Regression**       | Models not trained to use sub-LLMs for verification    |
 
 Key finding: **environment tips (strategy hints in system prompt) significantly improve RLM performance**. Without tips, RLM sometimes underperforms base LLM. With tips, models properly decompose and delegate.
 
@@ -385,6 +391,7 @@ Eight existing implementations were analyzed. They fall into four architectural 
 ### Category 1: Full plugin with hooks + budget tracking
 
 **rand/rlm-claude-code** [[repo-rand], [spec-rand]] — The most comprehensive implementation.
+
 - Rust + Python hybrid; Go binaries for hooks (5ms startup vs 500ms Python)
 - Three-tier: intelligent orchestrator (complexity classifier), RLM execution engine, persistence layer
 - REPL with 20+ helper functions (peek, search, summarize, llm, map_reduce, find_relevant)
@@ -396,18 +403,21 @@ Eight existing implementations were analyzed. They fall into four architectural 
 ### Category 2: Skill + subagent scaffolds
 
 **brainqub3/claude_code_RLM** [[repo-brainqub3]] — Minimal scaffold (~200 lines).
+
 - Root LLM = main Claude conversation (Opus), sub-LLM = subagent (Haiku)
 - Persistent Python REPL with peek/search/chunk/find/summarize
 - State in `.claude/rlm_state/` directory
 - No budget tracking, no cross-session memory
 
 **BowTiedSwan/rlm-skill** [[repo-bowtied]] — Single file, filesystem-focused.
+
 - Two modes: native (grep/find/ripgrep) and strict (programmatic slicing)
 - Pipeline: Index -> Filter -> Map -> Reduce
 - Parallel background agents (one per file)
 - No memory, no budget
 
 **JaredStewart/coderlm** [[repo-coderlm]] — Rust HTTP server + tree-sitter indexing.
+
 - HTTP API: `/structure`, `/search`, `/impl`, `/callers`, `/grep`
 - Tree-sitter parses 7 languages for precise symbol queries
 - Multi-platform generator (Claude Code, Cursor, Windsurf, Copilot)
@@ -416,6 +426,7 @@ Eight existing implementations were analyzed. They fall into four architectural 
 ### Category 3: MCP servers
 
 **EncrEor/rlm-claude** [[repo-encreor]] — 14 MCP tools + MAGMA 4-graph.
+
 - Knowledge graph: semantic/temporal/causal/entity edges with Hebbian learning
 - Tiered search: keyword -> BM25 -> fuzzy -> semantic -> hybrid RRF
 - 3-zone lifecycle: Active -> Archive (gzip) -> Purge
@@ -423,12 +434,14 @@ Eight existing implementations were analyzed. They fall into four architectural 
 - 458 tests + 77 benchmarks
 
 **richardwhiteii/rlm** [[repo-richardwhite]] — 12 MCP tools, single-file server.
+
 - Context as named variables on disk
 - `rlm_exec` for deterministic operations; `rlm_sub_query` for semantic
 - Provider flexibility: Claude SDK or Ollama
 - Recursive depth control (0-5)
 
 **maydali28/memcp** [[repo-memcp]] — 24 MCP tools, most feature-complete.
+
 - MAGMA 4-graph with Hebbian learning + exponential decay
 - 6 chunking strategies; 5-tiered search with RRF
 - Sub-agents: Analyzer, Mapper (parallel), Synthesizer
@@ -436,6 +449,7 @@ Eight existing implementations were analyzed. They fall into four architectural 
 - 458 tests + 77 benchmarks
 
 **delonsp/rlm-mcp-server** [[repo-delonsp]] — Remote execution for massive files.
+
 - Docker Compose, SSH tunnel or public HTTPS
 - Persistent Python REPL on VPS
 - S3/Minio integration for enterprise repos
@@ -443,17 +457,17 @@ Eight existing implementations were analyzed. They fall into four architectural 
 
 ### Comparative summary
 
-| Feature | rand | brainqub3 | BowTiedSwan | coderlm | EncrEor | richardwhiteii | memcp | delonsp |
-|---------|------|-----------|-------------|---------|---------|----------------|-------|---------|
-| Type | Plugin | Skill+Agent | Skill | Rust Server | MCP | MCP | MCP | Remote |
-| Persistent Memory | SQLite | No | No | No | SQLite+Graph | Filesystem | SQLite+Graph | No |
-| Cross-Session | Yes | No | No | No | Yes | No | Yes | No |
-| Budget Tracking | Detailed | No | No | No | Implicit | Implicit | Implicit | Implicit |
-| Recursion Depth | 0-3 | Unbounded | 1 | 0-5 | None | 0-5 | None | Unbounded |
-| Sub-Agents | No | Yes | Yes | No | No | No | Yes | No |
-| Knowledge Graph | Hyperedges | No | No | No | MAGMA 4-graph | No | MAGMA 4-graph | No |
-| Search | Pattern | Substring | Keyword | Tree-sitter | Hybrid 5-tier | No | Hybrid 5-tier | Python |
-| Tests | 3200+ | ~0 | ~0 | Moderate | 458 | Moderate | 458 | Moderate |
+| Feature           | rand       | brainqub3   | BowTiedSwan | coderlm     | EncrEor       | richardwhiteii | memcp         | delonsp   |
+| ----------------- | ---------- | ----------- | ----------- | ----------- | ------------- | -------------- | ------------- | --------- |
+| Type              | Plugin     | Skill+Agent | Skill       | Rust Server | MCP           | MCP            | MCP           | Remote    |
+| Persistent Memory | SQLite     | No          | No          | No          | SQLite+Graph  | Filesystem     | SQLite+Graph  | No        |
+| Cross-Session     | Yes        | No          | No          | No          | Yes           | No             | Yes           | No        |
+| Budget Tracking   | Detailed   | No          | No          | No          | Implicit      | Implicit       | Implicit      | Implicit  |
+| Recursion Depth   | 0-3        | Unbounded   | 1           | 0-5         | None          | 0-5            | None          | Unbounded |
+| Sub-Agents        | No         | Yes         | Yes         | No          | No            | No             | Yes           | No        |
+| Knowledge Graph   | Hyperedges | No          | No          | No          | MAGMA 4-graph | No             | MAGMA 4-graph | No        |
+| Search            | Pattern    | Substring   | Keyword     | Tree-sitter | Hybrid 5-tier | No             | Hybrid 5-tier | Python    |
+| Tests             | 3200+      | ~0          | ~0          | Moderate    | 458           | Moderate       | 458           | Moderate  |
 
 ### Design patterns worth noting
 
@@ -470,6 +484,7 @@ Five Node.js/TypeScript implementations were analyzed for reusable patterns [[re
 ### Sandbox approaches
 
 **Node.js VM module** [[repo-hampton], [repo-rllm]]:
+
 - Uses built-in `vm.createContext()` for isolation
 - No subprocess overhead, fast startup (<5ms)
 - True async/await support via Promise-based callbacks
@@ -478,11 +493,13 @@ Five Node.js/TypeScript implementations were analyzed for reusable patterns [[re
 - State persistence: transform `const x = 5` -> `globalThis.x = 5`
 
 **V8 isolates** [[repo-rllm]]:
+
 - Stricter isolation than VM module (prevents prototype pollution)
 - Better for untrusted code
 - More complex bindings
 
 **Child process + REPL** [[repo-opencode]]:
+
 - Spawns Bun subprocess with persistent REPL session
 - IPC communication via JSON messages
 - True subprocess isolation (can't crash host)
@@ -521,28 +538,32 @@ for (let i = 0; i < maxIterations; i++) {
   const result = await sandbox.execute(code);
   const final = sandbox.getFinalAnswer();
   if (final) return final;
-  messages.push({ role: "user", content: formatResult(result) });
+  messages.push({ role: 'user', content: formatResult(result) });
 }
 ```
 
 ### Handle-based result storage [[repo-matryoshka]]
 
 Large result arrays stored in SQLite, only handle stubs passed to the LLM:
+
 ```
 // Instead of: Array[1000 objects] = 15,000 tokens
 // Return:     "$res1: Array(1000) [preview...]" = 50 tokens
 ```
+
 Operations chain on server; only materialize what's needed. Claims 97% token savings.
 
 ### Symbolic execution [[repo-matryoshka], [blog-yogthos]]
 
 Alternative to arbitrary code: constrained S-expression language:
+
 ```scheme
 (grep "SALES_DATA")
 (filter RESULTS (lambda x (match x "NORTH" 0)))
 (sum RESULTS)
 <<<FINAL>>>13000000<<<END>>>
 ```
+
 Reduced entropy (smaller valid output space), type-safe at parse time, works with 7B models.
 
 ### Cost tracking pattern
@@ -563,11 +584,11 @@ class CostTracker {
 
 ```typescript
 type RLMEvent =
-  | { type: "iteration_start", iteration: number }
-  | { type: "llm_query_start", prompt: string }
-  | { type: "code_execution_start", code: string }
-  | { type: "code_execution_end", output: string, error?: string }
-  | { type: "final_answer", answer: string };
+  | { type: 'iteration_start'; iteration: number }
+  | { type: 'llm_query_start'; prompt: string }
+  | { type: 'code_execution_start'; code: string }
+  | { type: 'code_execution_end'; output: string; error?: string }
+  | { type: 'final_answer'; answer: string };
 ```
 
 ## 16. Limitations and Open Problems
@@ -643,6 +664,7 @@ These are observations distilled from the research, not design decisions.
 ### The training gap is the elephant in the room [[paper], [blog-pi]]
 
 Current models aren't trained to use RLM optimally. A plugin can mitigate this through:
+
 - Careful system prompt engineering (model-specific)
 - Strategy hints in the REPL environment
 - Guardrails (max iterations, budget limits, error thresholds)
@@ -654,74 +676,75 @@ Current models aren't trained to use RLM optimally. A plugin can mitigate this t
 
 ### Paper
 
-| Ref | File | Source |
-|-----|------|--------|
+| Ref     | File                                                                                   | Source                                                       |
+| ------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | [paper] | [paper-arxiv--recursive-language-models.md](paper-arxiv--recursive-language-models.md) | [arxiv.org/abs/2512.24601](https://arxiv.org/abs/2512.24601) |
 
 ### Official Documentation
 
-| Ref | File | Page |
-|-----|------|------|
-| [docs-main] | [docs-rlm--recursive-language-models.md](docs-rlm--recursive-language-models.md) | Main page |
-| [docs-client] | [docs-rlm--using-the-rlm-client.md](docs-rlm--using-the-rlm-client.md) | Using the RLM Client |
-| [docs-backends] | [docs-rlm--backends.md](docs-rlm--backends.md) | Backends |
-| [docs-repl] | [docs-rlm--repl-environments.md](docs-rlm--repl-environments.md) | REPL Environments |
-| [docs-local] | [docs-rlm--local-repl.md](docs-rlm--local-repl.md) | LocalREPL |
-| [docs-docker] | [docs-rlm--docker-repl.md](docs-rlm--docker-repl.md) | DockerREPL |
-| [docs-modal] | [docs-rlm--modal-repl.md](docs-rlm--modal-repl.md) | ModalREPL |
-| [docs-viz] | [docs-rlm--visualizing-rlm-trajectories.md](docs-rlm--visualizing-rlm-trajectories.md) | Visualizing Trajectories |
+| Ref             | File                                                                                   | Page                     |
+| --------------- | -------------------------------------------------------------------------------------- | ------------------------ |
+| [docs-main]     | [docs-rlm--recursive-language-models.md](docs-rlm--recursive-language-models.md)       | Main page                |
+| [docs-client]   | [docs-rlm--using-the-rlm-client.md](docs-rlm--using-the-rlm-client.md)                 | Using the RLM Client     |
+| [docs-backends] | [docs-rlm--backends.md](docs-rlm--backends.md)                                         | Backends                 |
+| [docs-repl]     | [docs-rlm--repl-environments.md](docs-rlm--repl-environments.md)                       | REPL Environments        |
+| [docs-local]    | [docs-rlm--local-repl.md](docs-rlm--local-repl.md)                                     | LocalREPL                |
+| [docs-docker]   | [docs-rlm--docker-repl.md](docs-rlm--docker-repl.md)                                   | DockerREPL               |
+| [docs-modal]    | [docs-rlm--modal-repl.md](docs-rlm--modal-repl.md)                                     | ModalREPL                |
+| [docs-viz]      | [docs-rlm--visualizing-rlm-trajectories.md](docs-rlm--visualizing-rlm-trajectories.md) | Visualizing Trajectories |
 
 ### Blog Posts & Articles
 
-| Ref | File | Source |
-|-----|------|--------|
-| [blog-zhang] | [blog-alex-zhang--recursive-language-models.md](blog-alex-zhang--recursive-language-models.md) | Alex L. Zhang |
-| [blog-pi] | [blog-prime-intellect--recursive-language-models-the-paradigm-of-2026.md](blog-prime-intellect--recursive-language-models-the-paradigm-of-2026.md) | Prime Intellect |
-| [blog-tds] | [blog-towards-data-science--going-beyond-the-context-window.md](blog-towards-data-science--going-beyond-the-context-window.md) | Towards Data Science |
-| [blog-neuron] | [blog-the-neuron--recursive-language-models-the-clever-hack.md](blog-the-neuron--recursive-language-models-the-clever-hack.md) | The Neuron |
-| [blog-ddds] | [blog-daily-dose-of-ds--recursive-language-models.md](blog-daily-dose-of-ds--recursive-language-models.md) | Daily Dose of Data Science |
-| [blog-tt] | [blog-techtalks--recursive-language-models.md](blog-techtalks--recursive-language-models.md) | TechTalks |
-| [blog-infoq] | [blog-infoq--mits-recursive-language-models.md](blog-infoq--mits-recursive-language-models.md) | InfoQ |
-| [blog-devto] | [blog-dev-to--bringing-rlm-to-typescript-building-rllm.md](blog-dev-to--bringing-rlm-to-typescript-building-rllm.md) | DEV Community |
-| [blog-yogthos] | [blog-yogthos--grounding-llms-with-recursive-code-execution.md](blog-yogthos--grounding-llms-with-recursive-code-execution.md) | yogthos.net |
+| Ref            | File                                                                                                                                               | Source                     |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| [blog-zhang]   | [blog-alex-zhang--recursive-language-models.md](blog-alex-zhang--recursive-language-models.md)                                                     | Alex L. Zhang              |
+| [blog-pi]      | [blog-prime-intellect--recursive-language-models-the-paradigm-of-2026.md](blog-prime-intellect--recursive-language-models-the-paradigm-of-2026.md) | Prime Intellect            |
+| [blog-tds]     | [blog-towards-data-science--going-beyond-the-context-window.md](blog-towards-data-science--going-beyond-the-context-window.md)                     | Towards Data Science       |
+| [blog-neuron]  | [blog-the-neuron--recursive-language-models-the-clever-hack.md](blog-the-neuron--recursive-language-models-the-clever-hack.md)                     | The Neuron                 |
+| [blog-ddds]    | [blog-daily-dose-of-ds--recursive-language-models.md](blog-daily-dose-of-ds--recursive-language-models.md)                                         | Daily Dose of Data Science |
+| [blog-tt]      | [blog-techtalks--recursive-language-models.md](blog-techtalks--recursive-language-models.md)                                                       | TechTalks                  |
+| [blog-infoq]   | [blog-infoq--mits-recursive-language-models.md](blog-infoq--mits-recursive-language-models.md)                                                     | InfoQ                      |
+| [blog-devto]   | [blog-dev-to--bringing-rlm-to-typescript-building-rllm.md](blog-dev-to--bringing-rlm-to-typescript-building-rllm.md)                               | DEV Community              |
+| [blog-yogthos] | [blog-yogthos--grounding-llms-with-recursive-code-execution.md](blog-yogthos--grounding-llms-with-recursive-code-execution.md)                     | yogthos.net                |
 
 ### Plugin Spec
 
-| Ref | File | Source |
-|-----|------|--------|
+| Ref         | File                                                                     | Source                    |
+| ----------- | ------------------------------------------------------------------------ | ------------------------- |
 | [spec-rand] | [docs-rand-rlm-claude-code--spec.md](docs-rand-rlm-claude-code--spec.md) | rand/rlm-claude-code spec |
 
 ### YouTube Videos
 
-| Ref | File | Channel |
-|-----|------|---------|
-| [yt-ax1] | [yt-alphaxiv--recursive-language-models-w-alex-zhang-1.md](yt-alphaxiv--recursive-language-models-w-alex-zhang-1.md) | alphaXiv |
-| [yt-ax2] | [yt-alphaxiv--recursive-language-models-w-alex-zhang-2.md](yt-alphaxiv--recursive-language-models-w-alex-zhang-2.md) | alphaXiv |
-| [yt-yacine] | [yt-deep-learning-with-yacine--exploring-recursive-language-models-with-alex-zhang.md](yt-deep-learning-with-yacine--exploring-recursive-language-models-with-alex-zhang.md) | Deep Learning with Yacine |
-| [yt-delta] | [yt-delta-institute--alex-zhang-recursive-language-model-creator.md](yt-delta-institute--alex-zhang-recursive-language-model-creator.md) | Delta Institute |
-| [yt-avb] | [yt-neural-breakdown-with-avb--recursive-language-models-lets-build-the-coolest-agents-ever.md](yt-neural-breakdown-with-avb--recursive-language-models-lets-build-the-coolest-agents-ever.md) | Neural Breakdown with AVB |
+| Ref         | File                                                                                                                                                                                           | Channel                   |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| [yt-ax1]    | [yt-alphaxiv--recursive-language-models-w-alex-zhang-1.md](yt-alphaxiv--recursive-language-models-w-alex-zhang-1.md)                                                                           | alphaXiv                  |
+| [yt-ax2]    | [yt-alphaxiv--recursive-language-models-w-alex-zhang-2.md](yt-alphaxiv--recursive-language-models-w-alex-zhang-2.md)                                                                           | alphaXiv                  |
+| [yt-yacine] | [yt-deep-learning-with-yacine--exploring-recursive-language-models-with-alex-zhang.md](yt-deep-learning-with-yacine--exploring-recursive-language-models-with-alex-zhang.md)                   | Deep Learning with Yacine |
+| [yt-delta]  | [yt-delta-institute--alex-zhang-recursive-language-model-creator.md](yt-delta-institute--alex-zhang-recursive-language-model-creator.md)                                                       | Delta Institute           |
+| [yt-avb]    | [yt-neural-breakdown-with-avb--recursive-language-models-lets-build-the-coolest-agents-ever.md](yt-neural-breakdown-with-avb--recursive-language-models-lets-build-the-coolest-agents-ever.md) | Neural Breakdown with AVB |
 
 ### GitHub Repositories (Local Clones)
 
-| Ref | Repository | Local Path |
-|-----|------------|------------|
-| [repo-rlm] | alexzhang13/rlm | D:/projects/github/alexzhang13/rlm |
-| [repo-minimal] | alexzhang13/rlm-minimal | D:/projects/github/alexzhang13/rlm-minimal |
-| [repo-fast] | avbiswas/fast-rlm | D:/projects/github/avbiswas/fast-rlm |
-| [repo-recursive-llm] | ysz/recursive-llm | D:/projects/github/ysz/recursive-llm |
-| [repo-hampton] | hampton-io/RLM | D:/projects/github/hampton-io/RLM |
-| [repo-rllm] | code-rabi/rllm | D:/projects/github/code-rabi/rllm |
-| [repo-opencode] | itsrainingmani/opencode-rlm | D:/projects/github/itsrainingmani/opencode-rlm |
-| [repo-matryoshka] | yogthos/Matryoshka | D:/projects/github/yogthos/Matryoshka |
-| [repo-scratchpad] | knot0-com/repl-scratchpad | D:/projects/github/knot0-com/repl-scratchpad |
-| [repo-rand] | rand/rlm-claude-code | D:/projects/github/rand/rlm-claude-code |
-| [repo-brainqub3] | brainqub3/claude_code_RLM | D:/projects/github/brainqub3/claude_code_RLM |
-| [repo-bowtied] | BowTiedSwan/rlm-skill | D:/projects/github/BowTiedSwan/rlm-skill |
-| [repo-coderlm] | JaredStewart/coderlm | D:/projects/github/JaredStewart/coderlm |
-| [repo-encreor] | EncrEor/rlm-claude | D:/projects/github/EncrEor/rlm-claude |
-| [repo-richardwhite] | richardwhiteii/rlm | D:/projects/github/richardwhiteii/rlm |
-| [repo-memcp] | maydali28/memcp | D:/projects/github/maydali28/memcp |
-| [repo-delonsp] | delonsp/rlm-mcp-server | D:/projects/github/delonsp/rlm-mcp-server |
+| Ref                  | Repository                  | Local Path                                     |
+| -------------------- | --------------------------- | ---------------------------------------------- |
+| [repo-rlm]           | alexzhang13/rlm             | D:/projects/github/alexzhang13/rlm             |
+| [repo-minimal]       | alexzhang13/rlm-minimal     | D:/projects/github/alexzhang13/rlm-minimal     |
+| [repo-fast]          | avbiswas/fast-rlm           | D:/projects/github/avbiswas/fast-rlm           |
+| [repo-recursive-llm] | ysz/recursive-llm           | D:/projects/github/ysz/recursive-llm           |
+| [repo-hampton]       | hampton-io/RLM              | D:/projects/github/hampton-io/RLM              |
+| [repo-rllm]          | code-rabi/rllm              | D:/projects/github/code-rabi/rllm              |
+| [repo-opencode]      | itsrainingmani/opencode-rlm | D:/projects/github/itsrainingmani/opencode-rlm |
+| [repo-matryoshka]    | yogthos/Matryoshka          | D:/projects/github/yogthos/Matryoshka          |
+| [repo-scratchpad]    | knot0-com/repl-scratchpad   | D:/projects/github/knot0-com/repl-scratchpad   |
+| [repo-rand]          | rand/rlm-claude-code        | D:/projects/github/rand/rlm-claude-code        |
+| [repo-brainqub3]     | brainqub3/claude_code_RLM   | D:/projects/github/brainqub3/claude_code_RLM   |
+| [repo-bowtied]       | BowTiedSwan/rlm-skill       | D:/projects/github/BowTiedSwan/rlm-skill       |
+| [repo-coderlm]       | JaredStewart/coderlm        | D:/projects/github/JaredStewart/coderlm        |
+| [repo-encreor]       | EncrEor/rlm-claude          | D:/projects/github/EncrEor/rlm-claude          |
+| [repo-richardwhite]  | richardwhiteii/rlm          | D:/projects/github/richardwhiteii/rlm          |
+| [repo-memcp]         | maydali28/memcp             | D:/projects/github/maydali28/memcp             |
+| [repo-delonsp]       | delonsp/rlm-mcp-server      | D:/projects/github/delonsp/rlm-mcp-server      |
 
 ### Plugin Spec
+
 - [rand/rlm-claude-code spec](https://github.com/rand/rlm-claude-code/blob/main/rlm-claude-code-spec.md)

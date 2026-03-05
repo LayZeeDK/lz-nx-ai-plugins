@@ -5,6 +5,7 @@
 > Site: Code With Seb Blog
 
 ---
+
 Anthropic's internal tests show multi-agent systems outperform single agents by 90%. But most tutorials stop at YAML configs. Here's how to build production-ready orchestrator patterns with cost optimization and debugging techniques that actually work.
 
 ## Table of contents
@@ -101,10 +102,10 @@ A subagent is a specialized AI assistant that runs in its own context window. Th
 
 Each subagent gets:
 
--   **Its own 200K context window** (fresh, uncluttered)
--   **Custom system prompt** (domain-specific instructions)
--   **Tool restrictions** (only what it needs)
--   **Independent permissions** (sandboxed execution)
+- **Its own 200K context window** (fresh, uncluttered)
+- **Custom system prompt** (domain-specific instructions)
+- **Tool restrictions** (only what it needs)
+- **Independent permissions** (sandboxed execution)
 
 The key insight: subagents cannot spawn their own subagents. This prevents infinite nesting and keeps the architecture predictable.
 
@@ -165,9 +166,9 @@ Build custom subagents when:
 
 **Don't build custom subagents when:**
 
--   Built-in agents already handle your use case
--   You're doing one-off tasks
--   You want the agent to do implementation work (more on this below)
+- Built-in agents already handle your use case
+- You're doing one-off tasks
+- You want the agent to do implementation work (more on this below)
 
 ## The Orchestrator-Worker Pattern: Anthropic's Secret Sauce
 
@@ -205,10 +206,10 @@ async function researchTask(query: string) {
 
 Subagents are Markdown files with YAML frontmatter. Location determines scope:
 
-| Location | Scope |
-| --- | --- |
+| Location            | Scope                     |
+| ------------------- | ------------------------- |
 | `~/.claude/agents/` | All projects (user-level) |
-| `.claude/agents/` | Current project only |
+| `.claude/agents/`   | Current project only      |
 
 ### Basic Structure
 
@@ -278,11 +279,11 @@ This is where most developers leave money on the table. Strategic model selectio
 
 ### The Decision Matrix
 
-| Task Type | Model | Why |
-| --- | --- | --- |
-| Code review, linting, docs | **Haiku** | Fast, cheap, patterns are well-defined |
+| Task Type                     | Model      | Why                                            |
+| ----------------------------- | ---------- | ---------------------------------------------- |
+| Code review, linting, docs    | **Haiku**  | Fast, cheap, patterns are well-defined         |
 | Multi-file changes, debugging | **Sonnet** | Balanced reasoning, Anthropic's recommendation |
-| Architecture, novel problems | **Opus** | Deep reasoning, worth the 5x premium |
+| Architecture, novel problems  | **Opus**   | Deep reasoning, worth the 5x premium           |
 
 ### Dynamic Selection in Practice
 
@@ -305,11 +306,11 @@ tools: [Read, Grep, Glob, Bash]
 
 From production benchmarks:
 
-| Agent Config | Time | Cost | Accuracy |
-| --- | --- | --- | --- |
-| Haiku 4.5 | 8s | $0.03 | 60% |
-| Sonnet 4.5 | 45s | $0.24 | 85% |
-| Opus 4.5 | 2min | $1.20 | 95% |
+| Agent Config | Time | Cost  | Accuracy |
+| ------------ | ---- | ----- | -------- |
+| Haiku 4.5    | 8s   | $0.03 | 60%      |
+| Sonnet 4.5   | 45s  | $0.24 | 85%      |
+| Opus 4.5     | 2min | $1.20 | 95%      |
 
 **Pro tip:** Start with Sonnet (`claude --model sonnet`), switch to Opus for complex refactoring (`/model opus`), drop to Haiku for bulk operations (`/model haiku`).
 
@@ -347,10 +348,10 @@ tools: [Read, Grep, Glob]
 
 Allowing every agent access to all tools causes:
 
--   Agents overstepping their authority
--   Redundant task execution
--   Context pollution
--   Massive token waste
+- Agents overstepping their authority
+- Redundant task execution
+- Context pollution
+- Massive token waste
 
 ```
 # ❌ Wrong
@@ -405,9 +406,9 @@ claude --mcp-debug
 
 This reveals:
 
--   Which subagent was invoked
--   What tools were called
--   Where the failure occurred
+- Which subagent was invoked
+- What tools were called
+- Where the failure occurred
 
 ### Common Failure Patterns
 
@@ -518,10 +519,10 @@ Processing auth/session.ts first...
 
 This approach:
 
--   Uses cheap Haiku for discovery
--   Keeps main context clean
--   Processes sequentially to avoid conflicts
--   Validates after each change
+- Uses cheap Haiku for discovery
+- Keeps main context clean
+- Processes sequentially to avoid conflicts
+- Validates after each change
 
 ## When NOT to Use Multi-Agent (The Honest Truth)
 
@@ -551,9 +552,9 @@ Multi-agent systems use approximately **15x more tokens** than chat interactions
 
 Do the math:
 
--   Simple chat: ~2K tokens
--   Single agent: ~8K tokens (4x)
--   Multi-agent: ~30K tokens (15x)
+- Simple chat: ~2K tokens
+- Single agent: ~8K tokens (4x)
+- Multi-agent: ~30K tokens (15x)
 
 If your task doesn't benefit from parallel exploration, you're just burning money.
 
@@ -563,47 +564,47 @@ Before deploying multi-agent workflows:
 
 ### Agent Configuration
 
--   Each agent has ONE clear purpose
--   Tools are restricted to minimum required
--   Names are non-descriptive (avoid behavioral inference)
--   Descriptions specify exact trigger conditions
--   YAML syntax validated (use a linter)
+- Each agent has ONE clear purpose
+- Tools are restricted to minimum required
+- Names are non-descriptive (avoid behavioral inference)
+- Descriptions specify exact trigger conditions
+- YAML syntax validated (use a linter)
 
 ### Cost Control
 
--   Haiku for high-volume, pattern-matching tasks
--   Sonnet for balanced reasoning (default)
--   Opus reserved for architecture and novel problems
--   Token usage monitored per workflow
+- Haiku for high-volume, pattern-matching tasks
+- Sonnet for balanced reasoning (default)
+- Opus reserved for architecture and novel problems
+- Token usage monitored per workflow
 
 ### Error Handling
 
--   Debug mode available (`--mcp-debug`)
--   Recovery points defined in CLAUDE.md
--   File edit coordination rules documented
--   Critical constraints survive context compaction
+- Debug mode available (`--mcp-debug`)
+- Recovery points defined in CLAUDE.md
+- File edit coordination rules documented
+- Critical constraints survive context compaction
 
 ### Testing
 
--   Agents tested individually before orchestration
--   Parallel execution conflicts identified
--   Fallback behavior defined for failures
+- Agents tested individually before orchestration
+- Parallel execution conflicts identified
+- Fallback behavior defined for failures
 
 ## References
 
 ### Sources
 
--   [Claude Code Sub-agents Documentation](https://code.claude.com/docs/en/sub-agents) - Official reference for YAML syntax and built-in agents
--   [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system) - Anthropic's architecture and the 90.2% performance data
--   [Community Learnings: 7 Critical Token-Wasting Patterns](https://github.com/anthropics/claude-code/issues/13579) - Real production data on token waste
--   [Best practices for Claude Code subagents](https://www.pubnub.com/blog/best-practices-for-claude-code-sub-agents/) - PubNub's production pipeline experience
+- [Claude Code Sub-agents Documentation](https://code.claude.com/docs/en/sub-agents) - Official reference for YAML syntax and built-in agents
+- [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system) - Anthropic's architecture and the 90.2% performance data
+- [Community Learnings: 7 Critical Token-Wasting Patterns](https://github.com/anthropics/claude-code/issues/13579) - Real production data on token waste
+- [Best practices for Claude Code subagents](https://www.pubnub.com/blog/best-practices-for-claude-code-sub-agents/) - PubNub's production pipeline experience
 
 ### Further Reading
 
--   [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) - 100+ production-ready subagent templates
--   [Building agents with the Claude Agent SDK](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk) - Deep dive into agent architecture
--   [Claude Code Model Configuration](https://code.claude.com/docs/en/model-config) - Official guide to Haiku/Sonnet/Opus selection
+- [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) - 100+ production-ready subagent templates
+- [Building agents with the Claude Agent SDK](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk) - Deep dive into agent architecture
+- [Claude Code Model Configuration](https://code.claude.com/docs/en/model-config) - Official guide to Haiku/Sonnet/Opus selection
 
-* * *
+---
 
 ~Seb 👊

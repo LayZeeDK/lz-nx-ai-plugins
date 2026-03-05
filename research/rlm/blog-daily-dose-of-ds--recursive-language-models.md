@@ -5,6 +5,7 @@
 > Site: Daily Dose of Data Science
 
 ---
+
 [
 
 ![](https://substackcdn.com/image/fetch/$s_!CR_U!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb7568aae-1589-450a-88af-a8eacaafb558_1128x910.png)
@@ -49,14 +50,10 @@ Instead, it gets access to tools that let it:
 
 ](https://substackcdn.com/image/fetch/$s_!ATuK!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fccef5110-cc7d-4c56-8735-980b18f831a5_1024x559.png)
 
--   Peek at portions of the context (like the first 2000 characters)
-    
--   Grep through it using regex or keywords
-    
--   Partition it into smaller chunks
-    
--   Call itself recursively on those chunks
-    
+- Peek at portions of the context (like the first 2000 characters)
+- Grep through it using regex or keywords
+- Partition it into smaller chunks
+- Call itself recursively on those chunks
 
 Each recursive call is like a function call in programming. It gets a smaller piece of the problem, solves it, and returns the result to the parent.
 
@@ -80,14 +77,10 @@ Here’s what an RLM does:
 
 ](https://substackcdn.com/image/fetch/$s_!jfXV!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F909152f2-f0bf-49fc-8714-e789a1782a61_1024x559.png)
 
--   Step 1: It peeks at the first few entries to understand the structure.
-    
--   Step 2: It runs a regex filter to grab only lines with the target user IDs. Now it has 50 lines instead of 5,000.
-    
--   Step 3: It spawns a recursive sub-call: “Classify each of these as billing or other.”
-    
--   Step 4: It counts the billing ones and returns the final answer.
-    
+- Step 1: It peeks at the first few entries to understand the structure.
+- Step 2: It runs a regex filter to grab only lines with the target user IDs. Now it has 50 lines instead of 5,000.
+- Step 3: It spawns a recursive sub-call: “Classify each of these as billing or other.”
+- Step 4: It counts the billing ones and returns the final answer.
 
 The root model’s context window stays small throughout. It only sees its query, its code, and the results from sub-calls.
 

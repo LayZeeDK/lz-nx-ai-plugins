@@ -122,7 +122,7 @@ the effective input and output lengths of LLMs. The key
 
 8k16k33k66k131k262k524k1M020406080100Score (%)GPT-5OOLONGOOLONG-PairsS-NIAH8k16k33k66k131k262k524k1MInput Context Length (log scale)020406080100Score (%)RLM(GPT-5)OOLONGOOLONG-PairsS-NIAH
 
-Recursive Language Models
+Recursive Language Models
 
 Figure 2. A Recursive Language Model (RLM) treats prompts as part of the environment. It loads the input prompt as a variable inside a
 REPL environment E and writes code to peek into, decompose, and invoke itself recursively over programmatic snippets of the variable.
@@ -194,7 +194,7 @@ median of 28.3% across the four evaluation tasks.
 
 2
 
-Recursive Language Models
+Recursive Language Models
 
 2. Recursive Language Models
 
@@ -320,7 +320,7 @@ processes to understand or transform all parts of P .
 
 3
 
-Recursive Language Models
+Recursive Language Models
 
 3. Scaling Long Context Tasks
 
@@ -406,8 +406,7 @@ to find the right answer.
 We compare RLMs against commonly used task-agnostic
 inference methods, using two modern LMs, GPT-5 with
 medium reasoning (Singh et al., 2025) and default sampling
-parameters, and Qwen3-Coder-480B-A35B (Yang et al.,
-2025) using the sampling parameters described in Qwen
+parameters, and Qwen3-Coder-480B-A35B (Yang et al., 2025) using the sampling parameters described in Qwen
 Team (2025b). For Qwen3-Coder-480B-A35B, we compute
 costs based on the compute provider Fireworks (Fireworks
 AI, 2025). In addition to evaluating the base model on all
@@ -441,7 +440,7 @@ due to the extremely high cost of applying this strategy to
 
 4
 
-Recursive Language Models
+Recursive Language Models
 
 Table 1. Performance comparison of different methods across long-context benchmarks of varying complexity. In gray is the average API
 cost ± the standard deviation of each method on each task. ∗ indicates runs where a method (sometimes) ran into input context limits.
@@ -625,7 +624,7 @@ scale well beyond the base models’ context window. For
 
 5
 
-Recursive Language Models
+Recursive Language Models
 
 Figure 3. Cost of RLM and baselines described in §3.2 plotted at the 25th, 50th, 75th, and 95th percentile of total API cost. We observe
 comparable or even lower costs for RLMs at the 50th percentile, but sharp increases at the tail end due to potentially long RLM trajectories.
@@ -720,7 +719,7 @@ dent on implementation details such as the machine used,
 
 6
 
-Recursive Language Models
+Recursive Language Models
 
 API request latency, and the asynchrony of LM calls. In our
 implementation of the baselines and RLMs, all LM calls
@@ -838,7 +837,7 @@ calls, but are unable to handle long context inputs beyond
 
 7
 
-Recursive Language Models
+Recursive Language Models
 
 Figure 4. RLMs have common patterns in their trajectories when solving tasks. (a) We frequently observed RLMs filtering and interacting
 with their context through regex code. (b) We found that RLMs can effectively decompose their context through recursive sub-calls (c)
@@ -902,7 +901,7 @@ scale for the next generation of language model systems.
 
 8
 
-Recursive Language Models
+Recursive Language Models
 
 8. Impact Statement
 
@@ -1025,7 +1024,7 @@ you need is retrieval? towards genuinely difficult long
 context nlp, 2025. URL https://arxiv.org/abs/
 2407.00402.
 
-Recursive Language Models
+Recursive Language Models
 
 Grand, G., Tenenbaum, J. B., Mansinghka, V. K., Lew,
 A. K., and Andreas, J. Self-steering language models.
@@ -1044,8 +1043,7 @@ challenges, 2024. URL https://arxiv.org/abs/
 Hong, K., Troynikov, A., and Huber, J.
 
 Context
-rot: How context degradation affects llm performance,
-2025. URL https://research.trychroma.com/
+rot: How context degradation affects llm performance, 2025. URL https://research.trychroma.com/
 context-rot.
 
 Hsieh, C.-P., Sun, S., Kriman, S., Acharya, S., Rekesh, D.,
@@ -1163,7 +1161,7 @@ Packer, C., Wooders, S., Lin, K., Fang, V., Patil, S. G.,
 
 10
 
-Recursive Language Models
+Recursive Language Models
 
 Stoica, I., and Gonzalez, J. E. Memgpt: Towards llms as
 operating systems, 2024. URL https://arxiv.org/
@@ -1294,7 +1292,7 @@ Thacker, P., Liu, Q., Yuan, Q., Liu, Q., Dias, R., Puckett,
 R., Arora, R., Mullapudi, R. T., Gaon, R., Miyara, R.,
 Song, R., Aggarwal, R., Marsan, R., Yemiru, R., Xiong,
 
-Recursive Language Models
+Recursive Language Models
 
 M., Wang, S., Cheng, H., and Zhou, J. Resum: Un-
 locking long-horizon search intelligence via context sum-
@@ -1416,7 +1414,7 @@ Z., Yu, X., Zhang, D., Jiang, Y., Xie, P., Huang, F., Cheng,
 
 12
 
-A. Additional Training Details
+A. Additional Training Details
 
 Recursive Language Models
 
@@ -1457,7 +1455,7 @@ will be necessary to maximize the potential of RLMs.
 
 13
 
-B. Negative Results: Things we Tried that Did Not Work.
+B. Negative Results: Things we Tried that Did Not Work.
 
 Recursive Language Models
 
@@ -1508,7 +1506,7 @@ should be avoided altogether in the future when models are trained as RLMs.
 
 14
 
-Recursive Language Models
+Recursive Language Models
 
 C. Additional Methods and Baseline Details
 
@@ -1535,9 +1533,10 @@ Your context is a {context_type} with {context_total_length} total characters, a
 context_lengths}.
 
 The REPL environment is initialized with:
+
 1. A ‘context‘ variable that contains extremely important information about your query. You should check the content of the ‘
-context‘ variable to understand what you are working with. Make sure you look through it sufficiently as you answer your
-query.
+   context‘ variable to understand what you are working with. Make sure you look through it sufficiently as you answer your
+   query.
 
 2. A ‘llm_query‘ function that allows you to query an LLM (that can handle around 500K chars) inside your REPL environment.
 3. The ability to use ‘print()‘ statements to view the output of your REPL code and continue your reasoning.
@@ -1603,7 +1602,9 @@ we ask the same query over each chunk:
 
 ‘‘‘repl
 query = "A man became famous for his book "The Great Gatsby". How many jobs did he have?"
+
 # Suppose our context is ~1M chars, and we want each sub-LLM query to be ~0.1M chars so we split it into 5 chunks
+
 chunk_size = len(context) // 10
 answers = []
 for i in range(10):
@@ -1629,7 +1630,7 @@ final_answer = llm_query(f"Aggregating all the answers per chunk, answer the ori
 
 15
 
-Recursive Language Models
+Recursive Language Models
 
 ‘‘‘
 
@@ -1638,7 +1639,9 @@ As a final example, after analyzing the context and realizing its separated by M
 buffers by chunking the context by headers, and iteratively querying an LLM over it:
 
 ‘‘‘repl
+
 # After finding out the context is separated by Markdown headers, we can chunk, summarize, and answer
+
 import re
 sections = re.split(r’### (.+)’, context["content"])
 buffers = []
@@ -1679,7 +1682,7 @@ reasonably possible into each call (aim for around ~200k characters per call). F
 information to process, it’s much better to split into chunks of 5 and call ‘llm_query‘ on each chunk (200 calls total)
 rather than making 1000 individual calls. Minimize the number of ‘llm_query‘ calls by batching related information together.
 
-+
+-
 
 (1c) The diff of the system prompt for RLM with REPL (Qwen3-8B), which has a few changes from the GPT-5 prompt
 due to differences in context length and similar sub-calling behavior as Qwen3-Coder-480B-A35B:
@@ -1692,10 +1695,9 @@ due to differences in context length and similar sub-calling behavior as Qwen3-C
 LLMs you can query also have this same ~32k token limit, so you must be conservative with how much context you send in each
 call.
 
-+
-@@ -7 +10 @@
--2. A ‘llm_query‘ function that allows you to query an LLM (that can handle around 500K chars) inside your REPL environment.
-+2. A ‘llm_query‘ function that allows you to query an LLM (that can handle around ~100k chars, roughly 32k tokens) inside your
+- @@ -7 +10 @@
+  -2. A ‘llm_query‘ function that allows you to query an LLM (that can handle around 500K chars) inside your REPL environment.
+  +2. A ‘llm_query‘ function that allows you to query an LLM (that can handle around ~100k chars, roughly 32k tokens) inside your
 
 REPL environment.
 
@@ -1713,8 +1715,7 @@ a ~32k token limit (approximately ~24k characters) -- be careful not to exceed t
 feed 2-3 documents per sub-LLM query. Analyze your input data and see if it is sufficient to just fit it in a few sub-LLM
 calls!
 
-+
-+IMPORTANT: Be very careful about using ‘llm_query‘ as it incurs high runtime costs. Always batch as much information as
+- +IMPORTANT: Be very careful about using ‘llm_query‘ as it incurs high runtime costs. Always batch as much information as
 
 reasonably possible into each call while staying within the ~32k token limit (aim for around ~10k-15k characters per call to
 
@@ -1727,9 +1728,9 @@ llm_query‘ calls by batching related information together, but always respect 
 +chunk = context[:1000]
 @@ -62,0 +68 @@
 +FINAL_VAR(final_answer)
-+
-@@ -66 +73 @@
--IMPORTANT: When you are done with the iterative process, you MUST provide a final answer inside a FINAL function when you have
+
+- @@ -66 +73 @@
+  -IMPORTANT: When you are done with the iterative process, you MUST provide a final answer inside a FINAL function when you have
 
 completed your task, NOT in code. Do not use these tags unless you have completed your task. You have two options:
 
@@ -1740,7 +1741,7 @@ options:
 
 16
 
-(2) The system prompt for RLM with REPL (no sub-calls):
+(2) The system prompt for RLM with REPL (no sub-calls):
 
 Recursive Language Models
 
@@ -1753,9 +1754,10 @@ Your context is a {context_type} with {context_total_length} total characters, a
 context_lengths}.
 
 The REPL environment is initialized with:
+
 1. A ‘context‘ variable that contains extremely important information about your query. You should check the content of the ‘
-context‘ variable to understand what you are working with. Make sure you look through it sufficiently as you answer your
-query.
+   context‘ variable to understand what you are working with. Make sure you look through it sufficiently as you answer your
+   query.
 
 2. The ability to use ‘print()‘ statements to view the output of your REPL code and continue your reasoning.
 
@@ -1785,13 +1787,16 @@ As another example, after analyzing the context and realizing we need to search 
 relevant sections and maintain state through buffers:
 
 ‘‘‘repl
+
 # After finding out we need to search for "magic" and "number" in the context
+
 import re
 query_terms = ["magic", "number"]
 relevant_sections = []
 buffers = []
 
 # Search for sections containing our query terms
+
 for i, chunk in enumerate(context):
 chunk_text = str(chunk).lower()
 if any(term in chunk_text for term in query_terms):
@@ -1799,6 +1804,7 @@ if any(term in chunk_text for term in query_terms):
 relevant_sections.append((i, chunk))
 
 # Process each relevant section and print findings
+
 for section_idx, section_content in relevant_sections:
 
 print(f"Found relevant section {{section_idx}} containing magic/number references:")
@@ -1842,24 +1848,27 @@ You must follow this format for each step:
 2. ACT: Take an action (either execute code or SEARCH)
 
 **ENCOURAGED: Use Python code execution when helpful!**
+
 - Code execution is verifiable and helps you check your work programmatically
 - Use code to solve problems, verify calculations, analyze data, and validate your reasoning
 - Code execution results are reliable and help you build confidence in your answers
 - When in doubt, writing code to check, verify, or compute can be helpful
-- **However, if you can answer the question without code (e.g., straightforward factual questions, simple reasoning), you can
+- \*\*However, if you can answer the question without code (e.g., straightforward factual questions, simple reasoning), you can
 
-provide your final answer directly without executing code**
+provide your final answer directly without executing code\*\*
 
 17
 
-Recursive Language Models
+Recursive Language Models
 
 Available Actions:
+
 - Execute Python code: Write code in ‘‘‘python code blocks. The code will be executed and results returned.
 - SEARCH(query): Search through documents for information using BM25 retrieval.
 - Provide final answer: When you have enough information, you can provide your final answer as "ANSWER: [your answer]"
 
 Format Requirements:
+
 - Start each turn with "THINK: " followed by your reasoning
 - Then either:
 
@@ -1870,7 +1879,7 @@ Format Requirements:
 - Code execution results will be returned to you automatically
 - Variables persist across code executions in the same session
 - **CRITICAL: Code is executed as-is in a fresh Python environment. You must include all necessary imports, data definitions, and
-context within your code blocks. Do not use fillers (e.g. FILL IN WITH REAL DATA), they have to be written in code.**
+  context within your code blocks. Do not use fillers (e.g. FILL IN WITH REAL DATA), they have to be written in code.**
 
 Example workflow:
 ‘‘‘
@@ -1881,7 +1890,7 @@ THINK: I need to count how many words in the list have exactly 2 r’s. I can wr
 import re
 
 words = [’error’, ’correct’, ’arrow’, ’berry’, ’carrot’, ’mirror’]
-pattern = r’^[^r]*r[^r]*r[^r]*$’
+pattern = r’^[^r]*r[^r]*r[^r]\*$’
 count = 0
 matching_words = []
 for word in words:
@@ -1912,11 +1921,12 @@ SEARCH(machine learning)
 ---
 
 Important:
+
 - Always start with THINK to reason about your next step
 - You can combine code execution and search as needed
 - Be strategic to avoid exceeding the context window
 - **CODE EXECUTION**: Use code to verify, check, and solve problems programmatically when helpful. However, if you can answer the
-question without code (e.g., straightforward factual questions, simple reasoning), you can provide your final answer
+  question without code (e.g., straightforward factual questions, simple reasoning), you can provide your final answer
 
 directly without executing code.
 
@@ -1935,31 +1945,34 @@ You must follow this format for each step:
 2. ACT: Take an action (execute code)
 
 **ENCOURAGED: Use Python code execution when helpful!**
+
 - Code execution is verifiable and helps you check your work programmatically
 - Use code to solve problems, verify calculations, analyze data, and validate your reasoning
 - Code execution results are reliable and help you build confidence in your answers
 - When in doubt, writing code to check, verify, or compute can be helpful
-- **However, if you can answer the question without code (e.g., straightforward factual questions, simple reasoning), you can
+- \*\*However, if you can answer the question without code (e.g., straightforward factual questions, simple reasoning), you can
 
-provide your final answer directly without executing code**
+provide your final answer directly without executing code\*\*
 
 Available Actions:
+
 - Execute Python code: Write code in ‘‘‘python code blocks. The code will be executed and results returned.
 - Provide final answer: When you have enough information, you can provide your final answer as "ANSWER: [your answer]"
 
 Format Requirements:
+
 - Start each turn with "THINK: " followed by your reasoning
 - Then write Python code in ‘‘‘python blocks to execute
 - You can execute code multiple times.
 
 18
 
-Recursive Language Models
+Recursive Language Models
 
 - Code execution results will be returned to you automatically
 - Variables persist across code executions in the same session
 - **CRITICAL: Code is executed as-is in a fresh Python environment. You must include all necessary imports, data definitions, and
-context within your code blocks. Do not use fillers (e.g. FILL IN WITH REAL DATA), they have to be written in code.**
+  context within your code blocks. Do not use fillers (e.g. FILL IN WITH REAL DATA), they have to be written in code.**
 
 Example workflow:
 ‘‘‘
@@ -1970,7 +1983,7 @@ THINK: I need to count how many words in the list have exactly 2 r’s. I can wr
 import re
 
 words = [’error’, ’correct’, ’arrow’, ’berry’, ’carrot’, ’mirror’]
-pattern = r’^[^r]*r[^r]*r[^r]*$’
+pattern = r’^[^r]*r[^r]*r[^r]\*$’
 count = 0
 matching_words = []
 for word in words:
@@ -1993,10 +2006,11 @@ Answer: 4
 ---
 
 Important:
+
 - Always start with THINK to reason about your next step
 - Be strategic to avoid exceeding the context window
 - **CODE EXECUTION**: Use code to verify, check, and solve problems programmatically when helpful. However, if you can answer the
-question without code (e.g., straightforward factual questions, simple reasoning), you can provide your final answer
+  question without code (e.g., straightforward factual questions, simple reasoning), you can provide your final answer
 
 directly without executing code.
 
@@ -2019,7 +2033,7 @@ samples that the performance between using GPT-5 and GPT-5-nano is comparable.
 
 19
 
-D. Additional Benchmark Details
+D. Additional Benchmark Details
 
 We provide additional details about the benchmarks used to evaluate RLMs in §3.
 
@@ -2073,7 +2087,7 @@ In your answer, list all pairs in the format (user_id_1, user_id_2), separated b
 
 20
 
-Recursive Language Models
+Recursive Language Models
 
 Task 6
 In the above data, list all pairs of user IDs (no duplicate pairs, list lower ID first) where both users have at least one instance
@@ -2126,7 +2140,7 @@ label from the semantics of the question): description and abstract concept, ent
 
 21
 
-abbreviation. In your answer, list all pairs in the format (user_id_1, user_id_2), separated by newlines.
+abbreviation. In your answer, list all pairs in the format (user_id_1, user_id_2), separated by newlines.
 
 Recursive Language Models
 
@@ -2179,7 +2193,7 @@ Task 19
 
 22
 
-Recursive Language Models
+Recursive Language Models
 
 In the above data, list all pairs of user IDs (no duplicate pairs, list lower ID first) such that one user has at least two instances
 with location and at least one instance with entity, and the other user has exactly one instance with description and abstract
@@ -2219,7 +2233,7 @@ assuming it has an infinite context window, we observe that the inference cost o
 
 23
 
-E. Additional RLM Trajectories
+E. Additional RLM Trajectories
 
 Recursive Language Models
 
@@ -2257,7 +2271,7 @@ recursive LM call over this snippet to look for information relevant to the orig
 
 24
 
-information in a variable answer6, as well as print this information out for the root LM to see. The sub-LM call finds the
+information in a variable answer6, as well as print this information out for the root LM to see. The sub-LM call finds the
 answer is likely ‘Maria Dalmacio‘ and stores this information back in the root LM’s environment.
 
 Recursive Language Models
@@ -2268,7 +2282,7 @@ check. Finally, the root LM returns its final answer as ‘Maria Dalmacio‘, wh
 
 25
 
-Recursive Language Models
+Recursive Language Models
 
 E.2. RLM(Qwen3-Coder) on OOLONG-Pairs-Query_3
 
@@ -2298,7 +2312,7 @@ looks like.
 
 26
 
-Recursive Language Models
+Recursive Language Models
 
 From the given format, the model chooses to first semantically classify the data using sub-LM calls over smaller chunks
 of the input (to avoid context rot and mistakes in larger contexts) and provides a sample back to the root LM of what it
@@ -2306,7 +2320,7 @@ observed during this process.
 
 27
 
-Recursive Language Models
+Recursive Language Models
 
 Using these classifications outputted by recursive LM calls, the model passes this variable into a function to categorize each
 programmatically. From here, the root LM is choosing to answer the rest of the question programmatically rather than by
@@ -2314,14 +2328,14 @@ trying to output all pairs through model generaetions.
 
 28
 
-Recursive Language Models
+Recursive Language Models
 
 The root LM specifically looks for instances satisfying the query (the user in the pair has to have at least one instance with a
 description and abstraction concept or abbreviation) and adds them to a variable of target users.
 
 29
 
-Recursive Language Models
+Recursive Language Models
 
 The root LM forms a list of unique pairs with this loop, and is essentially now able to answer the question.
 
@@ -2335,7 +2349,7 @@ prompt specifically for this model and b) the model not being trained to act as 
 
 30
 
-text for brevity. At this step, the model checks its pairs.
+text for brevity. At this step, the model checks its pairs.
 
 Recursive Language Models
 
@@ -2379,14 +2393,14 @@ sub-calls when applied to the full input context.
 
 31
 
-Recursive Language Models
+Recursive Language Models
 
 Step 2. After defining and testing several functions for running the above classification question over its input context, the
 root LM launches a long code execution call to classify and answer the query.
 
 32
 
-Recursive Language Models
+Recursive Language Models
 
 Final. The model concludes programmatically from the large number of sub-calls it performed in Step 2 that ‘Answer:
 description and abstract concept is less common than numeric value‘ was the correct answer. While the RLM was able to
@@ -2419,7 +2433,7 @@ words in the prompt. In the config directory, find the configuration files and m
 
 33
 
-Recursive Language Models
+Recursive Language Models
 
 , dataset location, storage location, and where to save the LoRA model. Only after configuring these settings can it run
 properly.
@@ -2466,7 +2480,7 @@ For the scaling plot in Figure 1, we also provide the average API cost per task.
 
 34
 
-Recursive Language Models
+Recursive Language Models
 
 Figure 7. Plotted quartiles of the runtime GPT-5 across OOLONG, OOLONG-Pairs, CodeQA, and BrowseComp+ (1K) for all methods
 described in §3.2. We plot the 25th, 50th, 75th, and 95th percentiles.
@@ -2476,23 +2490,22 @@ all methods described in §3.2. We plot the 25th, 50th, 75th, and 95th percentil
 
 35
 
-Recursive Language Models
+Recursive Language Models
 
 Figure 9. Histogram of the API costs for GPT-5 across OOLONG, OOLONG-Pairs, CodeQA, and BrowseComp+ (1K) for all methods
 described in §3.2.
 
 36
 
-Recursive Language Models
+Recursive Language Models
 
 Figure 10. Histogram of the API costs for Qwen3-Coder-480B across OOLONG, OOLONG-Pairs, CodeQA, and BrowseComp+ (1K) for
 all methods described in §3.2.
 
 37
 
-Recursive Language Models
+Recursive Language Models
 
 Figure 11. We plot the API cost in USD for the runs in Figure 1.
 
 38
-

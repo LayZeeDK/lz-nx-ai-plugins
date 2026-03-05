@@ -15,13 +15,13 @@ created: 2026-03-05
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Vitest 4.x (devDependency in workspace) |
-| **Config file** | `tests/lz-nx.rlm/vitest.config.mjs` (exists from Phase 1) |
-| **Quick run command** | `npx vitest run --reporter=verbose` |
-| **Full suite command** | `npx vitest run` |
-| **Estimated runtime** | ~5 seconds |
+| Property               | Value                                                     |
+| ---------------------- | --------------------------------------------------------- |
+| **Framework**          | Vitest 4.x (devDependency in workspace)                   |
+| **Config file**        | `tests/lz-nx.rlm/vitest.config.mjs` (exists from Phase 1) |
+| **Quick run command**  | `npx vitest run --reporter=verbose`                       |
+| **Full suite command** | `npx vitest run`                                          |
+| **Estimated runtime**  | ~5 seconds                                                |
 
 ---
 
@@ -36,18 +36,18 @@ created: 2026-03-05
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | REPL-01 | unit | `npx vitest run tests/lz-nx.rlm/code-transform.test.mjs` | Wave 0 | pending |
-| 02-01-02 | 01 | 1 | REPL-02 | unit | `npx vitest run tests/lz-nx.rlm/print-capture.test.mjs` | Wave 0 | pending |
-| 02-01-03 | 01 | 1 | REPL-03 | unit | `npx vitest run tests/lz-nx.rlm/rlm-config.test.mjs` | Wave 0 | pending |
-| 02-01-04 | 01 | 1 | REPL-04 | unit | `npx vitest run tests/lz-nx.rlm/repl-session.test.mjs` | Wave 0 | pending |
-| 02-02-01 | 02 | 2 | REPL-01 | unit | `npx vitest run tests/lz-nx.rlm/repl-globals.test.mjs` | Wave 0 | pending |
-| 02-02-02 | 02 | 2 | REPL-01 | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 | pending |
-| 02-02-03 | 02 | 2 | REPL-04 | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 | pending |
-| 02-02-04 | 02 | 2 | REPL-04 | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 | pending |
+| Task ID  | Plan | Wave | Requirement | Test Type | Automated Command                                        | File Exists | Status  |
+| -------- | ---- | ---- | ----------- | --------- | -------------------------------------------------------- | ----------- | ------- |
+| 02-01-01 | 01   | 1    | REPL-01     | unit      | `npx vitest run tests/lz-nx.rlm/code-transform.test.mjs` | Wave 0      | pending |
+| 02-01-02 | 01   | 1    | REPL-02     | unit      | `npx vitest run tests/lz-nx.rlm/print-capture.test.mjs`  | Wave 0      | pending |
+| 02-01-03 | 01   | 1    | REPL-03     | unit      | `npx vitest run tests/lz-nx.rlm/rlm-config.test.mjs`     | Wave 0      | pending |
+| 02-01-04 | 01   | 1    | REPL-04     | unit      | `npx vitest run tests/lz-nx.rlm/repl-session.test.mjs`   | Wave 0      | pending |
+| 02-02-01 | 02   | 2    | REPL-01     | unit      | `npx vitest run tests/lz-nx.rlm/repl-globals.test.mjs`   | Wave 0      | pending |
+| 02-02-02 | 02   | 2    | REPL-01     | unit      | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs`   | Wave 0      | pending |
+| 02-02-03 | 02   | 2    | REPL-04     | unit      | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs`   | Wave 0      | pending |
+| 02-02-04 | 02   | 2    | REPL-04     | unit      | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs`   | Wave 0      | pending |
 
-*Status: pending · green · red · flaky*
+_Status: pending · green · red · flaky_
 
 ---
 
@@ -60,13 +60,13 @@ created: 2026-03-05
 - [ ] `tests/lz-nx.rlm/rlm-config.test.mjs` — stubs for REPL-03 (config loading, merging)
 - [ ] `tests/lz-nx.rlm/repl-session.test.mjs` — stubs for REPL-04 (session state serialization)
 
-*Existing Phase 1 test infrastructure provides vitest.config.mjs, fixture patterns, and mock patterns.*
+_Existing Phase 1 test infrastructure provides vitest.config.mjs, fixture patterns, and mock patterns._
 
 ---
 
 ## Manual-Only Verifications
 
-*All phase behaviors have automated verification.*
+_All phase behaviors have automated verification._
 
 ---
 

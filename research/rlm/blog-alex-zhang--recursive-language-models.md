@@ -5,6 +5,7 @@
 > Site: Alex L. Zhang
 
 ---
+
 _The full paper is now available here: [https://arxiv.org/abs/2512.24601v1](https://arxiv.org/abs/2512.24601v1)._
 
 You can find the official codebase for Recursive Language Models (RLMs) here: [https://github.com/alexzhang13/rlm](https://github.com/alexzhang13/rlm)
@@ -51,7 +52,7 @@ We choose the **environment** to be a loop where the LM can write to and read th
 
 ![API](https://alexzhang13.github.io/assets/img/rlm/repl.png)
 
-**Figure 3.** Our instantiation of the RLM framework provides the root LM the ability to analyze the context in a Python notebook environment, and launch recursive LM calls (depth=1) over any string stored in a variable. The LM interacts by outputting code blocks, and it receives a (truncated) version of the output in its context. When it is done, it outputs a final answer with \`FINAL(…)\` tags or it can choose to use a string in the code execution environment with \`FINAL\_VAR(…)\`.
+**Figure 3.** Our instantiation of the RLM framework provides the root LM the ability to analyze the context in a Python notebook environment, and launch recursive LM calls (depth=1) over any string stored in a variable. The LM interacts by outputting code blocks, and it receives a (truncated) version of the output in its context. When it is done, it outputs a final answer with \`FINAL(…)\` tags or it can choose to use a string in the code execution environment with \`FINAL_VAR(…)\`.
 
 When the **root LM** is confident it has an answer, it can either directly output the answer as `FINAL(answer)`, or it can build up an answer using the variables in its REPL environment, and return the string inside that answer as `FINAL_VAR(final_ans_var)`.
 
@@ -95,23 +96,23 @@ Date: Feb 29, 2024 || User: 59320 || Instance: When was Calypso music invented?
 
 The score is computed as the number of queries answered correctly by the model, with the caveat that for numerical / counting problems, they use a continuous scoring metric. This benchmark is extremely hard for both frontier models and agents because they have to **semantically** map and associate thousands of pieces of information in a single query, and cannot compute things a-priori! We evaluate the following models / agents:
 
--   **GPT-5.** Given the whole context and query, tell GPT-5 to provide an answer.
--   **GPT-5-mini.** Given the whole context and query, tell GPT-5-mini to provide an answer.
--   **RLM(GPT-5-mini).** Given the whole context and query, tell RLM(GPT-5-mini) to provide an answer. GPT-5-mini (root LM) can recursively call GPT-5-mini inside its REPL environment.
--   **RLM(GPT-5) without sub-calls.** Given the whole context and query, tell RLM(GPT) to provide an answer. GPT-5 (root LM) cannot recursively call GPT-5 inside its REPL environment. This is an ablation for the use of a REPL environment without recursion.
--   **ReAct w/ GPT-5 + BM25.** We chunk every lines into its own “document”, and gives a ReAct loop access to a BM25 retriever to return 10 lines per search request.
+- **GPT-5.** Given the whole context and query, tell GPT-5 to provide an answer.
+- **GPT-5-mini.** Given the whole context and query, tell GPT-5-mini to provide an answer.
+- **RLM(GPT-5-mini).** Given the whole context and query, tell RLM(GPT-5-mini) to provide an answer. GPT-5-mini (root LM) can recursively call GPT-5-mini inside its REPL environment.
+- **RLM(GPT-5) without sub-calls.** Given the whole context and query, tell RLM(GPT) to provide an answer. GPT-5 (root LM) cannot recursively call GPT-5 inside its REPL environment. This is an ablation for the use of a REPL environment without recursion.
+- **ReAct w/ GPT-5 + BM25.** We chunk every lines into its own “document”, and gives a ReAct loop access to a BM25 retriever to return 10 lines per search request.
 
 **Results.** We focus explicitly on questions with contexts over 128k tokens (~100 queries), and we track both the performance on the benchmark, as well as the overall API cost of each query. In all of the following results (Figure **4a,b**), **the entire input fits in the context window of GPT-5 / GPT-5-mini** — i.e., incorrect predictions are never due to truncation or context window size limitations:
 
 ![API](https://alexzhang13.github.io/assets/img/rlm/oolong-132k.png)
 
-**Figure 4a.** We report the overall score for each method on the \`trec\_coarse\` dataset of the OOLONG benchmark for queries that have a context length of 132k tokens. We compare performance to GPT-5. RLM(GPT-5-mini) outperforms GPT-5 by over **34 points (~114% increase)**, and is nearly as cheap per query (we found that the median query is cheaper due to some outlier, expensive queries).
+**Figure 4a.** We report the overall score for each method on the \`trec_coarse\` dataset of the OOLONG benchmark for queries that have a context length of 132k tokens. We compare performance to GPT-5. RLM(GPT-5-mini) outperforms GPT-5 by over **34 points (~114% increase)**, and is nearly as cheap per query (we found that the median query is cheaper due to some outlier, expensive queries).
 
 It turns out actually that **RLM(GPT-5-mini)** outperforms **GPT-5** and **GPT-5-mini** by **\>33%**↑ raw score (over double the performance) while maintaining roughly the same total model API cost as **GPT-5** per query! When ablating recursion, we find that RLM performance degrades by ~10%, likely due to many questions requiring the model to answer semantic questions about the data (e.g. label each question). We see in **Figure 4b** that these gains roughly transfer when we double the size of the context to ~263k tokens as well, although with some performance degradation!
 
 ![API](https://alexzhang13.github.io/assets/img/rlm/oolong-256k.png)
 
-**Figure 4b.** We report the overall score for each method on the trec\_coarse dataset of the OOLONG benchmark for queries that have a context length of 263k tokens, nearly the limit for GPT-5/GPT-5-mini. We compare performance to GPT-5. RLM(GPT-5-mini) outperforms GPT-5 by over **15 points (~49% increase)**, and is cheaper per query on average.
+**Figure 4b.** We report the overall score for each method on the trec_coarse dataset of the OOLONG benchmark for queries that have a context length of 263k tokens, nearly the limit for GPT-5/GPT-5-mini. We compare performance to GPT-5. RLM(GPT-5-mini) outperforms GPT-5 by over **15 points (~49% increase)**, and is cheaper per query on average.
 
 Notably, the performance of **GPT-5-mini** drops while **GPT-5** does not, which indicates that context rot is more severe for GPT-5-mini. We additionally noticed that the performance drop for the RLM approaches occurs for **_counting_** problems, where it makes more errors when the context length increases — for **GPT-5**, it already got most of these questions incorrect in the 132k context case, which explains why its performance is roughly preserved. Finally, while the **ReAct + GPT-5 + BM25** baseline doesn’t make much sense in this setting, we provide it to show retrieval is difficult here while **RLM** is the more appropriate method.
 
@@ -129,12 +130,12 @@ My advisor Omar is a [superstar in the world of information retrieval (IR)](http
 
 For our experiments, we explore the performance of each model / agent / RLM given access to a corpus of sampled documents of varying sizes — the only guarantee is that the answer can be found in this corpus. In practice, we found that GPT-5 can fit ~40 documents in context before it exceeds the input context window (272k tokens), which we factor into our choice of constants for our baselines. We explore the following models / agents, similar to the previous experiment:
 
--   **GPT-5.** Given all documents in context and the query, tell GPT-5 to provide an answer. If it goes over the context limit, return nothing.
--   **GPT-5 (Truncated).** Given all documents in context and the query, tell GPT-5 to provide an answer. If it goes over the context limit, truncate by most recent tokens (i.e. random docs).
--   **GPT-5 + Pre-query BM25.** First retrieve the top 40 documents using BM25 with the original query. Given these top-40 documents and the query, tell GPT-5 to provide an answer.
--   **RLM(GPT-5).** Given all documents in context and the query, tell RLM(GPT-5) to provide an answer. GPT-5 (root LM) can “recursively” call GPT-5-mini inside its REPL environment.
--   **RLM(GPT-5) without sub-calls.** Given the whole context and query, tell RLM(GPT-5) to provide an answer. GPT-5 (root LM) cannot recursively call GPT-5 inside its REPL environment. This is an ablation for the use of a REPL environment without recursion.
--   **ReAct w/ GPT-5 + BM25.** Given all documents, query for an answer from a ReAct loop using GPT-5 with access to a BM25 retriever that can return 5 documents per request.
+- **GPT-5.** Given all documents in context and the query, tell GPT-5 to provide an answer. If it goes over the context limit, return nothing.
+- **GPT-5 (Truncated).** Given all documents in context and the query, tell GPT-5 to provide an answer. If it goes over the context limit, truncate by most recent tokens (i.e. random docs).
+- **GPT-5 + Pre-query BM25.** First retrieve the top 40 documents using BM25 with the original query. Given these top-40 documents and the query, tell GPT-5 to provide an answer.
+- **RLM(GPT-5).** Given all documents in context and the query, tell RLM(GPT-5) to provide an answer. GPT-5 (root LM) can “recursively” call GPT-5-mini inside its REPL environment.
+- **RLM(GPT-5) without sub-calls.** Given the whole context and query, tell RLM(GPT-5) to provide an answer. GPT-5 (root LM) cannot recursively call GPT-5 inside its REPL environment. This is an ablation for the use of a REPL environment without recursion.
+- **ReAct w/ GPT-5 + BM25.** Given all documents, query for an answer from a ReAct loop using GPT-5 with access to a BM25 retriever that can return 5 documents per request.
 
 **Results.** We want to emphasize that these preliminary results are not over the entire BrowseComp-Plus dataset, and only a small subset. We report the performance over 20 randomly sampled queries on BrowseComp-Plus when given 10, 50, 100, and 1000 documents in context in **Figure 5.** We always include the gold / evidence document documents in the corpus, as well as the hard-mined negatives if available.
 
@@ -174,7 +175,7 @@ A strong benefit of the RLM framework is the ability to roughly interpret what i
 
 **Long-input, long-output**. A particularly interesting and expensive case where LMs fail is in tasks that require long output generations. For example, you might give ChatGPT your list of papers and ask it to generate the BibTeX for all of them. Similar to huge multiplication problems, some people may argue that a model should not be expected to solve these programmatic tasks flawlessly — in these instances, RLMs with REPL environments should one-shot these tasks! An example is the [**LoCoDiff**](https://abanteai.github.io/LoCoDiff-bench/) benchmark, where language models are tasked with tracking a long `git diff` history from start to finish, and outputting the result of this history given the initial file. For histories longer than 75k tokens, GPT-5 can’t even solve 10% of the histories! An example of what the model is given (as provided on the project website) is as follows:
 
-\> git log -p \\ --cc \\ --reverse \\ --topo-order \\ -- shopping\_list.txt commit 008db723cd371b87c8b1e3df08cec4b4672e581b Author: Example User Date: Wed May 7 21:12:52 2025 +0000 Initial shopping list diff --git a/shopping\_list.txt b/shopping\_list.txt new file mode 100644 index 0000000..868d98c --- /dev/null +++ b/shopping\_list.txt @@ -0,0 +1,6 @@ +# shopping\_list.txt +apples +milk +bread +eggs +coffee commit b6d826ab1b332fe4ca1dc8f67a00f220a8469e48 Author: Example User Date: Wed May 7 21:12:52 2025 +0000 Change apples to oranges and add cheese diff --git a/shopping\_list.txt b/shopping\_list.txt index 868d98c..7c335bb 100644 --- a/shopping\_list.txt +++ b/shopping\_list.txt @@ -1,6 +1,7 @@ # shopping\_list.txt -apples +oranges milk bread eggs coffee +cheese ...
+\> git log -p \\ --cc \\ --reverse \\ --topo-order \\ -- shopping_list.txt commit 008db723cd371b87c8b1e3df08cec4b4672e581b Author: Example User Date: Wed May 7 21:12:52 2025 +0000 Initial shopping list diff --git a/shopping_list.txt b/shopping_list.txt new file mode 100644 index 0000000..868d98c --- /dev/null +++ b/shopping_list.txt @@ -0,0 +1,6 @@ +# shopping_list.txt +apples +milk +bread +eggs +coffee commit b6d826ab1b332fe4ca1dc8f67a00f220a8469e48 Author: Example User Date: Wed May 7 21:12:52 2025 +0000 Change apples to oranges and add cheese diff --git a/shopping_list.txt b/shopping_list.txt index 868d98c..7c335bb 100644 --- a/shopping_list.txt +++ b/shopping_list.txt @@ -1,6 +1,7 @@ # shopping_list.txt -apples +oranges milk bread eggs coffee +cheese ...
 
 We tried **RLM(GPT-5)** to probe what would happen, and found in some instances that it chooses to one-shot the task by programmatically processing the sequence of diffs! There are many benchmark-able abilities of LMs to perform programmatic tasks (e.g. huge multiplication, diff tracking, etc.), but RLMs offer a framework for avoiding the need for such abilities altogether.
 

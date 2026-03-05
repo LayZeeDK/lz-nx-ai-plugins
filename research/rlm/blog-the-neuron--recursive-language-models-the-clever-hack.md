@@ -5,6 +5,7 @@
 > Site: The Neuron
 
 ---
+
 You know that feeling when you're reading a 300-page PDF and someone asks you a question about page 47? You don't re-read the whole thing. You flip to the right section, skim for relevant bits, and piece together an answer. Alex Zhang and his team from MIT CSAIL may have the answer with Recursive Language Models.
 
 Current AI models? Not so smart. They try to cram _everything_ into their working memory at once. Once that memory fills up—typically around 100,000 tokens—things get messy. Performance tanks. Facts get jumbled. Researchers call it "context rot," and it's why ChatGPT starts forgetting things halfway through analyzing your company's quarterly report.
@@ -57,9 +58,9 @@ The research shows RLMs often outperform standard models _even on shorter prompt
 
 **The key results:**
 
--   **Near-unlimited context.** RLMs can handle inputs 100x larger than a model's native attention window. We're talking entire codebases, multi-year document archives, book-length texts.
--   **Better accuracy on hard tasks.** On complex reasoning benchmarks, RLMs beat both the base model and common long-context workarounds (like retrieval-augmented generation).
--   **Comparable costs.** Because the model only processes relevant chunks instead of the entire massive context, average query costs stay in line with standard calls. Sometimes they're actually _cheaper_—you don't pay 10x just because your input is 10x bigger.
+- **Near-unlimited context.** RLMs can handle inputs 100x larger than a model's native attention window. We're talking entire codebases, multi-year document archives, book-length texts.
+- **Better accuracy on hard tasks.** On complex reasoning benchmarks, RLMs beat both the base model and common long-context workarounds (like retrieval-augmented generation).
+- **Comparable costs.** Because the model only processes relevant chunks instead of the entire massive context, average query costs stay in line with standard calls. Sometimes they're actually _cheaper_—you don't pay 10x just because your input is 10x bigger.
 
 ![4815457baa3ca20492bc0561190d5dec.png](https://cdn.theneuron.ai/4815457baa3ca20492bc0561190d5dec.png)
 
@@ -79,9 +80,9 @@ The original research comes from MIT CSAIL, authored by [Alex L. Zhang](https://
 
 Beyond the academic team, several groups are actively building on RLM concepts:
 
--   [**Prime Intellect**](https://www.primeintellect.ai/) has published plans to productize and extend the RLM approach, including features like recursion depth control, custom functions, and compression across conversation turns.
--   **Open-source implementations** have started popping up, with community repos implementing the "context as Python variable + recursive exploration" pattern.
--   **Early adopters** in the developer community are experimenting with RLM-style systems for code analysis, legal document review, and research synthesis.
+- [**Prime Intellect**](https://www.primeintellect.ai/) has published plans to productize and extend the RLM approach, including features like recursion depth control, custom functions, and compression across conversation turns.
+- **Open-source implementations** have started popping up, with community repos implementing the "context as Python variable + recursive exploration" pattern.
+- **Early adopters** in the developer community are experimenting with RLM-style systems for code analysis, legal document review, and research synthesis.
 
 This is still early days, but the trajectory is clear: RLMs (or something like them) are coming to production AI systems.
 
@@ -89,11 +90,11 @@ This is still early days, but the trajectory is clear: RLMs (or something like t
 
 The applications here aren't niche. Basically any domain where context is massive stands to benefit:
 
--   **Legal:** Analyzing entire case histories, contract archives, or regulatory documents without missing cross-references.
--   **Software engineering:** Searching and reasoning over entire codebases—not just the file you're editing, but how it connects to everything else.
--   **Research & academia:** Synthesizing information across hundreds of papers, finding connections humans might miss.
--   **Enterprise data:** Querying years of internal documents, emails, and reports without pre-filtering what the AI can see.
--   **Customer support:** Accessing complete conversation histories and product documentation to resolve complex issues.
+- **Legal:** Analyzing entire case histories, contract archives, or regulatory documents without missing cross-references.
+- **Software engineering:** Searching and reasoning over entire codebases—not just the file you're editing, but how it connects to everything else.
+- **Research & academia:** Synthesizing information across hundreds of papers, finding connections humans might miss.
+- **Enterprise data:** Querying years of internal documents, emails, and reports without pre-filtering what the AI can see.
+- **Customer support:** Accessing complete conversation histories and product documentation to resolve complex issues.
 
 Traditional context window expansion isn't enough for these use cases. You need a fundamentally smarter way to navigate and reason over massive inputs.
 

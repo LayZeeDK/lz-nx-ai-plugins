@@ -465,7 +465,7 @@ IF Task fails:
    - Mark task as failed
    - Report error to orchestrator
    - Continue with remaining tasks
-</error_handling>
+     </error_handling>
 ```
 
 ### Graceful Degradation
@@ -477,7 +477,7 @@ IF Task fails:
 2. Fallback 1: If rate limited, try with sonnet
 3. Fallback 2: If sonnet fails, try with haiku (if task is simple enough)
 4. Final: Report failure with diagnostic info
-</fallback_strategy>
+   </fallback_strategy>
 ```
 
 ### Task Isolation Pattern
@@ -515,7 +515,7 @@ After Task returns:
    - Log discrepancy
    - Retry with clarified prompt
    - OR escalate to higher-capability model
-</output_validation>
+     </output_validation>
 ```
 
 ---
@@ -698,6 +698,7 @@ Track these metrics per Task:
 ---
 
 **Related Documents:**
+
 - [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md) - Haiku prompt patterns
 - [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) - Sonnet patterns
 - [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md) - Opus patterns

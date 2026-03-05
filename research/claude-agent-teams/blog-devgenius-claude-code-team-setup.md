@@ -5,6 +5,7 @@
 > Site: Reading.sh
 
 ---
+
 Member-only story
 
 ## Boris’ workflow is excellent. His colleagues do it differently. Git worktrees, two-Claude review, voice dictation, and 7 more patterns worth stealing.
@@ -12,8 +13,6 @@ Member-only story
 [
 
 ![JP Caparas](https://miro.medium.com/v2/resize:fill:64:64/1*PvjeN896pE-zfss-qaU_IA.png)
-
-
 
 ](https://jpcaparas.medium.com/?source=post_page---byline--4e5d90208813---------------------------------------)
 

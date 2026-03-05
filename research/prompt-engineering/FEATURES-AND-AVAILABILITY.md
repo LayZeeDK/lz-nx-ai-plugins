@@ -8,26 +8,26 @@
 
 ## Quick Reference
 
-| Feature | Status | Availability |
-|---------|--------|--------------|
-| Skills | **GA** | Production Ready |
-| Custom Commands | **GA** | Production Ready |
-| Context Management | **GA** | Production Ready |
-| Extended Thinking | **GA** | Production Ready |
-| Structured Outputs | **Beta** | `--json-schema` flag works (use with fallback) |
-| Interleaved Thinking | **GA** | Enabled by default in CLI |
-| Effort Parameter | **N/A** | API key users only (not subscription) |
+| Feature              | Status   | Availability                                   |
+| -------------------- | -------- | ---------------------------------------------- |
+| Skills               | **GA**   | Production Ready                               |
+| Custom Commands      | **GA**   | Production Ready                               |
+| Context Management   | **GA**   | Production Ready                               |
+| Extended Thinking    | **GA**   | Production Ready                               |
+| Structured Outputs   | **Beta** | `--json-schema` flag works (use with fallback) |
+| Interleaved Thinking | **GA**   | Enabled by default in CLI                      |
+| Effort Parameter     | **N/A**  | API key users only (not subscription)          |
 
 ---
 
 ## Verification Summary (Local Testing 2026-01-20)
 
-| Feature | CLI Status | Test Result |
-|---------|------------|-------------|
-| Extended Thinking | Available | Works in conversation mode |
-| Structured Outputs | Available | `--json-schema` returns `structured_output` field |
-| Interleaved Thinking | Available | Enabled by default; thinking blocks appear between tool calls |
-| Effort Parameter | Not Available | "Custom betas are only available for API key users" |
+| Feature              | CLI Status    | Test Result                                                   |
+| -------------------- | ------------- | ------------------------------------------------------------- |
+| Extended Thinking    | Available     | Works in conversation mode                                    |
+| Structured Outputs   | Available     | `--json-schema` returns `structured_output` field             |
+| Interleaved Thinking | Available     | Enabled by default; thinking blocks appear between tool calls |
+| Effort Parameter     | Not Available | "Custom betas are only available for API key users"           |
 
 **Verified by local CLI testing:**
 
@@ -72,13 +72,13 @@ Skills are multi-file workflow packages that enable complex, multi-step automati
 
 **When to use skills vs commands:**
 
-| Use Case | Use Skills | Use Commands |
-|----------|------------|--------------|
-| Complex multi-step workflows | Yes | |
-| Needs supporting files | Yes | |
-| Simple prompt shortcuts | | Yes |
-| Single-file prompts | | Yes |
-| Auto-invocation on context | Yes | |
+| Use Case                     | Use Skills | Use Commands |
+| ---------------------------- | ---------- | ------------ |
+| Complex multi-step workflows | Yes        |              |
+| Needs supporting files       | Yes        |              |
+| Simple prompt shortcuts      |            | Yes          |
+| Single-file prompts          |            | Yes          |
+| Auto-invocation on context   | Yes        |              |
 
 **Cross-reference**: See [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md) for design patterns
 
@@ -116,11 +116,11 @@ Commands are single-file prompt shortcuts that provide quick access to common pr
 
 Built-in commands for monitoring and optimizing context window usage.
 
-| Command | Purpose |
-|---------|---------|
-| `/context` | Check current token usage |
-| `/compact` | Run context compaction |
-| `/help` | View all available commands |
+| Command    | Purpose                     |
+| ---------- | --------------------------- |
+| `/context` | Check current token usage   |
+| `/compact` | Run context compaction      |
+| `/help`    | View all available commands |
 
 **Best practices:**
 
@@ -247,10 +247,10 @@ Interleaved thinking enables Claude to reason between tool calls, improving qual
 
 **API vs CLI difference:**
 
-| Environment | Status | Configuration |
-|-------------|--------|---------------|
-| Claude Code CLI | Enabled by default | No configuration needed |
-| Messages API | Beta | Requires `interleaved-thinking-2025-05-14` header |
+| Environment     | Status             | Configuration                                     |
+| --------------- | ------------------ | ------------------------------------------------- |
+| Claude Code CLI | Enabled by default | No configuration needed                           |
+| Messages API    | Beta               | Requires `interleaved-thinking-2025-05-14` header |
 
 **To disable** (if needed): Add `DISABLE_INTERLEAVED_THINKING` to your system prompt.
 
@@ -284,12 +284,12 @@ Custom betas are only available for API key users
 
 These features exist but don't apply to typical CLI workflows:
 
-| Feature | Why Not Applicable |
-|---------|-------------------|
-| **Prompt Caching** | Requires repeated identical context (batch processing use case) |
-| **Batch API** | Async processing with 24h window; CLI is synchronous |
-| **RAG / Contextual Retrieval** | Requires vector database infrastructure |
-| **Hybrid Retrieval (BM25 + Embeddings)** | Requires retrieval system setup |
+| Feature                                  | Why Not Applicable                                              |
+| ---------------------------------------- | --------------------------------------------------------------- |
+| **Prompt Caching**                       | Requires repeated identical context (batch processing use case) |
+| **Batch API**                            | Async processing with 24h window; CLI is synchronous            |
+| **RAG / Contextual Retrieval**           | Requires vector database infrastructure                         |
+| **Hybrid Retrieval (BM25 + Embeddings)** | Requires retrieval system setup                                 |
 
 **When these would apply:**
 
@@ -365,12 +365,12 @@ claude --print --model haiku --output-format json \
 
 ## Version Information
 
-| Property | Value |
-|----------|-------|
-| Minimum version | 2.1.x |
-| Context window | 200,000 tokens |
-| Maximum output | 64,000 tokens |
-| Extended thinking minimum | 1,024 tokens |
+| Property                  | Value          |
+| ------------------------- | -------------- |
+| Minimum version           | 2.1.x          |
+| Context window            | 200,000 tokens |
+| Maximum output            | 64,000 tokens  |
+| Extended thinking minimum | 1,024 tokens   |
 
 **Sources:**
 
@@ -381,15 +381,15 @@ claude --print --model haiku --output-format json \
 
 ## Related Documentation
 
-| Document | Description |
-|----------|-------------|
-| [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md) | Skill design patterns and namespacing |
-| [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md) | Commands and context optimization |
-| [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md) | Parallel agent execution |
-| [LARGE-FILE-CHUNKING.md](./LARGE-FILE-CHUNKING.md) | Context management for large files |
-| [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md) | Haiku 4.5 patterns |
-| [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) | Sonnet 4.5 patterns |
-| [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md) | Opus 4.5 extended thinking |
+| Document                                                       | Description                           |
+| -------------------------------------------------------------- | ------------------------------------- |
+| [SKILLS-ARCHITECTURE.md](./SKILLS-ARCHITECTURE.md)             | Skill design patterns and namespacing |
+| [COMMANDS-AND-CONTEXT.md](./COMMANDS-AND-CONTEXT.md)           | Commands and context optimization     |
+| [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md)             | Parallel agent execution              |
+| [LARGE-FILE-CHUNKING.md](./LARGE-FILE-CHUNKING.md)             | Context management for large files    |
+| [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md)   | Haiku 4.5 patterns                    |
+| [MODEL-OPTIMIZATION-SONNET.md](./MODEL-OPTIMIZATION-SONNET.md) | Sonnet 4.5 patterns                   |
+| [MODEL-OPTIMIZATION-OPUS.md](./MODEL-OPTIMIZATION-OPUS.md)     | Opus 4.5 extended thinking            |
 
 ---
 

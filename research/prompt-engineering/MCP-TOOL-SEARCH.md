@@ -319,9 +319,9 @@ MCPSearch returns tool references that are automatically expanded:
 
 | Model      | Tool Search Support |
 | ---------- | ------------------- |
-| Opus 4.5   | Full support     |
-| Sonnet 4.5 | Full support     |
-| Haiku 4.5  | Not supported    |
+| Opus 4.5   | Full support        |
+| Sonnet 4.5 | Full support        |
+| Haiku 4.5  | Not supported       |
 
 For Haiku orchestrators with MCP tools:
 
@@ -404,6 +404,7 @@ When spawning Tasks that need MCP tools:
 ---
 
 **Related Documents:**
+
 - [TASK-SPAWNING-GUIDE.md](./TASK-SPAWNING-GUIDE.md) - Task tool patterns
 - [MODEL-OPTIMIZATION-HAIKU.md](./MODEL-OPTIMIZATION-HAIKU.md) - Haiku prompt patterns
 

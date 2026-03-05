@@ -4,6 +4,7 @@
 > Author: Alexander Opalic
 
 ---
+
 In my [previous post](https://alexop.dev/posts/spec-driven-development-claude-code-in-action/) Spec-Driven Development with Claude Code in Action A practical workflow for tackling large refactors with Claude Code using parallel research subagents, written specs, and the new task system for context-efficient implementation. claude-codeailocal-first +1 Feb 1, 2026 I covered spec-driven development with Claude Code—using the task system to break large refactors into subagent-driven work. Subagents are powerful, but they have one fundamental limitation: they can only report back to the parent. They can’t talk to each other.
 
 Agent teams remove that limitation. They’re a new experimental feature in Claude Code where multiple sessions coordinate as a team—with a shared task list, direct messaging between teammates, and a team lead that orchestrates the whole thing.
@@ -12,33 +13,33 @@ Agent teams remove that limitation. They’re a new experimental feature in Clau
 
 Open Table of Contents
 
--   [The Evolution: From Subagents to Agent Teams](https://alexop.dev/#the-evolution-from-subagents-to-agent-teams)
--   [Subagents vs Agent Teams](https://alexop.dev/#subagents-vs-agent-teams)
--   [The Seven Team Primitives](https://alexop.dev/#the-seven-team-primitives)
-    -   [TeamCreate — Start a Team](https://alexop.dev/#teamcreate--start-a-team)
-    -   [TaskCreate — Define a Unit of Work](https://alexop.dev/#taskcreate--define-a-unit-of-work)
-    -   [TaskUpdate — Claim and Complete Work](https://alexop.dev/#taskupdate--claim-and-complete-work)
-    -   [TaskList — Find Available Work](https://alexop.dev/#tasklist--find-available-work)
-    -   [Task (with team\_name) — Spawn a Teammate](https://alexop.dev/#task-with-team_name--spawn-a-teammate)
-    -   [SendMessage — Talk to Each Other](https://alexop.dev/#sendmessage--talk-to-each-other)
-    -   [TeamDelete — Clean Up](https://alexop.dev/#teamdelete--clean-up)
-    -   [How They Fit Together](https://alexop.dev/#how-they-fit-together)
--   [The Team Lead’s Control Layer](https://alexop.dev/#the-team-leads-control-layer)
--   [Task Lifecycle in a Team](https://alexop.dev/#task-lifecycle-in-a-team)
--   [Use Case: Building a Large Feature](https://alexop.dev/#use-case-building-a-large-feature)
--   [Real Example: QA Swarm Against My Blog](https://alexop.dev/#real-example-qa-swarm-against-my-blog)
-    -   [What the Lead Did](https://alexop.dev/#what-the-lead-did)
-    -   [What the Files Look Like](https://alexop.dev/#what-the-files-look-like)
-    -   [How the Agents Reported Back](https://alexop.dev/#how-the-agents-reported-back)
-    -   [The Lead’s Synthesis](https://alexop.dev/#the-leads-synthesis)
-    -   [The Full Lifecycle](https://alexop.dev/#the-full-lifecycle)
--   [The Cost Trade-off](https://alexop.dev/#the-cost-trade-off)
-    -   [When Teams Are Worth It](https://alexop.dev/#when-teams-are-worth-it)
--   [Getting Started](https://alexop.dev/#getting-started)
-    -   [Recipe: Plan First, Parallelize Second](https://alexop.dev/#recipe-plan-first-parallelize-second)
-    -   [Display Modes](https://alexop.dev/#display-modes)
--   [The Abstraction Ladder](https://alexop.dev/#the-abstraction-ladder)
--   [Conclusion](https://alexop.dev/#conclusion)
+- [The Evolution: From Subagents to Agent Teams](https://alexop.dev/#the-evolution-from-subagents-to-agent-teams)
+- [Subagents vs Agent Teams](https://alexop.dev/#subagents-vs-agent-teams)
+- [The Seven Team Primitives](https://alexop.dev/#the-seven-team-primitives)
+  - [TeamCreate — Start a Team](https://alexop.dev/#teamcreate--start-a-team)
+  - [TaskCreate — Define a Unit of Work](https://alexop.dev/#taskcreate--define-a-unit-of-work)
+  - [TaskUpdate — Claim and Complete Work](https://alexop.dev/#taskupdate--claim-and-complete-work)
+  - [TaskList — Find Available Work](https://alexop.dev/#tasklist--find-available-work)
+  - [Task (with team_name) — Spawn a Teammate](https://alexop.dev/#task-with-team_name--spawn-a-teammate)
+  - [SendMessage — Talk to Each Other](https://alexop.dev/#sendmessage--talk-to-each-other)
+  - [TeamDelete — Clean Up](https://alexop.dev/#teamdelete--clean-up)
+  - [How They Fit Together](https://alexop.dev/#how-they-fit-together)
+- [The Team Lead’s Control Layer](https://alexop.dev/#the-team-leads-control-layer)
+- [Task Lifecycle in a Team](https://alexop.dev/#task-lifecycle-in-a-team)
+- [Use Case: Building a Large Feature](https://alexop.dev/#use-case-building-a-large-feature)
+- [Real Example: QA Swarm Against My Blog](https://alexop.dev/#real-example-qa-swarm-against-my-blog)
+  - [What the Lead Did](https://alexop.dev/#what-the-lead-did)
+  - [What the Files Look Like](https://alexop.dev/#what-the-files-look-like)
+  - [How the Agents Reported Back](https://alexop.dev/#how-the-agents-reported-back)
+  - [The Lead’s Synthesis](https://alexop.dev/#the-leads-synthesis)
+  - [The Full Lifecycle](https://alexop.dev/#the-full-lifecycle)
+- [The Cost Trade-off](https://alexop.dev/#the-cost-trade-off)
+  - [When Teams Are Worth It](https://alexop.dev/#when-teams-are-worth-it)
+- [Getting Started](https://alexop.dev/#getting-started)
+  - [Recipe: Plan First, Parallelize Second](https://alexop.dev/#recipe-plan-first-parallelize-second)
+  - [Display Modes](https://alexop.dev/#display-modes)
+- [The Abstraction Ladder](https://alexop.dev/#the-abstraction-ladder)
+- [Conclusion](https://alexop.dev/#conclusion)
 
 ## The Evolution: From Subagents to Agent Teams[#](https://alexop.dev/#the-evolution-from-subagents-to-agent-teams)
 
@@ -60,13 +61,13 @@ SUBAGENTS(one-way reporting)Main AgentS1S2S3Results go backto main onlyS1 can't 
 
 Subagents report back to main only. Agent teams share findings and coordinate directly.
 
-|  | Subagents | Agent Teams |
-| --- | --- | --- |
-| **Context** | Own window, results return | Own window, fully independent |
-| **Communication** | Report to main only | Message each other directly |
-| **Coordination** | Main manages everything | Shared task list, self-claim |
-| **Token cost** | Lower | Higher—each teammate is a full session |
-| **Best for** | Focused tasks, research | Complex work needing collaboration |
+|                   | Subagents                  | Agent Teams                            |
+| ----------------- | -------------------------- | -------------------------------------- |
+| **Context**       | Own window, results return | Own window, fully independent          |
+| **Communication** | Report to main only        | Message each other directly            |
+| **Coordination**  | Main manages everything    | Shared task list, self-claim           |
+| **Token cost**    | Lower                      | Higher—each teammate is a full session |
+| **Best for**      | Focused tasks, research    | Complex work needing collaboration     |
 
 ## The Seven Team Primitives[#](https://alexop.dev/#the-seven-team-primitives)
 
@@ -142,7 +143,7 @@ TaskList()
 
 This is the shared coordination mechanism. No centralized scheduler—each teammate polls `TaskList`, finds unowned pending tasks, and claims one.
 
-### Task (with team\_name) — Spawn a Teammate[#](https://alexop.dev/#task-with-team_name--spawn-a-teammate)
+### Task (with team_name) — Spawn a Teammate[#](https://alexop.dev/#task-with-team_name--spawn-a-teammate)
 
 The existing `Task` tool gets a `team_name` parameter that turns a regular subagent into a team member. Once spawned, the teammate can see the shared task list and message other teammates.
 
@@ -208,7 +209,7 @@ TeamDelete()
 
 Every team session follows the same tool sequence:
 
-SETUPTeamCreate("blog-qa")TaskCreate × NTask(team\_name) × Ncreate team + dirsdefine all workspawn teammatesEXECUTIONEach teammate runs this loop independentlyTaskList()TaskUpdate(claim)do workTaskUpdate(complete)SendMessage(report)more tasks?yesnogo idleTEARDOWNshutdown\_request × Nshutdown\_response × NTeamDelete()clean up files
+SETUPTeamCreate("blog-qa")TaskCreate × NTask(team_name) × Ncreate team + dirsdefine all workspawn teammatesEXECUTIONEach teammate runs this loop independentlyTaskList()TaskUpdate(claim)do workTaskUpdate(complete)SendMessage(report)more tasks?yesnogo idleTEARDOWNshutdown_request × Nshutdown_response × NTeamDelete()clean up files
 
 Every team session follows this three-phase tool sequence
 
@@ -224,7 +225,7 @@ The team lead observes, coordinates, enforces quality, and synthesizes results. 
 
 ## Task Lifecycle in a Team[#](https://alexop.dev/#task-lifecycle-in-a-team)
 
-PENDINGIN\_PROGRESSCOMPLETEDTeammate self-claimsOR lead assignsTeammateworks on itDependent tasksunblock automatically
+PENDINGIN_PROGRESSCOMPLETEDTeammate self-claimsOR lead assignsTeammateworks on itDependent tasksunblock automatically
 
 Tasks move through three states. Teammates self-claim or get assigned by the lead.
 
@@ -294,13 +295,13 @@ And the tasks lived as individual files under `~/.claude/tasks/blog-qa/`. Each t
 
 The lead created these 5 tasks:
 
-| # | Task | Agent | What It Checked |
-| --- | --- | --- | --- |
-| 1 | Core page responses | `qa-pages` | 16 URLs return correct HTTP status codes |
-| 2 | Blog post rendering | `qa-posts` | 83 posts have h1, meta tags, working images |
-| 3 | Navigation & link integrity | `qa-links` | 146 internal URLs for broken links |
-| 4 | RSS, sitemap, SEO metadata | `qa-seo` | RSS validity, robots.txt, og:tags, JSON-LD |
-| 5 | Accessibility & HTML structure | `qa-a11y` | Heading hierarchy, ARIA, theme toggle, lang attr |
+| #   | Task                           | Agent      | What It Checked                                  |
+| --- | ------------------------------ | ---------- | ------------------------------------------------ |
+| 1   | Core page responses            | `qa-pages` | 16 URLs return correct HTTP status codes         |
+| 2   | Blog post rendering            | `qa-posts` | 83 posts have h1, meta tags, working images      |
+| 3   | Navigation & link integrity    | `qa-links` | 146 internal URLs for broken links               |
+| 4   | RSS, sitemap, SEO metadata     | `qa-seo`   | RSS validity, robots.txt, og:tags, JSON-LD       |
+| 5   | Accessibility & HTML structure | `qa-a11y`  | Heading hierarchy, ARIA, theme toggle, lang attr |
 
 ### How the Agents Reported Back[#](https://alexop.dev/#how-the-agents-reported-back)
 
@@ -354,7 +355,7 @@ Then the lead sent `shutdown_request` to each agent, they acknowledged, and `Tea
 
 ### The Full Lifecycle[#](https://alexop.dev/#the-full-lifecycle)
 
-YOU"QA my blog at localhost:4321"LEADTeamCreate → 5 TaskCreate → 5 Task(spawn)← all run in parallelpagespostslinksseoa11y16/16 pass83 posts2 bad OG146 URLs1 404 devRSS ok,no og:type<htmlclass=false>Lead synthesizes10 issues, prioritizedshutdown\_request × 5TeamDeleteDone.
+YOU"QA my blog at localhost:4321"LEADTeamCreate → 5 TaskCreate → 5 Task(spawn)← all run in parallelpagespostslinksseoa11y16/16 pass83 posts2 bad OG146 URLs1 404 devRSS ok,no og:type<htmlclass=false>Lead synthesizes10 issues, prioritizedshutdown_request × 5TeamDeleteDone.
 
 The full lifecycle from prompt to prioritized QA report
 
@@ -459,10 +460,10 @@ Each level trades control for compute. Solo sessions give you full control but l
 
 ## Conclusion[#](https://alexop.dev/#conclusion)
 
--   Agent teams let multiple Claude Code sessions **communicate with each other**, not just report to a parent
--   A team lead orchestrates, observes, and synthesizes—another abstraction layer where AI manages AI
--   Best use cases: **large features** (parallel tracks), **QA swarms** (multiple testing perspectives), **competing hypotheses** (debate and converge)
--   The trade-off is real: more agents = more tokens = more cost
--   **Best recipe**: plan first with plan mode (cheap), then hand the plan to a team for parallel execution (expensive but fast). The plan gives you a checkpoint before committing tokens.
--   Start with subagents for focused work, graduate to teams when workers need to coordinate
--   For background on the task system that teams build on, see my [spec-driven development post](https://alexop.dev/posts/spec-driven-development-claude-code-in-action/) Spec-Driven Development with Claude Code in Action A practical workflow for tackling large refactors with Claude Code using parallel research subagents, written specs, and the new task system for context-efficient implementation. claude-codeailocal-first +1 Feb 1, 2026
+- Agent teams let multiple Claude Code sessions **communicate with each other**, not just report to a parent
+- A team lead orchestrates, observes, and synthesizes—another abstraction layer where AI manages AI
+- Best use cases: **large features** (parallel tracks), **QA swarms** (multiple testing perspectives), **competing hypotheses** (debate and converge)
+- The trade-off is real: more agents = more tokens = more cost
+- **Best recipe**: plan first with plan mode (cheap), then hand the plan to a team for parallel execution (expensive but fast). The plan gives you a checkpoint before committing tokens.
+- Start with subagents for focused work, graduate to teams when workers need to coordinate
+- For background on the task system that teams build on, see my [spec-driven development post](https://alexop.dev/posts/spec-driven-development-claude-code-in-action/) Spec-Driven Development with Claude Code in Action A practical workflow for tackling large refactors with Claude Code using parallel research subagents, written specs, and the new task system for context-efficient implementation. claude-codeailocal-first +1 Feb 1, 2026

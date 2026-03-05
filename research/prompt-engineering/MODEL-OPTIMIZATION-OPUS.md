@@ -32,10 +32,10 @@
 
 **Context Availability by Platform**:
 
-| Platform           | 200K Context | 1M Context           | Recommendation                                |
-| ------------------ | ------------ | -------------------- | --------------------------------------------- |
-| **Claude Code**    | ✅ Available | ❌ **Not Available** | Opus limited to 200K (use Sonnet for 1M)      |
-| **API Standard**   | ✅ Available | ❌ Not Available     | Use progressive disclosure for large features |
+| Platform         | 200K Context | 1M Context           | Recommendation                                |
+| ---------------- | ------------ | -------------------- | --------------------------------------------- |
+| **Claude Code**  | ✅ Available | ❌ **Not Available** | Opus limited to 200K (use Sonnet for 1M)      |
+| **API Standard** | ✅ Available | ❌ Not Available     | Use progressive disclosure for large features |
 
 **⚠️ IMPORTANT**: Opus 4.5 is limited to **200K context only**. The 1M context window is exclusive to Sonnet 4.5.
 

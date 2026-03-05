@@ -5,6 +5,7 @@
 > Site: Towards AI
 
 ---
+
 Member-only story
 
 ## _Anthropic and Moonshot shipped competing multi-agent systems within 10 days. One trusts developers. The other trusts reinforcement learning. Pick your side._
@@ -12,8 +13,6 @@ Member-only story
 [
 
 ![JP Caparas](https://miro.medium.com/v2/resize:fill:64:64/1*PvjeN896pE-zfss-qaU_IA.png)
-
-
 
 ](https://jpcaparas.medium.com/?source=post_page---byline--0106f2467bd2---------------------------------------)
 

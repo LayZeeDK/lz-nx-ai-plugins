@@ -5,19 +5,20 @@
 > Site: Dan Does Code
 
 ---
+
 ![Banner](https://www.dandoescode.com/_next/image?url=%2Fstatic%2Fimages%2Fparallel-vibe-coding-with-git-worktrees%2Fbanner.png&w=3840&q=75)
 
--   [Introduction](https://www.dandoescode.com/#introduction)
--   [The Problem with Shared Working Trees](https://www.dandoescode.com/#the-problem-with-shared-working-trees)
--   [What Are Git Worktrees?](https://www.dandoescode.com/#what-are-git-worktrees)
--   [Native Git Worktree Commands](https://www.dandoescode.com/#native-git-worktree-commands)
--   [Using Worktrees Directly in Claude Code](https://www.dandoescode.com/#using-worktrees-directly-in-claude-code)
--   [VS Code Support for Worktrees](https://www.dandoescode.com/#vs-code-support-for-worktrees)
--   [How Pull Requests Work with Worktrees](https://www.dandoescode.com/#how-pull-requests-work-with-worktrees)
--   [What Happens When You Have Changes on Both a Regular Branch and a Worktree?](https://www.dandoescode.com/#what-happens-when-you-have-changes-on-both-a-regular-branch-and-a-worktree)
--   [A Practical Parallel Workflow](https://www.dandoescode.com/#a-practical-parallel-workflow)
--   [Summary](https://www.dandoescode.com/#summary)
--   [Resources](https://www.dandoescode.com/#resources)
+- [Introduction](https://www.dandoescode.com/#introduction)
+- [The Problem with Shared Working Trees](https://www.dandoescode.com/#the-problem-with-shared-working-trees)
+- [What Are Git Worktrees?](https://www.dandoescode.com/#what-are-git-worktrees)
+- [Native Git Worktree Commands](https://www.dandoescode.com/#native-git-worktree-commands)
+- [Using Worktrees Directly in Claude Code](https://www.dandoescode.com/#using-worktrees-directly-in-claude-code)
+- [VS Code Support for Worktrees](https://www.dandoescode.com/#vs-code-support-for-worktrees)
+- [How Pull Requests Work with Worktrees](https://www.dandoescode.com/#how-pull-requests-work-with-worktrees)
+- [What Happens When You Have Changes on Both a Regular Branch and a Worktree?](https://www.dandoescode.com/#what-happens-when-you-have-changes-on-both-a-regular-branch-and-a-worktree)
+- [A Practical Parallel Workflow](https://www.dandoescode.com/#a-practical-parallel-workflow)
+- [Summary](https://www.dandoescode.com/#summary)
+- [Resources](https://www.dandoescode.com/#resources)
 
 ## Introduction
 
@@ -37,9 +38,9 @@ When you run Claude Code (or any vibe coding agent), the agent reads and writes 
 
 The problem is that a git repository only has one working tree by default. Every branch you check out lives in the same set of files on disk. So if Claude is halfway through generating a new feature on `feature/payments`, your working directory is in a partially modified state. You cannot:
 
--   Check out a different branch to work on something else
--   Run another Claude session that touches different files safely
--   Even meaningfully look at what another branch looks like
+- Check out a different branch to work on something else
+- Run another Claude session that touches different files safely
+- Even meaningfully look at what another branch looks like
 
 You're serialised. One task at a time. 🐌
 
@@ -229,17 +230,17 @@ Git worktrees are the missing piece for anyone trying to run Claude Code (or any
 
 The key takeaways:
 
--   **Worktrees are native git** — no extra tooling required, just `git worktree add`
--   **Claude Code understands worktrees** — you can ask it to create and operate in one directly
--   **VS Code handles them natively** — open each worktree as its own window
--   **PRs work exactly the same** — each worktree is just a branch, push and raise as normal
--   **Changes are isolated** — worktrees share git history but not working directory state; merges happen when you combine branches, just like normal
+- **Worktrees are native git** — no extra tooling required, just `git worktree add`
+- **Claude Code understands worktrees** — you can ask it to create and operate in one directly
+- **VS Code handles them natively** — open each worktree as its own window
+- **PRs work exactly the same** — each worktree is just a branch, push and raise as normal
+- **Changes are isolated** — worktrees share git history but not working directory state; merges happen when you combine branches, just like normal
 
 The first time you kick off two Claude sessions simultaneously and watch them both making progress without any interference, it genuinely changes how you think about AI-assisted development. Give it a try.
 
 ## Resources
 
--   [Git Worktrees Documentation](https://git-scm.com/docs/git-worktree)
--   [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
--   [GitHub CLI — Creating Pull Requests](https://cli.github.com/manual/gh_pr_create)
--   [Efficient Vibe Coding: How Clarifying Questions Make AI Actually Useful](https://www.dandoescode.com/blog/efficient-vibe-coding-with-clarifying-questions)
+- [Git Worktrees Documentation](https://git-scm.com/docs/git-worktree)
+- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [GitHub CLI — Creating Pull Requests](https://cli.github.com/manual/gh_pr_create)
+- [Efficient Vibe Coding: How Clarifying Questions Make AI Actually Useful](https://www.dandoescode.com/blog/efficient-vibe-coding-with-clarifying-questions)

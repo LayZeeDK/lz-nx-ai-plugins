@@ -37,6 +37,7 @@ const fs = require('fs');
 ## Naming Patterns
 
 **Files:**
+
 - Plugin scripts: `kebab-case.mjs` (e.g., `workspace-indexer.mjs`, `repl-sandbox.mjs`)
 - Plugin definitions (agents/commands/skills): `kebab-case.md` (e.g., `repl-executor.md`)
 - Hook config: `hooks.json` (fixed name per plugin conventions)
@@ -44,12 +45,14 @@ const fs = require('fs');
 - Skill definitions: `SKILL.md` (uppercase, fixed name per plugin conventions)
 
 **Directories:**
+
 - Plugin root: `plugins/<plugin-name>/` using dot-separated namespacing (e.g., `plugins/lz-nx.rlm/`)
 - Subdirectories: lowercase, plural nouns matching Claude Code conventions:
   `agents/`, `commands/`, `skills/`, `hooks/`, `scripts/`
 - Skill subdirectories: `skills/<skill-name>/` (kebab-case)
 
 **JavaScript identifiers:**
+
 - Functions: camelCase (e.g., `buildWorkspaceIndex`, `resolvePathAlias`)
 - Variables: camelCase (e.g., `workspaceIndex`, `projectEntry`)
 - Constants: SCREAMING_SNAKE_CASE for true constants (e.g., `DEFAULT_CONFIG`, `MAX_BUFFER`)
@@ -65,12 +68,14 @@ Follows the Matryoshka convention established in architecture research.
 ## Code Style
 
 **Formatting:**
+
 - Tool: Prettier 3.x
 - Config: `.prettierrc` -- single setting: `{ "singleQuote": true }`
 - Single quotes for all strings in JavaScript
 - Prettier handles indentation, line length, and all other formatting automatically
 
 **Linting:**
+
 - Tool: ESLint 9.x (Nx-managed, `@nx/eslint` plugin)
 - Config: `eslint.config.mjs` per project (flat config format)
 - Run via Nx: `npm exec nx lint <project>`
@@ -78,6 +83,7 @@ Follows the Matryoshka convention established in architecture research.
 **TypeScript strict mode (for type checking):**
 
 The root `tsconfig.base.json` enforces:
+
 - `strict: true` -- enables all strict type checks
 - `noUnusedLocals: true` -- no dead variables
 - `noImplicitReturns: true` -- all code paths must return
@@ -112,6 +118,7 @@ if (projects.size === 0) throw new Error('...');
 ## Import Organization
 
 **Order:**
+
 1. Node.js built-in modules (`node:` prefix)
 2. Internal module imports (relative paths within the plugin)
 
@@ -180,6 +187,7 @@ IIFEs. Errors thrown inside the REPL block are captured and returned as
 **Framework:** `console` (no logging library; zero dependencies rule applies).
 
 **Patterns:**
+
 - Script progress output uses ASCII prefix tags: `[OK]`, `[ERROR]`, `[WARN]`,
   `[INFO]`, `[SKIP]`
 - Script output goes to stdout (user-visible) or stderr (diagnostic only)
@@ -188,6 +196,7 @@ IIFEs. Errors thrown inside the REPL block are captured and returned as
 ## Comments
 
 **When to comment:**
+
 - Document the "why", not the "what"
 - Security decisions and known limitations require comments (especially vm sandbox caveats)
 - Non-obvious platform workarounds require inline explanation
@@ -237,6 +246,7 @@ export default function buildWorkspaceIndex() { ... }
 
 **Module responsibilities:** One primary concern per script file. The planned
 scripts follow this pattern:
+
 - `workspace-indexer.mjs` -- builds/reads workspace index only
 - `path-resolver.mjs` -- path alias resolution only
 - `repl-sandbox.mjs` -- VM sandbox execution only
@@ -264,7 +274,7 @@ allowed-tools: Bash(node scripts/:*), Bash(npx nx show :*)
 ```markdown
 ---
 name: repl-executor
-tools: ["Bash", "Read"]
+tools: ['Bash', 'Read']
 model: sonnet
 ---
 ```
@@ -288,20 +298,25 @@ system). Do not use in command markdown files or script arguments -- it is not
 substituted there.
 
 **Hook output format:**
+
 - Use `additionalContext` when Claude should consider information passively
 - Use `decision: "block"` with `reason` when Claude must take specific action
 
 ```javascript
 // Active intervention required
-process.stdout.write(JSON.stringify({
-  decision: 'block',
-  reason: 'Workspace index is stale. Run: node scripts/workspace-indexer.mjs',
-}));
+process.stdout.write(
+  JSON.stringify({
+    decision: 'block',
+    reason: 'Workspace index is stale. Run: node scripts/workspace-indexer.mjs',
+  }),
+);
 
 // Passive context injection
-process.stdout.write(JSON.stringify({
-  additionalContext: 'Workspace has ' + projectCount + ' projects indexed.',
-}));
+process.stdout.write(
+  JSON.stringify({
+    additionalContext: 'Workspace has ' + projectCount + ' projects indexed.',
+  }),
+);
 ```
 
 **Hook input handling:** PostToolUse hooks receive different formats. Handle both:
@@ -334,4 +349,4 @@ ASCII characters. Use prefix tags: `[OK]`, `[ERROR]`, `[WARN]`, `[INFO]`,
 
 ---
 
-*Convention analysis: 2026-03-03*
+_Convention analysis: 2026-03-03_

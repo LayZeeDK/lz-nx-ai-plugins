@@ -5,6 +5,7 @@
 > Site: DEV Community
 
 ---
+
 Last Tuesday at 3 AM, I watched 12 Claude agents rebuild my entire frontend while I slept. One agent refactored components, another wrote tests, a third updated documentation, and a fourth optimized performance.
 
 By morning, I had a pull request with 10,000+ lines of perfectly coordinated changes.
@@ -17,16 +18,16 @@ In Parts 1 and 2, we explored Claude's capabilities and hook system. Now, let's 
 
 But first, a warning: **This is where things get complex**. Multiple agents mean:
 
--   Resource contention
--   File conflicts
--   Coordination challenges
--   Observability nightmares
+- Resource contention
+- File conflicts
+- Coordination challenges
+- Observability nightmares
 
 Get it wrong, and you'll have chaos. Get it right, and you'll achieve superhuman productivity.
 
 ## [](https://dev.to/#the-architecture-that-makes-it-possible)The Architecture That Makes It Possible
 
-Here's the system architecture I use for multi-agent orchestration:  
+Here's the system architecture I use for multi-agent orchestration:
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -59,7 +60,7 @@ Enter fullscreen mode Exit fullscreen mode
 
 ## [](https://dev.to/#step-1-the-metaagent-orchestrator)Step 1: The Meta-Agent Orchestrator
 
-The meta-agent is Claude running in a special mode where it doesn't write code - it manages other agents:  
+The meta-agent is Claude running in a special mode where it doesn't write code - it manages other agents:
 
 ```
 # orchestrator.py
@@ -124,7 +125,7 @@ Enter fullscreen mode Exit fullscreen mode
 
 ## [](https://dev.to/#step-2-specialized-worker-agents)Step 2: Specialized Worker Agents
 
-Each worker agent has a specific role and configuration:  
+Each worker agent has a specific role and configuration:
 
 ```
 # worker_agent.py
@@ -205,7 +206,7 @@ Enter fullscreen mode Exit fullscreen mode
 
 ## [](https://dev.to/#step-3-realtime-observability)Step 3: Real-Time Observability
 
-With multiple agents running, observability becomes critical. Here's my monitoring dashboard:  
+With multiple agents running, observability becomes critical. Here's my monitoring dashboard:
 
 ```
 <!DOCTYPE html>
@@ -290,8 +291,8 @@ With multiple agents running, observability becomes critical. Here's my monitori
 
         <!-- Agent Grid -->
         <div class="agent-grid">
-            <div v-for="agent in agents" 
-                 :key="agent.id" 
+            <div v-for="agent in agents"
+                 :key="agent.id"
                  :class="['agent-card', { active: agent.status === 'active' }]">
 
                 <div :class="['agent-status', agent.status]"></div>
@@ -301,7 +302,7 @@ With multiple agents running, observability becomes critical. Here's my monitori
                 <p>Current Task: {{ agent.currentTask || 'Idle' }}</p>
 
                 <div v-if="agent.currentTask" class="task-progress">
-                    <div class="task-progress-bar" 
+                    <div class="task-progress-bar"
                          :style="{ width: agent.progress + '%' }"></div>
                 </div>
 
@@ -422,7 +423,7 @@ Last week, I needed to refactor my entire component library from class component
   },
   {
     "id": "refactor-forms",
-    "type": "frontend", 
+    "type": "frontend",
     "description": "Convert all Form components to functional",
     "dependencies": ["analyze-1"],
     "files": ["components/Form/*.tsx"]
@@ -455,10 +456,10 @@ Enter fullscreen mode Exit fullscreen mode
 
 ### [](https://dev.to/#the-execution)The Execution:
 
--   **Agent-1** and **Agent-2** worked on different component folders in parallel
--   **Agent-3** and **Agent-4** updated tests as components were completed
--   **Agent-5** regenerated documentation after all refactoring was done
--   **Agent-6** ran performance benchmarks on the new components
+- **Agent-1** and **Agent-2** worked on different component folders in parallel
+- **Agent-3** and **Agent-4** updated tests as components were completed
+- **Agent-5** regenerated documentation after all refactoring was done
+- **Agent-6** ran performance benchmarks on the new components
 
 **Total time**: 2 hours (vs estimated 2 days manual work)  
 **Lines changed**: 12,000+  
@@ -469,7 +470,7 @@ Enter fullscreen mode Exit fullscreen mode
 
 ### [](https://dev.to/#challenge-1-resource-management)Challenge 1: Resource Management
 
-Running 10+ Claude instances will max out your system. Here's my resource manager:  
+Running 10+ Claude instances will max out your system. Here's my resource manager:
 
 ```
 # resource_manager.py
@@ -491,7 +492,7 @@ class ResourceManager:
             return False
 
         # Check active containers
-        active = len([c for c in self.docker.containers.list() 
+        active = len([c for c in self.docker.containers.list()
                      if 'claude-agent' in c.name])
 
         return active < self.max_agents
@@ -518,7 +519,7 @@ Enter fullscreen mode Exit fullscreen mode
 
 ### [](https://dev.to/#challenge-2-coordination-without-conflicts)Challenge 2: Coordination Without Conflicts
 
-The key is smart task distribution and file locking:  
+The key is smart task distribution and file locking:
 
 ```
 # conflict_prevention.py
@@ -562,7 +563,7 @@ Enter fullscreen mode Exit fullscreen mode
 
 ### [](https://dev.to/#challenge-3-quality-control)Challenge 3: Quality Control
 
-With multiple agents, quality control becomes critical:  
+With multiple agents, quality control becomes critical:
 
 ```
 # quality_gate.py
@@ -614,15 +615,15 @@ Enter fullscreen mode Exit fullscreen mode
 
 Let's talk ROI. Running 10 Claude agents costs approximately:
 
--   **API costs**: ~$50/day at heavy usage
--   **Infrastructure**: ~$20/day for cloud resources
+- **API costs**: ~$50/day at heavy usage
+- **Infrastructure**: ~$20/day for cloud resources
 
 But the productivity gains:
 
--   **10x faster development** on parallelizable tasks
--   **24/7 operation** (agents don't sleep)
--   **Consistent quality** (no fatigue)
--   **Comprehensive testing** (every change, every time)
+- **10x faster development** on parallelizable tasks
+- **24/7 operation** (agents don't sleep)
+- **Consistent quality** (no fatigue)
+- **Comprehensive testing** (every change, every time)
 
 For a team of 5 developers, this replaces roughly $50,000/month in engineering time for $2,000/month in compute costs.
 
@@ -643,7 +644,7 @@ Next week, I'm experimenting with 50+ agents working on a complete application r
 
 It's turtles all the way down, and it's beautiful.
 
-* * *
+---
 
 ## [](https://dev.to/#take-your-ai-engineering-to-the-next-level)🚀 Take Your AI Engineering to the Next Level
 
@@ -651,40 +652,40 @@ It's turtles all the way down, and it's beautiful.
 
 ### [](https://dev.to/#complete-learning-paths)**🎓 Complete Learning Paths:**
 
--   🎯 [Claude Code Mastery](https://learn-agentic-ai.com/en/learn/paths/claude-code-mastery) - 7 modules from basics to multi-agent orchestration
--   🔧 [AI Engineering Fundamentals](https://learn-agentic-ai.com/en/learn/paths/ai-engineering-fundamentals) - Build unstoppable foundations
--   🏗️ [Production AI Systems](https://learn-agentic-ai.com/en/learn) - Enterprise-ready patterns and practices
+- 🎯 [Claude Code Mastery](https://learn-agentic-ai.com/en/learn/paths/claude-code-mastery) - 7 modules from basics to multi-agent orchestration
+- 🔧 [AI Engineering Fundamentals](https://learn-agentic-ai.com/en/learn/paths/ai-engineering-fundamentals) - Build unstoppable foundations
+- 🏗️ [Production AI Systems](https://learn-agentic-ai.com/en/learn) - Enterprise-ready patterns and practices
 
 ### [](https://dev.to/#essential-reading-for-multiagent-systems)**📚 Essential Reading for Multi-Agent Systems:**
 
--   [Multi-Agent Observability: Complete Implementation Guide](https://learn-agentic-ai.com/blog/multi-agent-observability-see-everything-your-ai-agents-do) - See everything your agents do
--   [Self-Building AI: Meta-Agents and Sub-Agent Architecture](https://learn-agentic-ai.com/blog/self-building-ai-meta-agents-and-sub-agent-architecture) - Advanced orchestration patterns
--   [Why Multi-Agent Systems Are a Trap (And How to Avoid It)](https://learn-agentic-ai.com/blog/why-multi-agent-systems-are-a-trap) - Critical lessons learned
--   [Agent Architecture Patterns: Production Guide](https://learn-agentic-ai.com/blog/agent-architecture-patterns-production-guide) - Battle-tested patterns
--   [Building AI Agents with Pure Python](https://learn-agentic-ai.com/blog/building-ai-agents-pure-python) - No framework required
--   [12-Factor Agents: Building Reliable LLM Applications](https://learn-agentic-ai.com/blog/12-factor-agents-building-reliable-llm-applications) - Production best practices
+- [Multi-Agent Observability: Complete Implementation Guide](https://learn-agentic-ai.com/blog/multi-agent-observability-see-everything-your-ai-agents-do) - See everything your agents do
+- [Self-Building AI: Meta-Agents and Sub-Agent Architecture](https://learn-agentic-ai.com/blog/self-building-ai-meta-agents-and-sub-agent-architecture) - Advanced orchestration patterns
+- [Why Multi-Agent Systems Are a Trap (And How to Avoid It)](https://learn-agentic-ai.com/blog/why-multi-agent-systems-are-a-trap) - Critical lessons learned
+- [Agent Architecture Patterns: Production Guide](https://learn-agentic-ai.com/blog/agent-architecture-patterns-production-guide) - Battle-tested patterns
+- [Building AI Agents with Pure Python](https://learn-agentic-ai.com/blog/building-ai-agents-pure-python) - No framework required
+- [12-Factor Agents: Building Reliable LLM Applications](https://learn-agentic-ai.com/blog/12-factor-agents-building-reliable-llm-applications) - Production best practices
 
 ### [](https://dev.to/#business-amp-roi-resources)**💡 Business & ROI Resources:**
 
--   [ROI-Driven AI: Measuring and Maximizing Returns](https://learn-agentic-ai.com/blog/roi-driven-ai-measuring-maximizing-returns) - Prove the value
--   [The CAIR Metric: Hidden Key to AI Product Success](https://learn-agentic-ai.com/blog/the-cair-metric-hidden-key-to-ai-product-success) - Measure what matters
--   [POC to Production: Lessons from 200+ Enterprise Deployments](https://learn-agentic-ai.com/blog/poc-to-production-200-enterprise-genai-deployments-taught-us-this) - Real-world insights
+- [ROI-Driven AI: Measuring and Maximizing Returns](https://learn-agentic-ai.com/blog/roi-driven-ai-measuring-maximizing-returns) - Prove the value
+- [The CAIR Metric: Hidden Key to AI Product Success](https://learn-agentic-ai.com/blog/the-cair-metric-hidden-key-to-ai-product-success) - Measure what matters
+- [POC to Production: Lessons from 200+ Enterprise Deployments](https://learn-agentic-ai.com/blog/poc-to-production-200-enterprise-genai-deployments-taught-us-this) - Real-world insights
 
 ### [](https://dev.to/#tools-amp-templates)**🛠️ Tools & Templates:**
 
--   [GitHub: Multi-Agent Orchestration Templates](https://github.com/brandonredmond) - Production-ready code
--   [Free Weekly Newsletter](https://learn-agentic-ai.com/) - Latest techniques and case studies
+- [GitHub: Multi-Agent Orchestration Templates](https://github.com/brandonredmond) - Production-ready code
+- [Free Weekly Newsletter](https://learn-agentic-ai.com/) - Latest techniques and case studies
 
 **About the Author:**  
 I'm Brandon J. Redmond, AI Engineer & Agentic Systems Architect. I've built and deployed multi-agent systems processing millions of requests. Let's connect on [LinkedIn](https://www.linkedin.com/in/bredmond1019/) or explore more at [learn-agentic-ai.com](https://learn-agentic-ai.com/).
 
-* * *
+---
 
 Have you experimented with multiple AI agents? What challenges did you face? Let's discuss in the comments!
 
 **Previous Articles in This Series:**
 
--   [Part 1: The Claude Code Revolution](https://dev.to/#)
--   [Part 2: Mastering Claude Hooks](https://dev.to/#)
+- [Part 1: The Claude Code Revolution](https://dev.to/#)
+- [Part 2: Mastering Claude Hooks](https://dev.to/#)
 
 **Ready to build your own agent swarm?** Start with the [Claude Code Mastery learning path](https://learn-agentic-ai.com/en/learn/paths/claude-code-mastery) - from zero to orchestrating multiple agents in 7 comprehensive modules.

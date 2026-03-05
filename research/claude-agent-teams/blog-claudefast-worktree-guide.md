@@ -5,6 +5,7 @@
 > Site: Claude Fast
 
 ---
+
 Use Claude Code git worktree support to run parallel AI sessions. Guide to the --worktree flag, subagent isolation, and Desktop mode.
 
 **Problem**: You're running a Claude Code session on a feature branch and need to fix a production bug. You either stash your work, lose context, or open a second terminal and fight merge conflicts when both sessions edit the same files.
@@ -71,31 +72,31 @@ When these hooks are configured, the `--worktree` flag and in-session worktree r
 
 Worktree cleanup depends on whether the session made changes:
 
--   **No changes**: The worktree and its branch are automatically removed when the session ends
--   **Changes exist**: Claude prompts you to keep or remove the worktree
+- **No changes**: The worktree and its branch are automatically removed when the session ends
+- **Changes exist**: Claude prompts you to keep or remove the worktree
 
 Add `.claude/worktrees/` to your `.gitignore` to keep worktree directories out of version control:
 
 If you accumulate stale worktrees, you can list and prune them with standard git commands:
 
-| Scenario | Use Worktree? | Why |
-| --- | --- | --- |
-| Quick single-file fix | No | Overhead isn't worth it |
-| Feature work while fixing a bug | Yes | Keeps feature and bugfix branches clean |
-| Multi-agent parallel execution | Yes | Prevents file conflicts between agents |
-| Code migration across many files | Yes | Split work across isolated agents |
-| Exploring experimental approaches | Yes | Throwaway worktrees with auto-cleanup |
-| Single focused session | No | Regular checkout is fine |
+| Scenario                          | Use Worktree? | Why                                     |
+| --------------------------------- | ------------- | --------------------------------------- |
+| Quick single-file fix             | No            | Overhead isn't worth it                 |
+| Feature work while fixing a bug   | Yes           | Keeps feature and bugfix branches clean |
+| Multi-agent parallel execution    | Yes           | Prevents file conflicts between agents  |
+| Code migration across many files  | Yes           | Split work across isolated agents       |
+| Exploring experimental approaches | Yes           | Throwaway worktrees with auto-cleanup   |
+| Single focused session            | No            | Regular checkout is fine                |
 
 The rule of thumb: if you'd normally create a separate branch to avoid conflicts, use a worktree instead. You get the branch isolation plus a separate working directory.
 
--   Use [Remote Control](https://claudefa.st/blog/guide/development/remote-control-guide) to manage worktree sessions from your phone
--   Set up [version control workflows](https://claudefa.st/blog/guide/development/git-integration) for commits, branches, and PRs
--   Learn [parallel and sequential patterns](https://claudefa.st/blog/guide/agents/sub-agent-best-practices) for effective agent dispatch
--   Run [background agents](https://claudefa.st/blog/guide/agents/async-workflows) to keep building while agents work
--   Build [custom agents](https://claudefa.st/blog/guide/agents/custom-agents) with built-in worktree isolation
--   Master [multi-agent orchestration](https://claudefa.st/blog/guide/agents/agent-teams) for complex projects
--   Understand the [terminal as main thread](https://claudefa.st/blog/guide/mechanics/terminal-main-thread) to coordinate it all
--   Review [sandboxing and security isolation](https://claudefa.st/blog/guide/sandboxing-guide) for safe agent execution
+- Use [Remote Control](https://claudefa.st/blog/guide/development/remote-control-guide) to manage worktree sessions from your phone
+- Set up [version control workflows](https://claudefa.st/blog/guide/development/git-integration) for commits, branches, and PRs
+- Learn [parallel and sequential patterns](https://claudefa.st/blog/guide/agents/sub-agent-best-practices) for effective agent dispatch
+- Run [background agents](https://claudefa.st/blog/guide/agents/async-workflows) to keep building while agents work
+- Build [custom agents](https://claudefa.st/blog/guide/agents/custom-agents) with built-in worktree isolation
+- Master [multi-agent orchestration](https://claudefa.st/blog/guide/agents/agent-teams) for complex projects
+- Understand the [terminal as main thread](https://claudefa.st/blog/guide/mechanics/terminal-main-thread) to coordinate it all
+- Review [sandboxing and security isolation](https://claudefa.st/blog/guide/sandboxing-guide) for safe agent execution
 
 Worktrees turn Claude Code from a single-threaded assistant into a parallel development environment. Launch isolated sessions, dispatch isolated agents, and merge results when you're ready.

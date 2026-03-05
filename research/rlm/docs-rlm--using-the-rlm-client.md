@@ -3,6 +3,7 @@
 > Source: [https://alexzhang13.github.io/rlm/api/](https://alexzhang13.github.io/rlm/api/)
 
 ---
+
 ## Using the RLM Client
 
 The main class for recursive language model completions. Enables LMs to programmatically examine, decompose, and recursively call themselves over their input.
@@ -43,14 +44,14 @@ RLM(
 
 LM provider to use for completions.
 
-| Value | Provider |
-| --- | --- |
-| `"openai"` | OpenAI API |
-| `"anthropic"` | Anthropic API |
-| `"portkey"` | Portkey AI gateway |
-| `"openrouter"` | OpenRouter |
-| `"litellm"` | LiteLLM (multi-provider) |
-| `"vllm"` | Local vLLM server |
+| Value          | Provider                 |
+| -------------- | ------------------------ |
+| `"openai"`     | OpenAI API               |
+| `"anthropic"`  | Anthropic API            |
+| `"portkey"`    | Portkey AI gateway       |
+| `"openrouter"` | OpenRouter               |
+| `"litellm"`    | LiteLLM (multi-provider) |
+| `"vllm"`       | Local vLLM server        |
 
 `backend_kwargs`dict | Nonedefault: None
 
@@ -80,11 +81,11 @@ backend_kwargs={
 
 Code execution environment for REPL interactions.
 
-| Value | Description |
-| --- | --- |
-| `"local"` | Same-process with sandboxed builtins |
-| `"docker"` | Docker container |
-| `"modal"` | Modal cloud sandbox |
+| Value      | Description                          |
+| ---------- | ------------------------------------ |
+| `"local"`  | Same-process with sandboxed builtins |
+| `"docker"` | Docker container                     |
+| `"modal"`  | Modal cloud sandbox                  |
 
 `environment_kwargs`dict | Nonedefault: None
 
@@ -167,18 +168,18 @@ result = rlm.completion(
 
 ### Arguments
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `prompt` | `str | dict` | Input context (becomes `context` variable in REPL) |
-| `root_prompt` | `str | None` | Optional hint visible only to the root LM call |
+| Name          | Type | Description |
+| ------------- | ---- | ----------- | -------------------------------------------------- |
+| `prompt`      | `str | dict`       | Input context (becomes `context` variable in REPL) |
+| `root_prompt` | `str | None`       | Optional hint visible only to the root LM call     |
 
 ### Returns
 
 `RLMChatCompletion` object with:
 
-| Attribute | Type | Description |
-| --- | --- | --- |
-| `response` | `str` | Final answer from the RLM |
-| `execution_time` | `float` | Total execution time in seconds |
-| `usage_summary` | `UsageSummary` | Aggregated token usage across all LM calls |
-| `root_model` | `str` | Model name used for root completion |
+| Attribute        | Type           | Description                                |
+| ---------------- | -------------- | ------------------------------------------ |
+| `response`       | `str`          | Final answer from the RLM                  |
+| `execution_time` | `float`        | Total execution time in seconds            |
+| `usage_summary`  | `UsageSummary` | Aggregated token usage across all LM calls |
+| `root_model`     | `str`          | Model name used for root completion        |

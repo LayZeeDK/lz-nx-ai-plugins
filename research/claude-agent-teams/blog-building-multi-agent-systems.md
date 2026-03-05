@@ -4,6 +4,7 @@
 > Site: Claude
 
 ---
+
 A multi-agent system is an architecture where multiple LLM instances run with separate conversation contexts, coordinated through code. Multiple coordination patterns exist (agent swarms, capability-based systems, and message bus architectures), but this article focuses on the orchestrator-subagent pattern: a hierarchical model where a lead agent spawns and manages specialized subagents for specific subtasks. This pattern offers a straightforward coordination model and is a good starting point for teams new to multi-agent systems. We'll explore other patterns in detail in our next article.
 
 Today, multi-agent systems are often applied in situations where a single agent would perform better, though this calculus continues to evolve as models improve. At Anthropic, we’ve seen teams invest months building elaborate multi-agent architectures only to discover that improved prompting on a single agent achieved equivalent results.
@@ -82,7 +83,7 @@ class SupportAgent:
             order_summary = OrderLookupAgent().lookup_order(order_id)
             # Inject compact summary, not full context
             context = f"Order {order_id}: {order_summary['status']}, purchased {order_summary['date']}"
-        
+
         # Main agent context stays clean
         messages = [
             {"role": "user", "content": f"{context}\n\nUser issue: {user_message}"}
@@ -116,14 +117,14 @@ client = AsyncAnthropic()
 async def research_topic(query: str) -> dict:
     # Lead agent breaks query into research facets
     facets = await lead_agent.decompose_query(query)
-    
+
     # Spawn subagents to research each facet in parallel
     tasks = [
-        research_subagent(facet) 
+        research_subagent(facet)
         for facet in facets
     ]
     results = await asyncio.gather(*tasks)
-    
+
     # Lead agent synthesizes findings
     return await lead_agent.synthesize(results)
 
@@ -175,8 +176,8 @@ client = Anthropic()
 # Specialized agents with focused toolsets and tailored prompts
 class CRMAgent:
     """Handles customer relationship management operations"""
-    system_prompt = """You are a CRM specialist. You manage contacts, 
-    opportunities, and account records. Always verify record ownership 
+    system_prompt = """You are a CRM specialist. You manage contacts,
+    opportunities, and account records. Always verify record ownership
     before updates and maintain data integrity across related records."""
     tools = [
         crm_get_contacts,
@@ -186,8 +187,8 @@ class CRMAgent:
 
 class MarketingAgent:
     """Handles marketing automation operations"""
-    system_prompt = """You are a marketing automation specialist. You 
-    manage campaigns, lead scoring, and email sequences. Prioritize 
+    system_prompt = """You are a marketing automation specialist. You
+    manage campaigns, lead scoring, and email sequences. Prioritize
     data hygiene and respect contact preferences."""
     tools = [
         marketing_get_campaigns,
@@ -241,15 +242,15 @@ This principle emerges from observing failure modes in multi-agent systems. When
 
 **Effective decomposition boundaries include:**
 
--   **Independent research paths.** Investigating "market trends in Asia" versus "market trends in Europe" can proceed in parallel with no shared context.
--   **Separate components with clean interfaces.** With a well-defined API contract, frontend and backend work can proceed in parallel.
--   **Blackbox verification.** A verifier that only needs to run tests and report results does not require implementation context.
+- **Independent research paths.** Investigating "market trends in Asia" versus "market trends in Europe" can proceed in parallel with no shared context.
+- **Separate components with clean interfaces.** With a well-defined API contract, frontend and backend work can proceed in parallel.
+- **Blackbox verification.** A verifier that only needs to run tests and report results does not require implementation context.
 
 **Problematic decomposition boundaries include:**
 
--   **Sequential phases of the same work.** Planning, implementation, and testing of the same feature share too much context.
--   **Tightly coupled components.** Components requiring constant back-and-forth belong in the same agent.
--   **Work requiring shared state.** Agents that would need to frequently synchronize understanding should remain together.
+- **Sequential phases of the same work.** Planning, implementation, and testing of the same feature share too much context.
+- **Tightly coupled components.** Components requiring constant back-and-forth belong in the same agent.
+- **Work requiring shared state.** Agents that would need to frequently synchronize understanding should remain together.
 
 ## The verification subagent pattern
 
@@ -324,12 +325,12 @@ def implement_with_verification(requirements: str, max_attempts: int = 3):
             requirements,
             result['files_changed']
         )
-        
+
         if verification['passed']:
             return result
-        
+
         requirements += f"\n\nPrevious attempt failed: {verification['issues']}"
-    
+
     raise Exception(f"Failed verification after {max_attempts} attempts")
 ```
 
@@ -337,10 +338,10 @@ def implement_with_verification(requirements: str, max_attempts: int = 3):
 
 Verification subagents are effective for:
 
--   **Quality assurance.** Running test suites, linting code, validating outputs against schemas.
--   **Compliance checking.** Verifying documents meet policy requirements, checking outputs against rules.
--   **Output validation.** Confirming generated content meets specifications before delivery.
--   **Factual verification.** Having a separate agent verify claims or citations in generated content.
+- **Quality assurance.** Running test suites, linting code, validating outputs against schemas.
+- **Compliance checking.** Verifying documents meet policy requirements, checking outputs against rules.
+- **Output validation.** Confirming generated content meets specifications before delivery.
+- **Factual verification.** Having a separate agent verify claims or citations in generated content.
 
 ### The early victory problem
 
@@ -348,10 +349,10 @@ The most significant failure mode for verification subagents is marking outputs 
 
 Mitigation strategies include:
 
--   **Concrete criteria.** Specify "Run the full test suite and report all failures" rather than "make sure it works."
--   **Comprehensive checks.** Require the verifier to test multiple scenarios and edge cases.
--   **Negative tests.** Direct the verifier to attempt inputs that should fail and confirm they do.
--   **Explicit instructions.** The instruction "You MUST run the complete test suite before marking as passed" is essential. Without explicit requirements for comprehensive validation, verification agents take shortcuts.
+- **Concrete criteria.** Specify "Run the full test suite and report all failures" rather than "make sure it works."
+- **Comprehensive checks.** Require the verifier to test multiple scenarios and edge cases.
+- **Negative tests.** Direct the verifier to attempt inputs that should fail and confirm they do.
+- **Explicit instructions.** The instruction "You MUST run the complete test suite before marking as passed" is essential. Without explicit requirements for comprehensive validation, verification agents take shortcuts.
 
 ## Moving forward 
 
