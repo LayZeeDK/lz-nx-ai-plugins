@@ -54,15 +54,7 @@ export default [
             'parent',
             'sibling',
           ],
-          pathGroups: [
-            {
-              pattern: 'node:*',
-              group: 'builtin',
-              position: 'before',
-            },
-          ],
-          pathGroupsExcludedImportTypes: ['builtin'],
-          'newlines-between': 'never',
+          'newlines-between': 'ignore',
         },
       ],
     },

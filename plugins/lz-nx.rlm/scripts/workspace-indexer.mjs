@@ -17,13 +17,24 @@ const INDEX_DIR = join('tmp', 'lz-nx.rlm');
 const INDEX_FILE = 'workspace-index.json';
 
 /**
+ * @typedef {{ executor?: string }} TargetConfig
+ * @typedef {{ root: string, sourceRoot?: string, tags?: string[], targets?: Record<string, TargetConfig>, projectType?: string }} NodeData
+ * @typedef {{ name: string, type: string, data: NodeData }} GraphNode
+ * @typedef {{ target: string, type: string }} GraphDep
+ * @typedef {{ graph: { nodes: Record<string, GraphNode>, dependencies: Record<string, GraphDep[]> } }} GraphOutput
+ * @typedef {{ root: string, sourceRoot: string | null, type: string, tags: string[], targets: Record<string, string> }} ProjectEntry
+ * @typedef {{ projects: Record<string, ProjectEntry>, dependencies: Record<string, Array<{ target: string, type: string }>>, pathAliases: Record<string, string[]>, meta: { builtAt: string, projectCount: number } }} WorkspaceIndex
+ */
+
+/**
  * Extract a slim target summary from the full target configuration.
  * Maps each target name to its executor string only.
  *
- * @param {object|undefined} targets - The full targets config from a graph node.
- * @returns {object} Map of target name to executor string.
+ * @param {Record<string, TargetConfig> | undefined} targets - The full targets config from a graph node.
+ * @returns {Record<string, string>} Map of target name to executor string.
  */
 function extractTargetSummary(targets) {
+  /** @type {Record<string, string>} */
   const summary = {};
 
   for (const [name, config] of Object.entries(targets || {})) {
@@ -39,13 +50,15 @@ function extractTargetSummary(targets) {
  * Uses graph-level `node.type` (not `data.projectType`) to correctly classify
  * e2e projects as "e2e" rather than "application" (Pitfall 7).
  *
- * @param {object} graphOutput - The parsed JSON from `nx graph --print`.
- * @param {object} pathAliases - Alias-to-paths map from readPathAliases.
- * @returns {object} The workspace index { projects, dependencies, pathAliases, meta }.
+ * @param {GraphOutput} graphOutput - The parsed JSON from `nx graph --print`.
+ * @param {Record<string, string[]>} pathAliases - Alias-to-paths map from readPathAliases.
+ * @returns {WorkspaceIndex} The workspace index { projects, dependencies, pathAliases, meta }.
  */
 export function transformGraphToIndex(graphOutput, pathAliases) {
   const { graph } = graphOutput;
+  /** @type {Record<string, ProjectEntry>} */
   const projects = {};
+  /** @type {Record<string, Array<{ target: string, type: string }>>} */
   const dependencies = {};
 
   for (const [name, node] of Object.entries(graph.nodes)) {
@@ -82,7 +95,7 @@ export function transformGraphToIndex(graphOutput, pathAliases) {
  * Preserves the full path array per alias for TypeScript fallback resolution.
  *
  * @param {string} workspaceRoot - Absolute path to the workspace root.
- * @returns {object} Map of alias to paths array (values are string[]).
+ * @returns {Record<string, string[]>} Map of alias to paths array (values are string[]).
  */
 export function readPathAliases(workspaceRoot) {
   let tsconfig = null;
@@ -106,6 +119,7 @@ export function readPathAliases(workspaceRoot) {
     return {};
   }
 
+  /** @type {Record<string, string[]>} */
   const aliases = {};
 
   for (const [alias, pathArray] of Object.entries(paths)) {
@@ -131,7 +145,7 @@ export function readPathAliases(workspaceRoot) {
  * 4. Write to tmp/lz-nx.rlm/workspace-index.json
  *
  * @param {string} workspaceRoot - Absolute path to the workspace root.
- * @returns {object} The built workspace index.
+ * @returns {WorkspaceIndex} The built workspace index.
  * @throws {Error} If nx graph --print fails.
  */
 export function buildIndex(workspaceRoot) {
@@ -145,7 +159,7 @@ export function buildIndex(workspaceRoot) {
   }
 
   const pathAliases = readPathAliases(workspaceRoot);
-  const index = transformGraphToIndex(graphData, pathAliases);
+  const index = transformGraphToIndex(/** @type {GraphOutput} */ (graphData), pathAliases);
 
   const indexDir = join(workspaceRoot, INDEX_DIR);
   const indexPath = join(indexDir, INDEX_FILE);

@@ -1,15 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRequire } from 'node:module';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 // Load fixtures using createRequire (not affected by vi.mock hoisting of node:fs)
 const require = createRequire(import.meta.url);
 const graphFixture = require('./fixtures/graph-output.json');
-const tsconfigFixture = require('./fixtures/tsconfig-base.json');
 
 // ─── workspace-indexer: transformGraphToIndex (pure function, no mocks needed) ───
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TransformFn = (graphOutput: any, pathAliases: Record<string, string[]>) => any;
+
 describe('workspace-indexer > transformGraphToIndex', () => {
-  let transformGraphToIndex;
+  let transformGraphToIndex: TransformFn;
 
   beforeEach(async () => {
     // Import the real module -- transformGraphToIndex is a pure function

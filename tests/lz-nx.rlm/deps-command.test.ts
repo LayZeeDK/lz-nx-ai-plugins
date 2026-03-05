@@ -86,8 +86,12 @@ const circularIndex = {
 
 // ─── project-filter tests ───
 
+type CommandResult = { output: string; exitCode: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyIndex = any;
+
 describe('project-filter > filterProjects', () => {
-  let filterProjects;
+  let filterProjects: (pattern: string, projectNames: string[]) => string[];
 
   beforeEach(async () => {
     const mod = await import('#rlm/shared/project-filter.mjs');
@@ -128,7 +132,8 @@ describe('project-filter > filterProjects', () => {
 // ─── deps-command tests ───
 
 describe('deps-command > renderDepsTree', () => {
-  let renderDepsTree;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let renderDepsTree: (projectName: any, index: AnyIndex, options?: { reverse?: boolean; depth?: number }) => CommandResult;
 
   beforeEach(async () => {
     const mod = await import('#rlm/deps-command.mjs');
@@ -154,7 +159,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(lines[0]).toBe('my-app');
     // Direct children at level 1
     const directChildren = lines.filter(
-      (l) => l.startsWith('  - ') && !l.startsWith('    - '),
+      (l: string) => l.startsWith('  - ') && !l.startsWith('    - '),
     );
 
     expect(directChildren.length).toBeGreaterThanOrEqual(2);

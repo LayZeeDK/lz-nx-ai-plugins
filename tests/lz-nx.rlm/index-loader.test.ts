@@ -1,4 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+interface NodeError extends Error {
+  code?: string;
+}
 
 // Hoist mock references so they're accessible inside vi.mock factories
 const { mockStatSync, mockReadFileSync } = vi.hoisted(() => ({
@@ -12,7 +16,7 @@ const { mockBuildIndex } = vi.hoisted(() => ({
 
 // Mock node:fs
 vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as Record<string, unknown>;
 
   return {
     ...actual,
@@ -33,7 +37,8 @@ vi.mock('#rlm/workspace-indexer.mjs', () => ({
 // ─── index-loader ───
 
 describe('index-loader', () => {
-  let loadIndex;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let loadIndex: (workspaceRoot: string) => any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -72,7 +77,7 @@ describe('index-loader', () => {
         typeof filePath === 'string' &&
         filePath.includes('workspace-index.json')
       ) {
-        const err = new Error('ENOENT');
+        const err: NodeError = new Error('ENOENT');
         err.code = 'ENOENT';
         throw err;
       }
@@ -116,9 +121,9 @@ describe('index-loader', () => {
 
   it('isStale checks three watch paths: .nx/workspace-data/, tsconfig.base.json, nx.json', () => {
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
-    const statCalls = [];
+    const statCalls: string[] = [];
 
-    mockStatSync.mockImplementation((filePath) => {
+    mockStatSync.mockImplementation((filePath: string) => {
       statCalls.push(filePath);
 
       if (
@@ -136,7 +141,7 @@ describe('index-loader', () => {
     loadIndex('/fake/workspace');
 
     const watchPathCalls = statCalls.filter(
-      (p) =>
+      (p: string) =>
         p.includes('workspace-data') ||
         p.includes('tsconfig.base.json') ||
         p.includes('nx.json'),
@@ -178,7 +183,7 @@ describe('index-loader', () => {
       }
 
       // All watch paths missing
-      const err = new Error('ENOENT');
+      const err: NodeError = new Error('ENOENT');
       err.code = 'ENOENT';
       throw err;
     });
@@ -199,7 +204,7 @@ describe('index-loader', () => {
         typeof filePath === 'string' &&
         filePath.includes('workspace-index.json')
       ) {
-        const err = new Error('ENOENT');
+        const err: NodeError = new Error('ENOENT');
         err.code = 'ENOENT';
         throw err;
       }

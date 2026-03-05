@@ -60,8 +60,13 @@ const fixtureIndex = {
   },
 };
 
+type CommandResult = { output: string; exitCode: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyIndex = any;
+
 describe('find-command > runFind', () => {
-  let runFind;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let runFind: (pattern: any, index: AnyIndex, options?: { project?: string; context?: number }, workspaceRoot?: string) => CommandResult;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -77,7 +82,7 @@ describe('find-command > runFind', () => {
       stderr: '',
     });
 
-    const { output, exitCode } = runFind(
+    const { exitCode } = runFind(
       'something',
       fixtureIndex,
       {},
@@ -102,7 +107,7 @@ describe('find-command > runFind', () => {
       stderr: '',
     });
 
-    const { output, exitCode } = runFind(
+    const { exitCode } = runFind(
       'something',
       fixtureIndex,
       { project: 'my-app' },
@@ -125,7 +130,7 @@ describe('find-command > runFind', () => {
       stderr: '',
     });
 
-    const { output, exitCode } = runFind(
+    const { exitCode } = runFind(
       'something',
       fixtureIndex,
       { project: 'shared-*' },

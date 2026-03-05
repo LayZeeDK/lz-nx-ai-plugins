@@ -48,8 +48,13 @@ const multiPathIndex = {
   },
 };
 
+type CommandResult = { output: string; exitCode: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyIndex = any;
+
 describe('alias-command > runAlias', () => {
-  let runAlias;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let runAlias: (input: any, index: AnyIndex) => CommandResult;
 
   beforeEach(async () => {
     const mod = await import('#rlm/alias-command.mjs');
@@ -143,7 +148,7 @@ describe('alias-command > runAlias', () => {
   // ─── Truncation ───
 
   it('substring results truncated at 20 with warning', () => {
-    const manyAliases = {};
+    const manyAliases: Record<string, string[]> = {};
 
     for (let i = 0; i < 25; i++) {
       manyAliases['@org/common-lib-' + i] = [
@@ -158,7 +163,7 @@ describe('alias-command > runAlias', () => {
     const { output } = runAlias('common', bigIndex);
 
     // Should mention truncation
-    const arrowLines = output.split('\n').filter((l) => l.includes('->'));
+    const arrowLines = output.split('\n').filter((l: string) => l.includes('->'));
 
     expect(arrowLines.length).toBeLessThanOrEqual(20);
     expect(output).toMatch(/20/);

@@ -15,12 +15,20 @@ import { loadIndex } from './shared/index-loader.mjs';
 import { error } from './shared/output-format.mjs';
 
 /**
+ * @typedef {{ target: string, type: string }} Dep
+ * @typedef {Record<string, Dep[]>} DepsMap
+ * @typedef {{ root: string, sourceRoot: string | null, type: string, tags: string[], targets: Record<string, string> }} ProjectEntry
+ * @typedef {{ projects: Record<string, ProjectEntry>, dependencies: DepsMap, pathAliases: Record<string, string[]>, meta: { builtAt: string, projectCount: number } }} WorkspaceIndex
+ */
+
+/**
  * Build a reverse adjacency list from the forward dependency graph.
  *
- * @param {object} dependencies - Forward deps map { [name]: Array<{ target, type }> }.
- * @returns {object} Reverse deps map { [name]: string[] }.
+ * @param {DepsMap} dependencies - Forward deps map { [name]: Array<{ target, type }> }.
+ * @returns {Record<string, string[]>} Reverse deps map { [name]: string[] }.
  */
 function buildReverseDeps(dependencies) {
+  /** @type {Record<string, string[]>} */
   const reverse = {};
 
   for (const name of Object.keys(dependencies)) {
@@ -44,10 +52,8 @@ function buildReverseDeps(dependencies) {
  * Render a dependency tree as markdown nested list.
  *
  * @param {string} projectName - Root project name.
- * @param {object} index - Workspace index from loadIndex.
- * @param {object} [options] - Options.
- * @param {boolean} [options.reverse] - Show reverse dependencies (who depends on this).
- * @param {number} [options.depth] - Maximum tree depth (default: Infinity).
+ * @param {WorkspaceIndex} index - Workspace index from loadIndex.
+ * @param {{ reverse?: boolean, depth?: number }} [options] - Options.
  * @returns {{ output: string, exitCode: number }}
  */
 export function renderDepsTree(projectName, index, options = {}) {
@@ -74,6 +80,7 @@ export function renderDepsTree(projectName, index, options = {}) {
   const isReverse = options.reverse === true;
 
   // Build adjacency list based on direction
+  /** @type {(name: string) => string[]} */
   let getChildren;
 
   if (isReverse) {
@@ -216,7 +223,7 @@ if (isMain) {
     process.stdout.write(output + '\n');
     process.exit(exitCode);
   } catch (err) {
-    error(err.message);
+    error(/** @type {Error} */ (err).message);
     process.exit(1);
   }
 }

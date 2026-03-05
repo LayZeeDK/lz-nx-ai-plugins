@@ -1,11 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
+
+interface ExecError extends Error {
+  stdout?: string;
+  stderr?: string;
+}
 
 // Mock child_process before importing nx-runner
 vi.mock('node:child_process', () => ({
   execSync: vi.fn(),
 }));
 
-const { execSync } = await import('node:child_process');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { execSync } = await import('node:child_process') as any;
 const { runNx, runNxGraph } = await import('#rlm/nx-runner.mjs');
 
 describe('nx-runner', () => {
@@ -161,7 +167,7 @@ describe('nx-runner', () => {
 
     it('returns truncated error message on execSync failure', () => {
       const longError = 'E'.repeat(1000);
-      const err = new Error('exec failed');
+      const err: ExecError = new Error('exec failed');
       err.stderr = longError;
       execSync.mockImplementation(() => {
         throw err;
@@ -174,7 +180,7 @@ describe('nx-runner', () => {
     });
 
     it('prefers stdout over stderr for error message extraction', () => {
-      const err = new Error('exec failed');
+      const err: ExecError = new Error('exec failed');
       err.stdout = 'stdout error message';
       err.stderr = 'stderr error message';
       execSync.mockImplementation(() => {
@@ -287,8 +293,14 @@ describe('nx-runner', () => {
 });
 
 describe('output-format', () => {
-  let info, warn, error, success;
-  let stdoutSpy, stderrSpy;
+  let info: (msg: string) => void;
+  let warn: (msg: string) => void;
+  let error: (msg: string) => void;
+  let success: (msg: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let stdoutSpy: MockInstance<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let stderrSpy: MockInstance<any>;
 
   beforeEach(async () => {
     const mod = await import('#rlm/shared/output-format.mjs');
@@ -340,9 +352,9 @@ describe('output-format', () => {
     warn('test');
     error('test');
 
-    const allCalls = [
-      ...stdoutSpy.mock.calls.map((c) => c[0]),
-      ...stderrSpy.mock.calls.map((c) => c[0]),
+    const allCalls: string[] = [
+      ...stdoutSpy.mock.calls.map((c: unknown[]) => c[0] as string),
+      ...stderrSpy.mock.calls.map((c: unknown[]) => c[0] as string),
     ];
 
     for (const call of allCalls) {

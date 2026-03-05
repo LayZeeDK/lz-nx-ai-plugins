@@ -13,8 +13,13 @@
 
 import { spawnSync } from 'node:child_process';
 import { loadIndex } from './shared/index-loader.mjs';
-import { error, warn } from './shared/output-format.mjs';
+import { error } from './shared/output-format.mjs';
 import { filterProjects } from './shared/project-filter.mjs';
+
+/**
+ * @typedef {{ root: string, sourceRoot: string | null, type: string, tags: string[], targets: Record<string, string> }} ProjectEntry
+ * @typedef {{ projects: Record<string, ProjectEntry>, dependencies: Record<string, Array<{ target: string, type: string }>>, pathAliases: Record<string, string[]>, meta: { builtAt: string, projectCount: number } }} WorkspaceIndex
+ */
 
 /** Maximum matches for unscoped search before truncation. */
 const MAX_UNSCOPED_MATCHES = 20;
@@ -23,7 +28,7 @@ const MAX_UNSCOPED_MATCHES = 20;
  * Determine which project a file path belongs to based on source roots.
  *
  * @param {string} filePath - File path from git grep output.
- * @param {object} projects - Projects map from workspace index.
+ * @param {Record<string, ProjectEntry>} projects - Projects map from workspace index.
  * @returns {string|null} Project name, or null if no match.
  */
 function fileToProject(filePath, projects) {
@@ -96,10 +101,8 @@ function parseGrepOutput(stdout) {
  * Run a project-scoped content search using git grep.
  *
  * @param {string} pattern - Search pattern (fixed string or /regex/).
- * @param {object} index - Workspace index from loadIndex.
- * @param {object} [options] - Options.
- * @param {string} [options.project] - Project name or glob pattern to scope search.
- * @param {number} [options.context] - Number of context lines.
+ * @param {WorkspaceIndex} index - Workspace index from loadIndex.
+ * @param {{ project?: string, context?: number }} [options] - Options.
  * @param {string} [workspaceRoot] - Workspace root path.
  * @returns {{ output: string, exitCode: number }}
  */
@@ -111,18 +114,20 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
     };
   }
 
-  const isScoped = !!options.project;
+  const projectFilter = options.project;
+  const isScoped = !!projectFilter;
+  /** @type {string[]} */
   let sourceRoots = [];
 
-  if (isScoped) {
+  if (isScoped && projectFilter) {
     const projectNames = Object.keys(index.projects);
-    const matchedProjects = filterProjects(options.project, projectNames);
+    const matchedProjects = filterProjects(projectFilter, projectNames);
 
     if (matchedProjects.length === 0) {
       return {
         output:
           "[ERROR] Project '" +
-          options.project +
+          projectFilter +
           "' not found (" +
           index.meta.projectCount +
           ' indexed)',
@@ -173,7 +178,7 @@ export function runFind(pattern, index, options = {}, workspaceRoot = '.') {
   });
 
   // Exit code 1 = no matches (not an error), exit code > 1 = actual error
-  if (result.status > 1) {
+  if (result.status !== null && result.status > 1) {
     return {
       output: '[ERROR] git grep failed: ' + (result.stderr || 'unknown error'),
       exitCode: 1,
@@ -291,6 +296,7 @@ if (isMain) {
 
   try {
     const index = loadIndex(workspaceRoot);
+    /** @type {{ project?: string, context?: number }} */
     const opts = {};
 
     if (project) {
@@ -311,7 +317,7 @@ if (isMain) {
     process.stdout.write(output + '\n');
     process.exit(exitCode);
   } catch (err) {
-    error(err.message);
+    error(/** @type {Error} */ (err).message);
     process.exit(1);
   }
 }

@@ -3,10 +3,18 @@
   "compilerOptions": {
     "outDir": "../../out-tsc/tests/lz-nx.rlm",
     "types": ["vitest/globals", "node"],
+    "allowJs": true,
+    "checkJs": false,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    "noEmit": true,
+    "noUnusedLocals": false,
     "paths": {
       "#rlm/*": ["../../plugins/lz-nx.rlm/scripts/*"]
     }
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "../../plugins/lz-nx.rlm/scripts/**/*.mjs"],
   "exclude": ["node_modules"]
 }

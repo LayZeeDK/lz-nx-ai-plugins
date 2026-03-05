@@ -24,7 +24,7 @@ const MAX_RESULTS = 20;
  * Resolve an alias or path bidirectionally against a path aliases map.
  *
  * @param {string} input - The alias or path to resolve.
- * @param {object} pathAliases - Map of alias to paths array (values are string[]).
+ * @param {Record<string, string[]>} pathAliases - Map of alias to paths array (values are string[]).
  * @returns {{ results: Array<{ from: string, to: string|string[], direction: string }>, partial: boolean, error?: string }}
  */
 export function resolveAlias(input, pathAliases) {

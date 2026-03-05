@@ -71,7 +71,7 @@ function isStale(workspaceRoot, indexPath) {
  * Load the workspace index, auto-building if the index is missing or stale.
  *
  * @param {string} workspaceRoot - Absolute path to the workspace root.
- * @returns {object} The parsed workspace index.
+ * @returns {import('../workspace-indexer.mjs').WorkspaceIndex} The parsed workspace index.
  */
 export function loadIndex(workspaceRoot) {
   const indexPath = join(workspaceRoot, INDEX_DIR, INDEX_FILE);

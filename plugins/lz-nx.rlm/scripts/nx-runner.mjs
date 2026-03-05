@@ -51,13 +51,14 @@ function isAllowed(command) {
 }
 
 /**
+ * @typedef {{ stdout?: string, stderr?: string, message: string }} ExecError
+ */
+
+/**
  * Run an Nx CLI command safely.
  *
  * @param {string} command - The Nx command to run (without "nx" prefix).
- * @param {object} [options] - Options for the command.
- * @param {number} [options.maxBuffer] - Max buffer size in bytes (default: 10MB).
- * @param {number} [options.timeout] - Timeout in ms (default: 60000).
- * @param {boolean} [options.expectJson] - Parse stdout as JSON.
+ * @param {{ maxBuffer?: number, timeout?: number, expectJson?: boolean }} [options] - Options for the command.
  * @returns {{ data: string|object|null, error: string|null }}
  */
 export function runNx(command, options = {}) {
@@ -90,7 +91,8 @@ export function runNx(command, options = {}) {
 
     return { data: stdout, error: null };
   } catch (err) {
-    const message = err.stdout || err.stderr || err.message;
+    const e = /** @type {ExecError} */ (err);
+    const message = e.stdout || e.stderr || e.message;
 
     return { data: null, error: message.slice(0, 500) };
   }
@@ -100,7 +102,7 @@ export function runNx(command, options = {}) {
  * Convenience function for `nx graph --print` with retry logic.
  * On failure, runs `nx reset` and retries once.
  *
- * @returns {{ data: object|null, error: string|null }}
+ * @returns {{ data: string|object|null, error: string|null }}
  */
 export function runNxGraph() {
   const graphOptions = {

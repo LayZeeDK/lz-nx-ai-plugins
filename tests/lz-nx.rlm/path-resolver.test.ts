@@ -7,8 +7,15 @@ const aliases = {
   '@myorg/feature-auth': ['libs/feature-auth/src/index.ts'],
 };
 
+interface ResolveResult {
+  results: Array<{ from: string; to: string | string[]; direction: string }>;
+  partial: boolean;
+  error?: string;
+}
+
 describe('path-resolver > resolveAlias', () => {
-  let resolveAlias;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let resolveAlias: (input: any, pathAliases: Record<string, string[]>) => ResolveResult;
 
   beforeEach(async () => {
     const mod = await import('#rlm/path-resolver.mjs');
@@ -87,11 +94,11 @@ describe('path-resolver > resolveAlias', () => {
     expect(result.results.length).toBeGreaterThanOrEqual(1);
 
     const aliasMatches = result.results.filter(
-      (r) => r.direction === 'alias->path',
+      (r: ResolveResult['results'][0]) => r.direction === 'alias->path',
     );
 
     expect(aliasMatches.length).toBeGreaterThanOrEqual(1);
-    expect(aliasMatches.some((r) => r.from === '@myorg/shared-utils')).toBe(
+    expect(aliasMatches.some((r: ResolveResult['results'][0]) => r.from === '@myorg/shared-utils')).toBe(
       true,
     );
     expect(result.partial).toBe(true);
@@ -110,7 +117,7 @@ describe('path-resolver > resolveAlias', () => {
   // ─── 20-match truncation ───
 
   it('substring results limited to 20 matches', () => {
-    const manyAliases = {};
+    const manyAliases: Record<string, string[]> = {};
 
     for (let i = 0; i < 25; i++) {
       manyAliases['@org/common-lib-' + i] = [
@@ -184,7 +191,7 @@ describe('path-resolver > resolveAlias', () => {
     const result = resolveAlias('libs/shared/utils.ts', overlappingAliases);
 
     expect(result.results).toHaveLength(2);
-    expect(result.results.every((r) => r.direction === 'path->alias')).toBe(
+    expect(result.results.every((r: ResolveResult['results'][0]) => r.direction === 'path->alias')).toBe(
       true,
     );
     expect(result.partial).toBe(false);

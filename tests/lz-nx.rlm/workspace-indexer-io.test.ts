@@ -1,5 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRequire } from 'node:module';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+interface NodeError extends Error {
+  code?: string;
+}
 
 // Load fixtures using createRequire (not affected by vi.mock hoisting)
 const require = createRequire(import.meta.url);
@@ -19,13 +23,9 @@ const { mockRunNxGraph } = vi.hoisted(() => ({
   mockRunNxGraph: vi.fn(),
 }));
 
-const { mockBuildIndex } = vi.hoisted(() => ({
-  mockBuildIndex: vi.fn(),
-}));
-
 // Mock node:fs at the file level (hoisted)
 vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as Record<string, unknown>;
 
   return {
     ...actual,
@@ -52,7 +52,7 @@ vi.mock('#rlm/shared/output-format.mjs', () => ({
 // ─── readPathAliases (needs fs mock) ───
 
 describe('workspace-indexer > readPathAliases', () => {
-  let readPathAliases;
+  let readPathAliases: (workspaceRoot: string) => Record<string, string[]>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -94,7 +94,7 @@ describe('workspace-indexer > readPathAliases', () => {
         typeof filePath === 'string' &&
         filePath.includes('tsconfig.base.json')
       ) {
-        const err = new Error('ENOENT');
+        const err: NodeError = new Error('ENOENT');
         err.code = 'ENOENT';
         throw err;
       }
@@ -109,7 +109,7 @@ describe('workspace-indexer > readPathAliases', () => {
 
   it('returns empty object if no tsconfig files exist', () => {
     mockReadFileSync.mockImplementation(() => {
-      const err = new Error('ENOENT');
+      const err: NodeError = new Error('ENOENT');
       err.code = 'ENOENT';
       throw err;
     });
@@ -157,7 +157,8 @@ describe('workspace-indexer > readPathAliases', () => {
 // ─── buildIndex (needs fs + nx-runner mocks) ───
 
 describe('workspace-indexer > buildIndex', () => {
-  let buildIndex;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let buildIndex: (workspaceRoot: string) => any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -170,7 +171,7 @@ describe('workspace-indexer > buildIndex', () => {
 
     // readPathAliases will try to read tsconfig.base.json -- return ENOENT
     mockReadFileSync.mockImplementation(() => {
-      const err = new Error('ENOENT');
+      const err: NodeError = new Error('ENOENT');
       err.code = 'ENOENT';
       throw err;
     });

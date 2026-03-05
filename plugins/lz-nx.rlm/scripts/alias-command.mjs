@@ -16,10 +16,14 @@ import { error } from './shared/output-format.mjs';
 import { resolveAlias } from './path-resolver.mjs';
 
 /**
+ * @typedef {{ pathAliases?: Record<string, string[]> }} AliasIndex
+ */
+
+/**
  * Run bidirectional alias resolution and format output.
  *
  * @param {string} input - Alias or path to resolve.
- * @param {object} index - Workspace index from loadIndex.
+ * @param {AliasIndex} index - Workspace index from loadIndex.
  * @returns {{ output: string, exitCode: number }}
  */
 export function runAlias(input, index) {
@@ -162,7 +166,7 @@ if (isMain) {
     process.stdout.write(output + '\n');
     process.exit(exitCode);
   } catch (err) {
-    error(err.message);
+    error(/** @type {Error} */ (err).message);
     process.exit(1);
   }
 }
