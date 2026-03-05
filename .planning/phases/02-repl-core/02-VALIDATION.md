@@ -18,7 +18,7 @@ created: 2026-03-05
 | Property | Value |
 |----------|-------|
 | **Framework** | Vitest 4.x (devDependency in workspace) |
-| **Config file** | `plugins/lz-nx.rlm/vitest.config.mjs` (exists from Phase 1) |
+| **Config file** | `tests/lz-nx.rlm/vitest.config.mjs` (exists from Phase 1) |
 | **Quick run command** | `npx vitest run --reporter=verbose` |
 | **Full suite command** | `npx vitest run` |
 | **Estimated runtime** | ~5 seconds |
@@ -38,14 +38,14 @@ created: 2026-03-05
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | REPL-01 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/code-transform.test.mjs` | Wave 0 | pending |
-| 02-01-02 | 01 | 1 | REPL-02 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/print-capture.test.mjs` | Wave 0 | pending |
-| 02-01-03 | 01 | 1 | REPL-03 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/rlm-config.test.mjs` | Wave 0 | pending |
-| 02-01-04 | 01 | 1 | REPL-04 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-session.test.mjs` | Wave 0 | pending |
-| 02-02-01 | 02 | 2 | REPL-01 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-globals.test.mjs` | Wave 0 | pending |
-| 02-02-02 | 02 | 2 | REPL-01 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` | Wave 0 | pending |
-| 02-02-03 | 02 | 2 | REPL-04 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` | Wave 0 | pending |
-| 02-02-04 | 02 | 2 | REPL-04 | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` | Wave 0 | pending |
+| 02-01-01 | 01 | 1 | REPL-01 | unit | `npx vitest run tests/lz-nx.rlm/code-transform.test.mjs` | Wave 0 | pending |
+| 02-01-02 | 01 | 1 | REPL-02 | unit | `npx vitest run tests/lz-nx.rlm/print-capture.test.mjs` | Wave 0 | pending |
+| 02-01-03 | 01 | 1 | REPL-03 | unit | `npx vitest run tests/lz-nx.rlm/rlm-config.test.mjs` | Wave 0 | pending |
+| 02-01-04 | 01 | 1 | REPL-04 | unit | `npx vitest run tests/lz-nx.rlm/repl-session.test.mjs` | Wave 0 | pending |
+| 02-02-01 | 02 | 2 | REPL-01 | unit | `npx vitest run tests/lz-nx.rlm/repl-globals.test.mjs` | Wave 0 | pending |
+| 02-02-02 | 02 | 2 | REPL-01 | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 | pending |
+| 02-02-03 | 02 | 2 | REPL-04 | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 | pending |
+| 02-02-04 | 02 | 2 | REPL-04 | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 | pending |
 
 *Status: pending · green · red · flaky*
 
@@ -53,12 +53,12 @@ created: 2026-03-05
 
 ## Wave 0 Requirements
 
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` — stubs for REPL-01 (sandbox execution), REPL-04 (SandboxResult, timeout, security)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/repl-globals.test.mjs` — stubs for REPL-01 (12 globals), REPL-02 (SHOW_VARS), REPL-04 (FINAL/FINAL_VAR)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/code-transform.test.mjs` — stubs for REPL-01 (const/let/var transformation)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/print-capture.test.mjs` — stubs for REPL-02 (truncation logic, formatting)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/rlm-config.test.mjs` — stubs for REPL-03 (config loading, merging)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/repl-session.test.mjs` — stubs for REPL-04 (session state serialization)
+- [ ] `tests/lz-nx.rlm/repl-sandbox.test.mjs` — stubs for REPL-01 (sandbox execution), REPL-04 (SandboxResult, timeout, security)
+- [ ] `tests/lz-nx.rlm/repl-globals.test.mjs` — stubs for REPL-01 (12 globals), REPL-02 (SHOW_VARS), REPL-04 (FINAL/FINAL_VAR)
+- [ ] `tests/lz-nx.rlm/code-transform.test.mjs` — stubs for REPL-01 (const/let/var transformation)
+- [ ] `tests/lz-nx.rlm/print-capture.test.mjs` — stubs for REPL-02 (truncation logic, formatting)
+- [ ] `tests/lz-nx.rlm/rlm-config.test.mjs` — stubs for REPL-03 (config loading, merging)
+- [ ] `tests/lz-nx.rlm/repl-session.test.mjs` — stubs for REPL-04 (session state serialization)
 
 *Existing Phase 1 test infrastructure provides vitest.config.mjs, fixture patterns, and mock patterns.*
 

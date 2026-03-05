@@ -95,14 +95,18 @@ plugins/lz-nx.rlm/
       repl-globals.mjs         # Factory functions for all 12 REPL globals
       code-transform.mjs       # Regex transformation: const/let/var -> globalThis
       print-capture.mjs        # print() with truncation + output capture
-    __tests__/
-      repl-sandbox.test.mjs    # Integration: stdin code -> SandboxResult
-      repl-globals.test.mjs    # Unit: each global function in isolation
-      code-transform.test.mjs  # Unit: regex transformation edge cases
-      print-capture.test.mjs   # Unit: truncation logic
-      rlm-config.test.mjs      # Unit: config merge logic
-      repl-session.test.mjs    # Unit: state serialization/deserialization
   lz-nx.rlm.config.json        # Default guardrails config
+
+tests/lz-nx.rlm/
+  project.json                 # Nx project: "lz-nx-rlm-test"
+  vitest.config.mjs            # Vitest config with #rlm alias to plugin scripts
+  repl-sandbox.test.mjs        # Integration: stdin code -> SandboxResult
+  repl-globals.test.mjs        # Unit: each global function in isolation
+  code-transform.test.mjs      # Unit: regex transformation edge cases
+  print-capture.test.mjs       # Unit: truncation logic
+  rlm-config.test.mjs          # Unit: config merge logic
+  repl-session.test.mjs        # Unit: state serialization/deserialization
+  fixtures/                    # JSON test fixtures
 ```
 
 ### Pattern 1: Per-Invocation Sandbox
@@ -760,26 +764,26 @@ Object.prototype.toString = function() {
 | Property | Value |
 |----------|-------|
 | Framework | Vitest 4.x (devDependency in workspace) |
-| Config file | `plugins/lz-nx.rlm/vitest.config.mjs` (exists from Phase 1) |
+| Config file | `tests/lz-nx.rlm/vitest.config.mjs` (moved from plugin dir) |
 | Quick run command | `npx vitest run --reporter=verbose` |
 | Full suite command | `npx vitest run` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| REPL-01 | VM sandbox executes code with 12 workspace globals | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` | Wave 0 |
-| REPL-01 | Each global function works correctly in isolation | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-globals.test.mjs` | Wave 0 |
-| REPL-01 | Code transformation (const/let/var -> globalThis) | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/code-transform.test.mjs` | Wave 0 |
-| REPL-02 | print() truncation at 2000/call and 20000/turn | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/print-capture.test.mjs` | Wave 0 |
-| REPL-02 | Array truncation, object truncation, circular ref handling | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/print-capture.test.mjs` | Wave 0 |
-| REPL-02 | SHOW_VARS() returns correct format excluding builtins | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-globals.test.mjs` | Wave 0 |
-| REPL-03 | Config loader merges defaults + user overrides | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/rlm-config.test.mjs` | Wave 0 |
-| REPL-03 | Missing config files handled gracefully | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/rlm-config.test.mjs` | Wave 0 |
-| REPL-04 | SandboxResult JSON schema is correct (output, variables, final, error) | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` | Wave 0 |
-| REPL-04 | FINAL() sets final answer, FINAL_VAR() sets variable name | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-globals.test.mjs` | Wave 0 |
-| REPL-04 | Session state persists between turns (write -> read -> verify) | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-session.test.mjs` | Wave 0 |
-| REPL-04 | Timeout enforcement (vm.runInContext timeout) | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` | Wave 0 |
-| REPL-04 | eval/Function blocked (codeGeneration: strings: false) | unit | `npx vitest run plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` | Wave 0 |
+| REPL-01 | VM sandbox executes code with 12 workspace globals | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 |
+| REPL-01 | Each global function works correctly in isolation | unit | `npx vitest run tests/lz-nx.rlm/repl-globals.test.mjs` | Wave 0 |
+| REPL-01 | Code transformation (const/let/var -> globalThis) | unit | `npx vitest run tests/lz-nx.rlm/code-transform.test.mjs` | Wave 0 |
+| REPL-02 | print() truncation at 2000/call and 20000/turn | unit | `npx vitest run tests/lz-nx.rlm/print-capture.test.mjs` | Wave 0 |
+| REPL-02 | Array truncation, object truncation, circular ref handling | unit | `npx vitest run tests/lz-nx.rlm/print-capture.test.mjs` | Wave 0 |
+| REPL-02 | SHOW_VARS() returns correct format excluding builtins | unit | `npx vitest run tests/lz-nx.rlm/repl-globals.test.mjs` | Wave 0 |
+| REPL-03 | Config loader merges defaults + user overrides | unit | `npx vitest run tests/lz-nx.rlm/rlm-config.test.mjs` | Wave 0 |
+| REPL-03 | Missing config files handled gracefully | unit | `npx vitest run tests/lz-nx.rlm/rlm-config.test.mjs` | Wave 0 |
+| REPL-04 | SandboxResult JSON schema is correct (output, variables, final, error) | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 |
+| REPL-04 | FINAL() sets final answer, FINAL_VAR() sets variable name | unit | `npx vitest run tests/lz-nx.rlm/repl-globals.test.mjs` | Wave 0 |
+| REPL-04 | Session state persists between turns (write -> read -> verify) | unit | `npx vitest run tests/lz-nx.rlm/repl-session.test.mjs` | Wave 0 |
+| REPL-04 | Timeout enforcement (vm.runInContext timeout) | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 |
+| REPL-04 | eval/Function blocked (codeGeneration: strings: false) | unit | `npx vitest run tests/lz-nx.rlm/repl-sandbox.test.mjs` | Wave 0 |
 
 ### Sampling Rate
 - **Per task commit:** `npx vitest run --reporter=verbose`
@@ -787,12 +791,12 @@ Object.prototype.toString = function() {
 - **Phase gate:** Full suite green (Phase 1 tests 111 + Phase 2 new tests) before `/gsd:verify-work`
 
 ### Wave 0 Gaps
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/repl-sandbox.test.mjs` -- covers REPL-01 (sandbox creation + execution), REPL-04 (SandboxResult schema, timeout, security)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/repl-globals.test.mjs` -- covers REPL-01 (all 12 globals), REPL-02 (SHOW_VARS), REPL-04 (FINAL/FINAL_VAR)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/code-transform.test.mjs` -- covers REPL-01 (const/let/var transformation, edge cases)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/print-capture.test.mjs` -- covers REPL-02 (truncation logic, formatting)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/rlm-config.test.mjs` -- covers REPL-03 (config loading, merging, defaults)
-- [ ] `plugins/lz-nx.rlm/scripts/__tests__/repl-session.test.mjs` -- covers REPL-04 (session state read/write, circular ref handling)
+- [ ] `tests/lz-nx.rlm/repl-sandbox.test.mjs` -- covers REPL-01 (sandbox creation + execution), REPL-04 (SandboxResult schema, timeout, security)
+- [ ] `tests/lz-nx.rlm/repl-globals.test.mjs` -- covers REPL-01 (all 12 globals), REPL-02 (SHOW_VARS), REPL-04 (FINAL/FINAL_VAR)
+- [ ] `tests/lz-nx.rlm/code-transform.test.mjs` -- covers REPL-01 (const/let/var transformation, edge cases)
+- [ ] `tests/lz-nx.rlm/print-capture.test.mjs` -- covers REPL-02 (truncation logic, formatting)
+- [ ] `tests/lz-nx.rlm/rlm-config.test.mjs` -- covers REPL-03 (config loading, merging, defaults)
+- [ ] `tests/lz-nx.rlm/repl-session.test.mjs` -- covers REPL-04 (session state read/write, circular ref handling)
 
 *(Existing test infrastructure from Phase 1 provides vitest.config.mjs, fixture patterns, and mock patterns.)*
 
