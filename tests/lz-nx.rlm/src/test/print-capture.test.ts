@@ -107,16 +107,20 @@ describe('print-capture > createPrintCapture', () => {
 
   it('silently stops capturing after maxTotal chars reached', async () => {
     const { createPrintCapture } = await setup();
-    const { print, getOutput, getTotalChars } = createPrintCapture(2000, 100);
+    const { print, getOutput } = createPrintCapture(2000, 50);
 
-    print('x'.repeat(80));
-    print('y'.repeat(80)); // This should be silently dropped
+    print('x'.repeat(40)); // 40 chars, within limit
+    print('y'.repeat(80)); // Would exceed limit -- gets truncated
+    print('z'.repeat(80)); // totalChars already >= maxTotal -- silently dropped
 
     const output = getOutput();
 
-    // Should only have the first print (or truncated second)
-    expect(getTotalChars()).toBeLessThanOrEqual(120); // some flexibility for suffix
+    // First print captured fully
+    expect(output).toContain('x'.repeat(40));
+    // Second print was truncated (not the full 80 y's)
     expect(output).not.toContain('y'.repeat(80));
+    // Third print silently dropped entirely
+    expect(output).not.toContain('z'.repeat(80));
   });
 
   it('joins multiple captured lines with newline', async () => {
