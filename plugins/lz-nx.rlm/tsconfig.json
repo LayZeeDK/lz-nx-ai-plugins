@@ -8,7 +8,8 @@
     "declaration": false,
     "declarationMap": false,
     "emitDeclarationOnly": false,
-    "rootDir": "scripts"
+    "rootDir": "scripts",
+    "types": ["node"]
   },
   "include": ["scripts/**/*.mjs"],
   "exclude": ["node_modules"]
