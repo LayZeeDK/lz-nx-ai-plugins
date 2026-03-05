@@ -236,6 +236,7 @@ describe('deps-command > renderDepsTree', () => {
 
   it('missing argument returns error message', async () => {
     const { renderDepsTree } = await setup();
+    // @ts-expect-error -- testing missing argument handling
     const { output, exitCode } = renderDepsTree(undefined, fixtureIndex);
 
     expect(exitCode).toBe(1);

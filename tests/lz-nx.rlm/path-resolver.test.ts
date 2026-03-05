@@ -176,6 +176,7 @@ describe('path-resolver > resolveAlias', () => {
 
   it('undefined input returns error', async () => {
     const { resolveAlias } = await setup();
+    // @ts-expect-error -- testing missing argument handling
     const result = resolveAlias(undefined, aliases);
 
     expect(result.results).toEqual([]);

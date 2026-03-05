@@ -209,6 +209,7 @@ describe('alias-command > runAlias', () => {
 
   it('missing argument outputs error', async () => {
     const { runAlias } = await setup();
+    // @ts-expect-error -- testing missing argument handling
     const { output, exitCode } = runAlias(undefined, fixtureIndex);
 
     expect(exitCode).toBe(1);
@@ -225,6 +226,7 @@ describe('alias-command > runAlias', () => {
 
     expect(successResult.exitCode).toBe(0);
 
+    // @ts-expect-error -- testing missing argument handling
     const errorResult = runAlias(undefined, fixtureIndex);
 
     expect(errorResult.exitCode).toBe(1);

@@ -326,6 +326,7 @@ describe('find-command > runFind', () => {
   it('missing pattern argument returns error', async () => {
     const { runFind } = await setup();
     const { output, exitCode } = runFind(
+      // @ts-expect-error -- testing missing argument handling
       undefined,
       fixtureIndex,
       {},
