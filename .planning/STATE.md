@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 01.1-01-PLAN.md
-last_updated: "2026-03-05T20:58:15.118Z"
-last_activity: 2026-03-05 - Nx project setup and linting infrastructure
+last_updated: "2026-03-05T21:23:00Z"
+last_activity: 2026-03-05 - Align project configurations with Nx defaults
 progress:
   total_phases: 4
   completed_phases: 2
@@ -79,6 +79,9 @@ Recent decisions affecting current work:
 - [Phase 01.1]: import-x/order uses newlines-between:ignore due to eslint-plugin-import-x v4.16.1 bug with builtin/external group boundaries
 - [Phase 01.1]: JSDoc @typedef with Record<string, T> for checkJs compatibility in .mjs plugin scripts
 - [Phase 01.1]: tests/lz-nx.rlm/package.json with type:module needed for import.meta under moduleResolution:nodenext
+- [Quick 4]: Retain manual typecheck target for plugin project -- noEmit incompatible with tsc --build mode used by @nx/js/typescript inferred targets
+- [Quick 4]: Skip solution-style tsconfig for plugin project to avoid unwanted inferred build target from tsconfig.lib.json
+- [Quick 4]: nxViteTsPaths() replaces manual resolve.alias as standard pattern for vitest path resolution
 
 ### Pending Todos
 
@@ -96,9 +99,10 @@ None yet.
 | 1   | Research and analyze git grep and alternatives for Nx RLM plugin search() function | 2026-03-04 | 951a502 | [1-research-and-analyze-git-grep-and-altern](./quick/1-research-and-analyze-git-grep-and-altern/) |
 | 2   | Agent teams nesting analysis for llm_query()                                       | 2026-03-04 | 35941cc | [2-research-whether-claude-agent-teams-can-](./quick/2-research-whether-claude-agent-teams-can-/) |
 | 3   | Analyze transformers.js applicability for Nx RLM sub-components                    | 2026-03-04 | 0c9b259 | [3-analyze-huggingface-transformers-support](./quick/3-analyze-huggingface-transformers-support/) |
+| 4   | Align project configurations with Nx defaults                                      | 2026-03-05 | db0b071 | [4-align-project-configurations-with-nx-def](./quick/4-align-project-configurations-with-nx-def/) |
 
 ## Session Continuity
 
-Last session: 2026-03-05T14:58:53Z
-Stopped at: Completed 01.1-01-PLAN.md
-Resume file: .planning/phases/01.1-nx-project-setup-linting/01.1-01-SUMMARY.md
+Last session: 2026-03-05T21:23:00Z
+Stopped at: Completed quick task 4 (align project configs with Nx defaults)
+Resume file: .planning/quick/4-align-project-configurations-with-nx-def/4-SUMMARY.md
