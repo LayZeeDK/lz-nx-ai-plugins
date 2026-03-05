@@ -4,7 +4,7 @@
     "outDir": "../../out-tsc/tests/lz-nx.rlm",
     "types": ["vitest/globals", "node"],
     "allowJs": true,
-    "checkJs": false,
+    "checkJs": true,
     "composite": false,
     "declaration": false,
     "declarationMap": false,
