@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 interface NodeError extends Error {
   code?: string;
@@ -37,16 +37,15 @@ vi.mock('#rlm/workspace-indexer.mjs', () => ({
 // ─── index-loader ───
 
 describe('index-loader', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let loadIndex: (workspaceRoot: string) => any;
-
-  beforeEach(async () => {
+  async function setup() {
     vi.clearAllMocks();
-    const mod = await import('#rlm/shared/index-loader.mjs');
-    loadIndex = mod.loadIndex;
-  });
+    const { loadIndex } = await import('#rlm/shared/index-loader.mjs');
 
-  it('returns parsed index when file exists and is not stale', () => {
+    return { loadIndex };
+  }
+
+  it('returns parsed index when file exists and is not stale', async () => {
+    const { loadIndex } = await setup();
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
@@ -69,7 +68,8 @@ describe('index-loader', () => {
     expect(mockBuildIndex).not.toHaveBeenCalled();
   });
 
-  it('calls buildIndex when index file does not exist', () => {
+  it('calls buildIndex when index file does not exist', async () => {
+    const { loadIndex } = await setup();
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
@@ -93,7 +93,8 @@ describe('index-loader', () => {
     expect(mockBuildIndex).toHaveBeenCalledWith('/fake/workspace');
   });
 
-  it('calls buildIndex when index is stale (watch path newer than index)', () => {
+  it('calls buildIndex when index is stale (watch path newer than index)', async () => {
+    const { loadIndex } = await setup();
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
@@ -119,7 +120,8 @@ describe('index-loader', () => {
     expect(mockBuildIndex).toHaveBeenCalledWith('/fake/workspace');
   });
 
-  it('isStale checks three watch paths: .nx/workspace-data/, tsconfig.base.json, nx.json', () => {
+  it('isStale checks three watch paths: .nx/workspace-data/, tsconfig.base.json, nx.json', async () => {
+    const { loadIndex } = await setup();
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
     const statCalls: string[] = [];
 
@@ -150,7 +152,8 @@ describe('index-loader', () => {
     expect(watchPathCalls).toHaveLength(3);
   });
 
-  it('isStale returns false when all watch paths are older than index', () => {
+  it('isStale returns false when all watch paths are older than index', async () => {
+    const { loadIndex } = await setup();
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
@@ -171,7 +174,8 @@ describe('index-loader', () => {
     expect(mockBuildIndex).not.toHaveBeenCalled();
   });
 
-  it('isStale handles missing watch paths gracefully (skip, do not crash)', () => {
+  it('isStale handles missing watch paths gracefully (skip, do not crash)', async () => {
+    const { loadIndex } = await setup();
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {
@@ -196,7 +200,8 @@ describe('index-loader', () => {
     expect(mockBuildIndex).not.toHaveBeenCalled();
   });
 
-  it('loadIndex triggers buildIndex when index does not exist (directory creation handled by buildIndex)', () => {
+  it('loadIndex triggers buildIndex when index does not exist (directory creation handled by buildIndex)', async () => {
+    const { loadIndex } = await setup();
     const fakeIndex = { projects: {}, meta: { builtAt: '2026-01-01' } };
 
     mockStatSync.mockImplementation((filePath) => {

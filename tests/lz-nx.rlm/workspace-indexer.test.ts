@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Load fixtures using createRequire (not affected by vi.mock hoisting of node:fs)
 const require = createRequire(import.meta.url);
@@ -7,23 +7,17 @@ const graphFixture = require('./fixtures/graph-output.json');
 
 // ─── workspace-indexer: transformGraphToIndex (pure function, no mocks needed) ───
 
-type TransformFn = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  graphOutput: any,
-  pathAliases: Record<string, string[]>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-) => any;
-
 describe('workspace-indexer > transformGraphToIndex', () => {
-  let transformGraphToIndex: TransformFn;
+  async function setup() {
+    const { transformGraphToIndex } = await import(
+      '#rlm/workspace-indexer.mjs'
+    );
 
-  beforeEach(async () => {
-    // Import the real module -- transformGraphToIndex is a pure function
-    const mod = await import('#rlm/workspace-indexer.mjs');
-    transformGraphToIndex = mod.transformGraphToIndex;
-  });
+    return { transformGraphToIndex };
+  }
 
-  it('extracts projects with root, sourceRoot, type, tags, targets', () => {
+  it('extracts projects with root, sourceRoot, type, tags, targets', async () => {
+    const { transformGraphToIndex } = await setup();
     const index = transformGraphToIndex(graphFixture, {});
 
     expect(index.projects['my-app']).toEqual({
@@ -39,13 +33,15 @@ describe('workspace-indexer > transformGraphToIndex', () => {
     });
   });
 
-  it('uses graph-level node.type, not data.projectType (e2e has type "e2e")', () => {
+  it('uses graph-level node.type, not data.projectType (e2e has type "e2e")', async () => {
+    const { transformGraphToIndex } = await setup();
     const index = transformGraphToIndex(graphFixture, {});
 
     expect(index.projects['my-app-e2e'].type).toBe('e2e');
   });
 
-  it('extracts only executor string from targets, not full config objects', () => {
+  it('extracts only executor string from targets, not full config objects', async () => {
+    const { transformGraphToIndex } = await setup();
     const index = transformGraphToIndex(graphFixture, {});
     const targets = index.projects['shared-utils'].targets;
 
@@ -54,7 +50,8 @@ describe('workspace-indexer > transformGraphToIndex', () => {
     expect(typeof targets.build).toBe('string');
   });
 
-  it('maps dependencies to { target, type } per project', () => {
+  it('maps dependencies to { target, type } per project', async () => {
+    const { transformGraphToIndex } = await setup();
     const index = transformGraphToIndex(graphFixture, {});
 
     expect(index.dependencies['my-app']).toEqual([
@@ -70,7 +67,8 @@ describe('workspace-indexer > transformGraphToIndex', () => {
     ]);
   });
 
-  it('includes meta with builtAt (ISO string) and projectCount', () => {
+  it('includes meta with builtAt (ISO string) and projectCount', async () => {
+    const { transformGraphToIndex } = await setup();
     const index = transformGraphToIndex(graphFixture, {});
 
     expect(index.meta.projectCount).toBe(4);
@@ -78,7 +76,8 @@ describe('workspace-indexer > transformGraphToIndex', () => {
     expect(index.meta.builtAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
   });
 
-  it('includes pathAliases in the returned index', () => {
+  it('includes pathAliases in the returned index', async () => {
+    const { transformGraphToIndex } = await setup();
     const aliases = {
       '@myorg/shared-utils': ['libs/shared-utils/src/index.ts'],
     };
@@ -87,7 +86,8 @@ describe('workspace-indexer > transformGraphToIndex', () => {
     expect(index.pathAliases).toEqual(aliases);
   });
 
-  it('handles nodes with missing sourceRoot gracefully (null)', () => {
+  it('handles nodes with missing sourceRoot gracefully (null)', async () => {
+    const { transformGraphToIndex } = await setup();
     const graphWithMissing = {
       graph: {
         nodes: {
@@ -105,7 +105,8 @@ describe('workspace-indexer > transformGraphToIndex', () => {
     expect(index.projects['no-source'].sourceRoot).toBeNull();
   });
 
-  it('handles nodes with missing tags (defaults to empty array)', () => {
+  it('handles nodes with missing tags (defaults to empty array)', async () => {
+    const { transformGraphToIndex } = await setup();
     const graphWithMissing = {
       graph: {
         nodes: {

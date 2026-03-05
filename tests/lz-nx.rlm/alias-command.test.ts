@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // ─── Fixture: workspace index with path aliases ───
 const fixtureIndex = {
@@ -48,22 +48,17 @@ const multiPathIndex = {
   },
 };
 
-type CommandResult = { output: string; exitCode: number };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyIndex = any;
-
 describe('alias-command > runAlias', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let runAlias: (input: any, index: AnyIndex) => CommandResult;
+  async function setup() {
+    const { runAlias } = await import('#rlm/alias-command.mjs');
 
-  beforeEach(async () => {
-    const mod = await import('#rlm/alias-command.mjs');
-    runAlias = mod.runAlias;
-  });
+    return { runAlias };
+  }
 
   // ─── Exact alias -> path ───
 
-  it('resolves alias to all paths: "@myorg/shared-utils -> libs/shared-utils/src/index.ts"', () => {
+  it('resolves alias to all paths: "@myorg/shared-utils -> libs/shared-utils/src/index.ts"', async () => {
+    const { runAlias } = await setup();
     const { output, exitCode } = runAlias('@myorg/shared-utils', fixtureIndex);
 
     expect(exitCode).toBe(0);
@@ -72,7 +67,8 @@ describe('alias-command > runAlias', () => {
     );
   });
 
-  it('alias with multiple fallback paths shows each path on its own line', () => {
+  it('alias with multiple fallback paths shows each path on its own line', async () => {
+    const { runAlias } = await setup();
     const { output, exitCode } = runAlias('@myorg/utils', multiPathIndex);
 
     expect(exitCode).toBe(0);
@@ -82,7 +78,8 @@ describe('alias-command > runAlias', () => {
 
   // ─── Exact path -> alias ───
 
-  it('resolves path to alias: "libs/shared-utils/src/index.ts -> @myorg/shared-utils"', () => {
+  it('resolves path to alias: "libs/shared-utils/src/index.ts -> @myorg/shared-utils"', async () => {
+    const { runAlias } = await setup();
     const { output, exitCode } = runAlias(
       'libs/shared-utils/src/index.ts',
       fixtureIndex,
@@ -96,7 +93,8 @@ describe('alias-command > runAlias', () => {
 
   // ─── Arrow direction ───
 
-  it('arrow direction is always "input -> resolved"', () => {
+  it('arrow direction is always "input -> resolved"', async () => {
+    const { runAlias } = await setup();
     const aliasResult = runAlias('@myorg/shared-utils', fixtureIndex);
 
     expect(aliasResult.output).toContain('@myorg/shared-utils ->');
@@ -108,14 +106,16 @@ describe('alias-command > runAlias', () => {
 
   // ─── Summary footer ───
 
-  it('no summary footer for single match', () => {
+  it('no summary footer for single match', async () => {
+    const { runAlias } = await setup();
     const { output } = runAlias('@myorg/shared-utils', fixtureIndex);
 
     // Single alias with single path = 1 result line, no "N matches"
     expect(output).not.toMatch(/\d+ match(es)?$/m);
   });
 
-  it('summary footer with count for 2+ result lines', () => {
+  it('summary footer with count for 2+ result lines', async () => {
+    const { runAlias } = await setup();
     const { output } = runAlias('@myorg/utils', multiPathIndex);
 
     // 2 paths = 2 result lines -> should have "2 matches"
@@ -124,14 +124,16 @@ describe('alias-command > runAlias', () => {
 
   // ─── Partial matches ───
 
-  it('partial matches show header: "Partial matches (alias):"', () => {
+  it('partial matches show header: "Partial matches (alias):"', async () => {
+    const { runAlias } = await setup();
     const { output, exitCode } = runAlias('shared', fixtureIndex);
 
     expect(exitCode).toBe(0);
     expect(output).toContain('Partial matches (alias):');
   });
 
-  it('partial path matches show header: "Partial matches (path):"', () => {
+  it('partial path matches show header: "Partial matches (path):"', async () => {
+    const { runAlias } = await setup();
     // Use a substring that matches only in paths, not aliases
     // "src/index.ts" appears in paths but not as an alias key
     const indexWithDistinctPaths = {
@@ -147,7 +149,8 @@ describe('alias-command > runAlias', () => {
 
   // ─── Truncation ───
 
-  it('substring results truncated at 20 with warning', () => {
+  it('substring results truncated at 20 with warning', async () => {
+    const { runAlias } = await setup();
     const manyAliases: Record<string, string[]> = {};
 
     for (let i = 0; i < 25; i++) {
@@ -173,7 +176,8 @@ describe('alias-command > runAlias', () => {
 
   // ─── No match ───
 
-  it('no match outputs "[WARN] No match for \'<input>\'" with hint', () => {
+  it('no match outputs "[WARN] No match for \'<input>\'" with hint', async () => {
+    const { runAlias } = await setup();
     const { output, exitCode } = runAlias('nonexistent-xyz', fixtureIndex);
 
     expect(exitCode).toBe(0);
@@ -181,7 +185,8 @@ describe('alias-command > runAlias', () => {
     expect(output).toContain('Hint:');
   });
 
-  it('hint format uses actual data from index', () => {
+  it('hint format uses actual data from index', async () => {
+    const { runAlias } = await setup();
     const { output } = runAlias('nonexistent-xyz', fixtureIndex);
 
     // Hint should reference a real alias and path from the index
@@ -191,7 +196,8 @@ describe('alias-command > runAlias', () => {
 
   // ─── Wildcard warning ───
 
-  it('wildcard input warns about ignored wildcard patterns', () => {
+  it('wildcard input warns about ignored wildcard patterns', async () => {
+    const { runAlias } = await setup();
     const { output, exitCode } = runAlias('@myorg/my-app/*', fixtureIndex);
 
     expect(exitCode).toBe(0);
@@ -201,7 +207,8 @@ describe('alias-command > runAlias', () => {
 
   // ─── Missing argument ───
 
-  it('missing argument outputs error', () => {
+  it('missing argument outputs error', async () => {
+    const { runAlias } = await setup();
     const { output, exitCode } = runAlias(undefined, fixtureIndex);
 
     expect(exitCode).toBe(1);
@@ -212,7 +219,8 @@ describe('alias-command > runAlias', () => {
 
   // ─── Exit codes ───
 
-  it('exit code 0 on success, 1 on error', () => {
+  it('exit code 0 on success, 1 on error', async () => {
+    const { runAlias } = await setup();
     const successResult = runAlias('@myorg/shared-utils', fixtureIndex);
 
     expect(successResult.exitCode).toBe(0);

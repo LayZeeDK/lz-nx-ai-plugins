@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // ─── Mock child_process.spawnSync ───
 const { mockSpawnSync } = vi.hoisted(() => {
@@ -60,26 +60,16 @@ const fixtureIndex = {
   },
 };
 
-type CommandResult = { output: string; exitCode: number };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyIndex = any;
-
 describe('find-command > runFind', () => {
-  let runFind: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    pattern: any,
-    index: AnyIndex,
-    options?: { project?: string; context?: number },
-    workspaceRoot?: string,
-  ) => CommandResult;
-
-  beforeEach(async () => {
+  async function setup() {
     vi.clearAllMocks();
-    const mod = await import('#rlm/find-command.mjs');
-    runFind = mod.runFind;
-  });
+    const { runFind } = await import('#rlm/find-command.mjs');
 
-  it('without --project runs git grep across entire workspace', () => {
+    return { runFind };
+  }
+
+  it('without --project runs git grep across entire workspace', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout:
@@ -99,7 +89,8 @@ describe('find-command > runFind', () => {
     expect(callArgs[separatorIdx + 1]).toBe('something');
   });
 
-  it('with --project scopes git grep to project sourceRoot', () => {
+  it('with --project scopes git grep to project sourceRoot', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout:
@@ -122,7 +113,8 @@ describe('find-command > runFind', () => {
     expect(callArgs.slice(separatorIdx + 2)).toContain('apps/my-app/src');
   });
 
-  it('with --project glob scopes to all matching project sourceRoots', () => {
+  it('with --project glob scopes to all matching project sourceRoots', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout:
@@ -144,7 +136,8 @@ describe('find-command > runFind', () => {
     expect(callArgs.slice(separatorIdx + 2)).toContain('libs/shared-utils/src');
   });
 
-  it('unscoped search truncates results at 20 matches with warning', () => {
+  it('unscoped search truncates results at 20 matches with warning', async () => {
+    const { runFind } = await setup();
     // Generate 25 match lines
     const matchLines = [];
 
@@ -178,7 +171,8 @@ describe('find-command > runFind', () => {
     expect(output).toMatch(/--project/);
   });
 
-  it('--project scoped search shows all results (no truncation)', () => {
+  it('--project scoped search shows all results (no truncation)', async () => {
+    const { runFind } = await setup();
     const matchLines = [];
 
     for (let i = 0; i < 25; i++) {
@@ -209,7 +203,8 @@ describe('find-command > runFind', () => {
     expect(output).not.toMatch(/Showing \d+ of/);
   });
 
-  it('fixed string matching by default (git grep -F flag)', () => {
+  it('fixed string matching by default (git grep -F flag)', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout: 'apps/my-app/src/main.ts:1:const x = "test";\n',
@@ -223,7 +218,8 @@ describe('find-command > runFind', () => {
     expect(callArgs).toContain('-F');
   });
 
-  it('/pattern/ regex delimiters trigger regex mode (no -F flag)', () => {
+  it('/pattern/ regex delimiters trigger regex mode (no -F flag)', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout: 'apps/my-app/src/main.ts:1:const x = "test";\n',
@@ -241,7 +237,8 @@ describe('find-command > runFind', () => {
     expect(callArgs[separatorIdx + 1]).toBe('test\\.pattern');
   });
 
-  it('--context N passes -C flag to git grep', () => {
+  it('--context N passes -C flag to git grep', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout: 'apps/my-app/src/main.ts:1:const x = "test";\n',
@@ -255,7 +252,8 @@ describe('find-command > runFind', () => {
     expect(callArgs).toContain('-C3');
   });
 
-  it('results grouped by project name with project header', () => {
+  it('results grouped by project name with project header', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout:
@@ -274,7 +272,8 @@ describe('find-command > runFind', () => {
     expect(output).toContain('shared-utils');
   });
 
-  it('each result line shows "file:line: content" format', () => {
+  it('each result line shows "file:line: content" format', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout:
@@ -287,7 +286,8 @@ describe('find-command > runFind', () => {
     expect(output).toContain('apps/my-app/src/main.ts:15:');
   });
 
-  it('summary footer with match count and project count', () => {
+  it('summary footer with match count and project count', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 0,
       stdout:
@@ -304,7 +304,8 @@ describe('find-command > runFind', () => {
     expect(output).toMatch(/\d+ match(es)? in \d+ project/);
   });
 
-  it('no matches returns informational message', () => {
+  it('no matches returns informational message', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 1,
       stdout: '',
@@ -322,7 +323,8 @@ describe('find-command > runFind', () => {
     expect(output).toContain('No matches');
   });
 
-  it('missing pattern argument returns error', () => {
+  it('missing pattern argument returns error', async () => {
+    const { runFind } = await setup();
     const { output, exitCode } = runFind(
       undefined,
       fixtureIndex,
@@ -334,7 +336,8 @@ describe('find-command > runFind', () => {
     expect(output).toContain('[ERROR]');
   });
 
-  it('invalid --project name returns error with project count', () => {
+  it('invalid --project name returns error with project count', async () => {
+    const { runFind } = await setup();
     const { output, exitCode } = runFind(
       'test',
       fixtureIndex,
@@ -348,7 +351,8 @@ describe('find-command > runFind', () => {
     expect(output).toContain('4 indexed');
   });
 
-  it('git grep failure returns error message', () => {
+  it('git grep failure returns error message', async () => {
+    const { runFind } = await setup();
     mockSpawnSync.mockReturnValue({
       status: 2,
       stdout: '',

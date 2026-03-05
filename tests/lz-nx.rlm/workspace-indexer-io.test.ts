@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 interface NodeError extends Error {
   code?: string;
@@ -52,15 +52,15 @@ vi.mock('#rlm/shared/output-format.mjs', () => ({
 // ─── readPathAliases (needs fs mock) ───
 
 describe('workspace-indexer > readPathAliases', () => {
-  let readPathAliases: (workspaceRoot: string) => Record<string, string[]>;
-
-  beforeEach(async () => {
+  async function setup() {
     vi.clearAllMocks();
-    const mod = await import('#rlm/workspace-indexer.mjs');
-    readPathAliases = mod.readPathAliases;
-  });
+    const { readPathAliases } = await import('#rlm/workspace-indexer.mjs');
 
-  it('reads tsconfig.base.json and returns alias->paths map preserving full arrays', () => {
+    return { readPathAliases };
+  }
+
+  it('reads tsconfig.base.json and returns alias->paths map preserving full arrays', async () => {
+    const { readPathAliases } = await setup();
     mockReadFileSync.mockReturnValue(JSON.stringify(tsconfigFixture));
 
     const aliases = readPathAliases('/fake/workspace');
@@ -73,7 +73,8 @@ describe('workspace-indexer > readPathAliases', () => {
     ]);
   });
 
-  it('ignores wildcard patterns (entries containing "*")', () => {
+  it('ignores wildcard patterns (entries containing "*")', async () => {
+    const { readPathAliases } = await setup();
     mockReadFileSync.mockReturnValue(JSON.stringify(tsconfigFixture));
 
     const aliases = readPathAliases('/fake/workspace');
@@ -81,7 +82,8 @@ describe('workspace-indexer > readPathAliases', () => {
     expect(aliases['@myorg/my-app/*']).toBeUndefined();
   });
 
-  it('falls back to tsconfig.json if tsconfig.base.json missing', () => {
+  it('falls back to tsconfig.json if tsconfig.base.json missing', async () => {
+    const { readPathAliases } = await setup();
     const fallbackTsconfig = {
       compilerOptions: {
         baseUrl: '.',
@@ -107,7 +109,8 @@ describe('workspace-indexer > readPathAliases', () => {
     expect(aliases['@fallback/lib']).toEqual(['libs/fallback/src/index.ts']);
   });
 
-  it('returns empty object if no tsconfig files exist', () => {
+  it('returns empty object if no tsconfig files exist', async () => {
+    const { readPathAliases } = await setup();
     mockReadFileSync.mockImplementation(() => {
       const err: NodeError = new Error('ENOENT');
       err.code = 'ENOENT';
@@ -119,7 +122,8 @@ describe('workspace-indexer > readPathAliases', () => {
     expect(aliases).toEqual({});
   });
 
-  it('preserves all entries in each path array (TypeScript fallback resolution)', () => {
+  it('preserves all entries in each path array (TypeScript fallback resolution)', async () => {
+    const { readPathAliases } = await setup();
     const multiPathTsconfig = {
       compilerOptions: {
         baseUrl: '.',
@@ -141,7 +145,8 @@ describe('workspace-indexer > readPathAliases', () => {
     ]);
   });
 
-  it('for "@myorg/shared-utils" returns single-element array preserved as array', () => {
+  it('for "@myorg/shared-utils" returns single-element array preserved as array', async () => {
+    const { readPathAliases } = await setup();
     mockReadFileSync.mockReturnValue(JSON.stringify(tsconfigFixture));
 
     const aliases = readPathAliases('/fake/workspace');
@@ -157,16 +162,15 @@ describe('workspace-indexer > readPathAliases', () => {
 // ─── buildIndex (needs fs + nx-runner mocks) ───
 
 describe('workspace-indexer > buildIndex', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let buildIndex: (workspaceRoot: string) => any;
-
-  beforeEach(async () => {
+  async function setup() {
     vi.clearAllMocks();
-    const mod = await import('#rlm/workspace-indexer.mjs');
-    buildIndex = mod.buildIndex;
-  });
+    const { buildIndex } = await import('#rlm/workspace-indexer.mjs');
 
-  it('calls runNxGraph, transforms result, writes index to tmp/lz-nx.rlm/workspace-index.json', () => {
+    return { buildIndex };
+  }
+
+  it('calls runNxGraph, transforms result, writes index to tmp/lz-nx.rlm/workspace-index.json', async () => {
+    const { buildIndex } = await setup();
     mockRunNxGraph.mockReturnValue({ data: graphFixture, error: null });
 
     // readPathAliases will try to read tsconfig.base.json -- return ENOENT
@@ -192,7 +196,8 @@ describe('workspace-indexer > buildIndex', () => {
     expect(result.meta.projectCount).toBe(4);
   });
 
-  it('throws when runNxGraph returns an error', () => {
+  it('throws when runNxGraph returns an error', async () => {
+    const { buildIndex } = await setup();
     mockRunNxGraph.mockReturnValue({ data: null, error: 'graph failed' });
 
     expect(() => buildIndex('/fake/workspace')).toThrow();

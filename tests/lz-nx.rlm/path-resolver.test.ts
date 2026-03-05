@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Build aliases map from the tsconfig-base fixture format
 // Values are arrays (TypeScript fallback resolution)
@@ -14,20 +14,16 @@ interface ResolveResult {
 }
 
 describe('path-resolver > resolveAlias', () => {
-  let resolveAlias: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    input: any,
-    pathAliases: Record<string, string[]>,
-  ) => ResolveResult;
+  async function setup() {
+    const { resolveAlias } = await import('#rlm/path-resolver.mjs');
 
-  beforeEach(async () => {
-    const mod = await import('#rlm/path-resolver.mjs');
-    resolveAlias = mod.resolveAlias;
-  });
+    return { resolveAlias };
+  }
 
   // ─── Exact alias match ───
 
-  it('resolveAlias("@myorg/shared-utils", aliases) returns exact alias->paths match with full paths array', () => {
+  it('resolveAlias("@myorg/shared-utils", aliases) returns exact alias->paths match with full paths array', async () => {
+    const { resolveAlias } = await setup();
     const result = resolveAlias('@myorg/shared-utils', aliases);
 
     expect(result.results).toHaveLength(1);
@@ -39,7 +35,8 @@ describe('path-resolver > resolveAlias', () => {
     expect(result.partial).toBe(false);
   });
 
-  it('resolveAlias for alias with multiple fallback paths returns all paths in `to` array', () => {
+  it('resolveAlias for alias with multiple fallback paths returns all paths in `to` array', async () => {
+    const { resolveAlias } = await setup();
     const multiAliases = {
       '@myorg/utils': [
         'libs/utils/src/index.ts',
@@ -60,7 +57,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Exact path match ───
 
-  it('resolveAlias("libs/shared-utils/src/index.ts", aliases) returns exact path->alias match', () => {
+  it('resolveAlias("libs/shared-utils/src/index.ts", aliases) returns exact path->alias match', async () => {
+    const { resolveAlias } = await setup();
     const result = resolveAlias('libs/shared-utils/src/index.ts', aliases);
 
     expect(result.results).toHaveLength(1);
@@ -74,7 +72,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Priority: exact alias first, then exact path, then substring ───
 
-  it('exact alias match checked first, then exact path match, then substring fallback', () => {
+  it('exact alias match checked first, then exact path match, then substring fallback', async () => {
+    const { resolveAlias } = await setup();
     // Create a scenario where input matches both an alias key and a path value
     const ambiguousAliases = {
       'libs/shared': ['other/path.ts'],
@@ -91,7 +90,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Substring fallback (alias side) ───
 
-  it('substring fallback on alias side: resolveAlias("shared", aliases) returns partial matches containing "shared" in alias keys', () => {
+  it('substring fallback on alias side: resolveAlias("shared", aliases) returns partial matches containing "shared" in alias keys', async () => {
+    const { resolveAlias } = await setup();
     const result = resolveAlias('shared', aliases);
 
     expect(result.results.length).toBeGreaterThanOrEqual(1);
@@ -111,7 +111,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Substring fallback (path side) ───
 
-  it('substring fallback on path side: resolveAlias("feature-auth", aliases) returns partial matches containing "feature-auth" in path values', () => {
+  it('substring fallback on path side: resolveAlias("feature-auth", aliases) returns partial matches containing "feature-auth" in path values', async () => {
+    const { resolveAlias } = await setup();
     const result = resolveAlias('feature-auth', aliases);
 
     // "feature-auth" appears as an alias key substring AND in path values
@@ -121,7 +122,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── 20-match truncation ───
 
-  it('substring results limited to 20 matches', () => {
+  it('substring results limited to 20 matches', async () => {
+    const { resolveAlias } = await setup();
     const manyAliases: Record<string, string[]> = {};
 
     for (let i = 0; i < 25; i++) {
@@ -138,7 +140,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Direction indicators ───
 
-  it('results include direction indicator ("alias->path" or "path->alias")', () => {
+  it('results include direction indicator ("alias->path" or "path->alias")', async () => {
+    const { resolveAlias } = await setup();
     const aliasResult = resolveAlias('@myorg/shared-utils', aliases);
 
     expect(aliasResult.results[0].direction).toBe('alias->path');
@@ -150,7 +153,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Partial flag ───
 
-  it('partial flag is true for substring matches, false for exact matches', () => {
+  it('partial flag is true for substring matches, false for exact matches', async () => {
+    const { resolveAlias } = await setup();
     const exactResult = resolveAlias('@myorg/shared-utils', aliases);
 
     expect(exactResult.partial).toBe(false);
@@ -162,14 +166,16 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Empty input ───
 
-  it('empty input returns error', () => {
+  it('empty input returns error', async () => {
+    const { resolveAlias } = await setup();
     const result = resolveAlias('', aliases);
 
     expect(result.results).toEqual([]);
     expect(result.error).toBeDefined();
   });
 
-  it('undefined input returns error', () => {
+  it('undefined input returns error', async () => {
+    const { resolveAlias } = await setup();
     const result = resolveAlias(undefined, aliases);
 
     expect(result.results).toEqual([]);
@@ -178,7 +184,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── No match ───
 
-  it('no match returns empty results array', () => {
+  it('no match returns empty results array', async () => {
+    const { resolveAlias } = await setup();
     const result = resolveAlias('nonexistent-xyz', aliases);
 
     expect(result.results).toEqual([]);
@@ -187,7 +194,8 @@ describe('path-resolver > resolveAlias', () => {
 
   // ─── Multiple path->alias matches ───
 
-  it('multiple path->alias matches returned when same path appears in different aliases', () => {
+  it('multiple path->alias matches returned when same path appears in different aliases', async () => {
+    const { resolveAlias } = await setup();
     const overlappingAliases = {
       '@myorg/utils-v1': ['libs/shared/utils.ts'],
       '@myorg/utils-v2': ['libs/shared/utils.ts'],

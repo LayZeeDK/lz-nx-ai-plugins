@@ -1,12 +1,4 @@
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach,
-  type MockInstance,
-} from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 interface ExecError extends Error {
   stdout?: string;
@@ -18,9 +10,20 @@ vi.mock('node:child_process', () => ({
   execSync: vi.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { execSync } = (await import('node:child_process')) as any;
+const { execSync: _execSync } = await import('node:child_process');
+const execSync = vi.mocked(_execSync);
 const { runNx, runNxGraph } = await import('#rlm/nx-runner.mjs');
+
+function getExecSyncOptions() {
+  const callArgs = execSync.mock.calls[0];
+  const options = callArgs[1];
+
+  if (!options) {
+    throw new Error('execSync was called without options');
+  }
+
+  return options;
+}
 
 describe('nx-runner', () => {
   beforeEach(() => {
@@ -143,12 +146,11 @@ describe('nx-runner', () => {
 
       runNx('show projects');
 
-      const callArgs = execSync.mock.calls[0];
-      const options = callArgs[1];
+      const options = getExecSyncOptions();
 
-      expect(options.env.NX_TUI).toBe('false');
-      expect(options.env.NX_INTERACTIVE).toBe('false');
-      expect(options.env.NX_NO_CLOUD).toBe('true');
+      expect(options.env?.NX_TUI).toBe('false');
+      expect(options.env?.NX_INTERACTIVE).toBe('false');
+      expect(options.env?.NX_NO_CLOUD).toBe('true');
     });
 
     it('defaults maxBuffer to 10MB', () => {
@@ -156,8 +158,7 @@ describe('nx-runner', () => {
 
       runNx('graph --print');
 
-      const callArgs = execSync.mock.calls[0];
-      const options = callArgs[1];
+      const options = getExecSyncOptions();
 
       expect(options.maxBuffer).toBe(10 * 1024 * 1024);
     });
@@ -167,8 +168,7 @@ describe('nx-runner', () => {
 
       runNx('show projects');
 
-      const callArgs = execSync.mock.calls[0];
-      const options = callArgs[1];
+      const options = getExecSyncOptions();
 
       expect(options.windowsHide).toBe(true);
     });
@@ -215,8 +215,7 @@ describe('nx-runner', () => {
 
       runNx('show projects');
 
-      const callArgs = execSync.mock.calls[0];
-      const options = callArgs[1];
+      const options = getExecSyncOptions();
 
       expect(options.cwd).toBe('/fake/workspace');
     });
@@ -226,8 +225,7 @@ describe('nx-runner', () => {
 
       runNx('show projects');
 
-      const callArgs = execSync.mock.calls[0];
-      const options = callArgs[1];
+      const options = getExecSyncOptions();
 
       expect(options.timeout).toBe(60000);
     });
@@ -301,60 +299,55 @@ describe('nx-runner', () => {
 });
 
 describe('output-format', () => {
-  let info: (msg: string) => void;
-  let warn: (msg: string) => void;
-  let error: (msg: string) => void;
-  let success: (msg: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let stdoutSpy: MockInstance<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let stderrSpy: MockInstance<any>;
+  async function setup() {
+    const { info, warn, error, success } = await import(
+      '#rlm/shared/output-format.mjs'
+    );
 
-  beforeEach(async () => {
-    const mod = await import('#rlm/shared/output-format.mjs');
-    info = mod.info;
-    warn = mod.warn;
-    error = mod.error;
-    success = mod.success;
-
-    stdoutSpy = vi
+    const stdoutSpy = vi
       .spyOn(process.stdout, 'write')
       .mockImplementation(() => true);
-    stderrSpy = vi
+    const stderrSpy = vi
       .spyOn(process.stderr, 'write')
       .mockImplementation(() => true);
-  });
+
+    return { info, warn, error, success, stdoutSpy, stderrSpy };
+  }
 
   afterEach(() => {
-    stdoutSpy.mockRestore();
-    stderrSpy.mockRestore();
+    vi.restoreAllMocks();
   });
 
-  it('info writes [INFO] message to stdout', () => {
+  it('info writes [INFO] message to stdout', async () => {
+    const { info, stdoutSpy } = await setup();
     info('msg');
 
     expect(stdoutSpy).toHaveBeenCalledWith('[INFO] msg\n');
   });
 
-  it('error writes [ERROR] message to stderr', () => {
+  it('error writes [ERROR] message to stderr', async () => {
+    const { error, stderrSpy } = await setup();
     error('msg');
 
     expect(stderrSpy).toHaveBeenCalledWith('[ERROR] msg\n');
   });
 
-  it('warn writes [WARN] message to stderr', () => {
+  it('warn writes [WARN] message to stderr', async () => {
+    const { warn, stderrSpy } = await setup();
     warn('msg');
 
     expect(stderrSpy).toHaveBeenCalledWith('[WARN] msg\n');
   });
 
-  it('success writes [OK] message to stdout', () => {
+  it('success writes [OK] message to stdout', async () => {
+    const { success, stdoutSpy } = await setup();
     success('msg');
 
     expect(stdoutSpy).toHaveBeenCalledWith('[OK] msg\n');
   });
 
-  it('does not contain emojis in output', () => {
+  it('does not contain emojis in output', async () => {
+    const { info, warn, error, success, stdoutSpy, stderrSpy } = await setup();
     info('test');
     success('test');
     warn('test');
