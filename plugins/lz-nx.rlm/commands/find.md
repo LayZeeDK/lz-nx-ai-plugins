@@ -1,6 +1,6 @@
 ---
 name: find
-description: Search file contents scoped to Nx projects using the workspace index (zero LLM tokens)
+description: Search file contents scoped to Nx projects using the workspace index
 argument-hint: <pattern> [--project <name|glob>] [--context N]
 disable-model-invocation: true
 allowed-tools: Bash(node *)

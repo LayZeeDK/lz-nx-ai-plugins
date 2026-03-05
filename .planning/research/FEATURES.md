@@ -585,6 +585,9 @@ Minimum viable product -- what is needed to validate that RLM navigation actuall
 - [Why we deleted (most of) our MCP tools | Nx Blog](https://nx.dev/blog/why-we-deleted-most-of-our-mcp-tools)
 
 ---
+
+> **Correction (2026-03-05):** The feature table (line 419) describes the workspace index as "Pure Node.js, zero LLM tokens." This is accurate for the script itself. However, the broader assumption that Claude Code commands consume "zero LLM tokens" (reflected throughout the planning documents) was incorrect. `disable-model-invocation: true` prevents Claude from *automatically* invoking commands but does not bypass model processing when users invoke them. The "zero LLM" framing was influenced by the RLM reference implementations where the REPL sandbox calls script functions as direct VM globals — genuinely zero model involvement. The Claude Code command invocation path is different. See CLI-01 in REQUIREMENTS.md.
+
 *Feature research for: RLM-powered Nx monorepo navigation -- REPL globals, handle store, execution loop, llm_query architecture*
 *Researched: 2026-03-03*
 *Source analysis confidence: HIGH -- all contracts derived from direct source code reading, not secondary documentation*

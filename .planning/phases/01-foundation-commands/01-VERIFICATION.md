@@ -149,5 +149,7 @@ All task commits from SUMMARY files confirmed in git history:
 
 ---
 
+> **Correction (2026-03-05):** This report uses the phrase "zero LLM tokens" in the phase goal and CMD-01/02/03 requirement checks. This was a false assumption carried forward from the original RLM architecture research, where deterministic commands would be called programmatically by the REPL sandbox (genuinely zero LLM involvement). In the Claude Code plugin system, `disable-model-invocation: true` only prevents Claude from *automatically* invoking the command — it does not bypass model processing. When a user types `/lz-nx.rlm:deps`, the model still reads the command markdown, invokes the Bash tool, and processes the output. The scripts themselves are deterministic (no LLM calls), but the invocation path through Claude Code is not token-free. A standalone CLI wrapper (CLI-01) is tracked as a later milestone requirement for genuinely token-free usage.
+
 _Verified: 2026-03-05T00:57:00Z_
 _Verifier: Claude (gsd-verifier)_

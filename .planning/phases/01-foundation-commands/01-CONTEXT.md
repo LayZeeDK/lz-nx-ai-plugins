@@ -168,5 +168,7 @@ Plugin shell, workspace indexer, path resolver, Nx runner, and three determinist
 
 ---
 
+> **Correction (2026-03-05):** The domain description above states "zero LLM tokens." This is inaccurate for the Claude Code invocation path. The scripts are deterministic (no LLM calls), but Claude Code's model still processes command invocations. The original RLM research architecture has the REPL sandbox calling script functions directly (genuinely zero model involvement) — but the Claude Code command wrapper is a different invocation path. See CLI-01 in REQUIREMENTS.md for standalone CLI tracking.
+
 *Phase: 01-foundation-commands*
 *Context gathered: 2026-03-04*

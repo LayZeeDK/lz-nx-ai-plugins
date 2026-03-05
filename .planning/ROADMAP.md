@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Foundation + Commands
-**Goal**: Users can install the plugin, build a workspace index, and run deterministic commands (deps, find, alias) that return useful results with zero LLM tokens
+**Goal**: Users can install the plugin, build a workspace index, and run deterministic commands (deps, find, alias) that return useful results without LLM calls in the scripts themselves (note: Claude Code still processes the command invocation)
 **Depends on**: Nothing (first phase)
 **Requirements**: FOUND-01, FOUND-02, FOUND-03, CMD-01, CMD-02, CMD-03, PLUG-01, PLUG-02
 **Success Criteria** (what must be TRUE):

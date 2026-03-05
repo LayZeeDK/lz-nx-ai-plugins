@@ -67,9 +67,9 @@ plugins/
     │   ├── repl-executor.md   # Sonnet agent: drives RLM fill/solve execution loop
     │   └── haiku-searcher.md  # Haiku agent: mechanical search sub-calls
     ├── commands/
-    │   ├── deps.md            # /lz-nx.rlm:deps -- dependency tree (zero LLM tokens)
-    │   ├── find.md            # /lz-nx.rlm:find -- project-scoped file search (zero LLM tokens)
-    │   └── alias.md           # /lz-nx.rlm:alias -- tsconfig path alias resolution (zero LLM tokens)
+    │   ├── deps.md            # /lz-nx.rlm:deps -- dependency tree (deterministic script)
+    │   ├── find.md            # /lz-nx.rlm:find -- project-scoped file search (deterministic script)
+    │   └── alias.md           # /lz-nx.rlm:alias -- tsconfig path alias resolution (deterministic script)
     ├── hooks/                 # Deferred to a later milestone (not in v0.0.1 scope)
     │   ├── hooks.json
     │   └── scripts/
@@ -122,7 +122,7 @@ plugins/
 - Note: `skills/` is preferred over `commands/` for new LLM-powered interactions per updated Claude Code conventions
 
 **`plugins/lz-nx.rlm/commands/` (planned):**
-- Purpose: Zero-LLM-token slash commands that invoke Node.js scripts deterministically
+- Purpose: Slash commands that invoke deterministic Node.js scripts (scripts make no LLM calls; Claude Code still processes the invocation)
 - Contains: Markdown files with `allowed-tools` restricting to `Bash(node *)` and `Read`
 
 ## Key File Locations
@@ -181,7 +181,7 @@ plugins/
 
 **New slash command (Phase 3):**
 - Location: `plugins/lz-nx.rlm/commands/<command-name>.md`
-- Convention: Use `allowed-tools` to restrict tool access; commands are zero-LLM-token operations
+- Convention: Use `allowed-tools` to restrict tool access; command scripts are deterministic (no LLM calls in scripts, but Claude Code still processes invocation)
 
 **New skill (Phase 5+):**
 - Location: `plugins/lz-nx.rlm/skills/<skill-name>/SKILL.md`

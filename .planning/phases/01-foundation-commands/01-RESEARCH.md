@@ -634,3 +634,9 @@ If the command exits with a non-zero code, display the error output.
 
 **Research date:** 2026-03-04
 **Valid until:** 2026-04-04 (stable domain -- Node.js builtins, Nx CLI, Claude Code plugin API)
+
+> **Correction (2026-03-05):** This research document contains two inaccurate claims about "zero LLM tokens":
+> - Pattern 1 (line 119): "Commands are the correct Claude Code primitive for deterministic operations that need zero LLM interpretation." In fact, `disable-model-invocation: true` only prevents Claude from *automatically* invoking the command. When a user invokes it, the model still reads the command markdown, calls the Bash tool, and processes the output.
+> - Command Markdown Pattern (line 491): The `description` field template includes "(zero LLM tokens)."
+>
+> These claims originated from conflating two different invocation paths: (1) the REPL sandbox path, where script functions are called directly as VM globals — genuinely zero model involvement, and (2) the Claude Code command path, where the model mediates the invocation. The scripts themselves are deterministic (no LLM calls), but the Claude Code command wrapper is not token-free. See CLI-01 in REQUIREMENTS.md for standalone CLI tracking.

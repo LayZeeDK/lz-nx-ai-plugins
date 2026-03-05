@@ -36,9 +36,9 @@ Claude can navigate and understand a large Nx workspace without burning context 
 - [ ] `/lz-nx.rlm:explore` skill navigates the codebase via the REPL fill/solve loop, returning only distilled answers to the conversation
 - [ ] `repl-executor` agent drives the RLM execution loop (fill phase -> solve phase -> FINAL answer)
 - [ ] `haiku-searcher` agent handles mechanical search tasks as the `llm_query()` target for REPL sub-calls (deferred to a later milestone -- subagent nesting constraint)
-- [ ] `/lz-nx.rlm:deps` command prints a dependency tree for a given Nx project (zero LLM tokens)
-- [ ] `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index (zero LLM tokens)
-- [ ] `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally (zero LLM tokens)
+- [ ] `/lz-nx.rlm:deps` command prints a dependency tree for a given Nx project (deterministic scripts, no LLM calls)
+- [ ] `/lz-nx.rlm:find` command searches files scoped to specific Nx projects via the workspace index (deterministic scripts, no LLM calls)
+- [ ] `/lz-nx.rlm:alias` command resolves tsconfig path aliases bidirectionally (deterministic scripts, no LLM calls)
 
 ### Out of Scope
 

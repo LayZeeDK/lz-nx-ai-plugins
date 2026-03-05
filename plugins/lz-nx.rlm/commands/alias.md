@@ -1,6 +1,6 @@
 ---
 name: alias
-description: Resolve tsconfig path aliases bidirectionally (zero LLM tokens)
+description: Resolve tsconfig path aliases bidirectionally
 argument-hint: <alias-or-path>
 disable-model-invocation: true
 allowed-tools: Bash(node *)

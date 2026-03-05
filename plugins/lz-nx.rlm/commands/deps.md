@@ -1,6 +1,6 @@
 ---
 name: deps
-description: Print dependency tree for an Nx project using the workspace index (zero LLM tokens)
+description: Print dependency tree for an Nx project using the workspace index
 argument-hint: <project> [--reverse] [--depth N]
 disable-model-invocation: true
 allowed-tools: Bash(node *)

@@ -18,7 +18,7 @@
 
 **User Layer (Claude Code conversation):**
 - Purpose: Entry points for user interaction -- slash commands and skills exposed by the plugin
-- Location: `plugins/lz-nx.rlm/commands/` (zero-LLM deterministic commands), `plugins/lz-nx.rlm/skills/` (RLM-powered skills)
+- Location: `plugins/lz-nx.rlm/commands/` (deterministic commands -- scripts make no LLM calls, but Claude Code still processes the invocation), `plugins/lz-nx.rlm/skills/` (RLM-powered skills)
 - Contains: Markdown files with frontmatter that Claude Code parses for command/skill registration
 - Depends on: Agent layer (skills delegate to agents), Foundation scripts (commands invoke Node.js scripts directly via Bash tool)
 - Used by: End users typing slash commands in Claude Code
@@ -38,7 +38,7 @@
 - Used by: Agent layer (repl-executor agent invokes sandbox per REPL turn)
 
 **Foundation Scripts:**
-- Purpose: Deterministic, zero-LLM Node.js scripts that build and query the workspace index
+- Purpose: Deterministic Node.js scripts that build and query the workspace index (no LLM calls in scripts)
 - Location: `plugins/lz-nx.rlm/scripts/`
 - Contains: `workspace-indexer.mjs`, `path-resolver.mjs`, `nx-runner.mjs`, `handle-store.mjs`, `rlm-config.mjs`
 - Depends on: External layer only (Nx CLI, filesystem, git)
@@ -72,7 +72,7 @@
 2. Command markdown in `plugins/lz-nx.rlm/commands/deps.md` invokes: `node ${CLAUDE_PLUGIN_ROOT}/scripts/deps-tree.mjs my-project`
 3. Script reads `workspace-index.json`
 4. Script walks adjacency list in `index.deps`, formats dependency tree
-5. Output displayed directly -- zero LLM tokens consumed
+5. Output displayed to user (note: Claude Code model still processes the invocation and output; the script itself makes no LLM calls)
 
 **Handle store flow (large result compression):**
 
@@ -140,17 +140,17 @@
 **`/lz-nx.rlm:deps` command:**
 - Location: `plugins/lz-nx.rlm/commands/deps.md` (planned)
 - Triggers: User invokes `/lz-nx.rlm:deps <project-name>`
-- Responsibilities: Run `node scripts/deps-tree.mjs <project>`, print dependency tree from workspace index; zero LLM tokens
+- Responsibilities: Run `node scripts/deps-tree.mjs <project>`, print dependency tree from workspace index (deterministic script)
 
 **`/lz-nx.rlm:find` command:**
 - Location: `plugins/lz-nx.rlm/commands/find.md` (planned)
 - Triggers: User invokes `/lz-nx.rlm:find <pattern>`
-- Responsibilities: Search files scoped to Nx project source roots using workspace index; zero LLM tokens
+- Responsibilities: Search files scoped to Nx project source roots using workspace index (deterministic script)
 
 **`/lz-nx.rlm:alias` command:**
 - Location: `plugins/lz-nx.rlm/commands/alias.md` (planned)
 - Triggers: User invokes `/lz-nx.rlm:alias <input>`
-- Responsibilities: Bidirectional tsconfig path alias resolution (alias <-> filesystem path); zero LLM tokens
+- Responsibilities: Bidirectional tsconfig path alias resolution (alias <-> filesystem path) (deterministic script)
 
 **`repl-executor` agent:**
 - Location: `plugins/lz-nx.rlm/agents/repl-executor.md` (planned)

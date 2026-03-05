@@ -120,5 +120,8 @@ None - no external service configuration required.
 - 111/111 tests passing
 
 ---
+
+> **Correction (2026-03-05):** "zero LLM tokens" above is inaccurate for the Claude Code invocation path. The scripts are deterministic (no LLM calls), but Claude Code's model still processes command invocations. This assumption originated from the RLM research where REPL globals call scripts directly without model involvement. See CLI-01 in REQUIREMENTS.md for standalone CLI tracking.
+
 *Phase: 01-foundation-commands*
 *Completed: 2026-03-04*

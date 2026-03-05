@@ -225,5 +225,8 @@ Phases with standard patterns (can skip research-phase):
 - [Claude Code context buffer analysis](https://claudefa.st/blog/guide/mechanics/context-buffer-management) -- auto-compaction behavior; needs empirical validation with real REPL sessions
 
 ---
+
+> **Correction (2026-03-05):** This document uses "zero LLM tokens" when describing deterministic commands (lines 47, 80) and the Script Layer (line 67). The Script Layer description is accurate — the Node.js scripts make no LLM calls. However, the command descriptions conflate two invocation paths: (1) the REPL sandbox path, where script functions are imported as VM globals and called programmatically (genuinely zero model involvement), and (2) the Claude Code command path, where the model reads the command markdown, invokes Bash, and processes output. `disable-model-invocation: true` only prevents Claude from *automatically* invoking commands — it does not bypass model processing when users invoke them. See CLI-01 in REQUIREMENTS.md for standalone CLI tracking.
+
 *Research completed: 2026-03-04*
 *Ready for roadmap: yes*
