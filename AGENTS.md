@@ -220,6 +220,37 @@ Plugins are developed across macOS, Linux, and Windows. The right search tool de
   ```
 - **Limitation**: `git grep` only searches files tracked by git. It will **not** find matches in `.gitignore`d paths or untracked files. Fall back to `rg` for those.
 
+## Testing Style
+
+### SIFERS Pattern
+
+Tests use the [SIFERS](https://medium.com/@kolodny/testing-with-sifers-c9d6bb5b362) pattern (Simple Injectable Functions Explicitly Returning State). Each `describe` block defines an `async function setup()` that dynamically imports the module under test and returns its exports. Each `it()` is async and destructures from `await setup()`.
+
+```typescript
+describe('my-module > myFunction', () => {
+  async function setup() {
+    const { myFunction } = await import('#rlm/my-module.mjs');
+
+    return { myFunction };
+  }
+
+  it('does something', async () => {
+    const { myFunction } = await setup();
+
+    expect(myFunction('input')).toBe('output');
+  });
+});
+```
+
+**Why:** TypeScript infers types from the `setup()` return value, eliminating `typeof import()` annotations and `eslint-disable` suppression comments. Each test gets a fresh module import.
+
+**Rules:**
+
+- One `setup()` per `describe` block — if a block needs mocks, include `vi.clearAllMocks()` in its `setup()`
+- Return only what the tests in that block need
+- For mock-typed access, use `vi.mocked()` instead of `as any` casts
+- For tests passing deliberately-invalid arguments (e.g., `undefined` where `string` is expected), use `@ts-expect-error` — not `as unknown as string`
+
 ## Testing Changes
 
 After modifying plugin files, verify:
