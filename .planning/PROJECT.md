@@ -72,6 +72,7 @@ Extensive research corpus in `research/`:
 - `research/claude-plugin/BRAINSTORM_AGENT_TEAMS.md` -- agent team integration proposals
 - `research/nx/nx-cli.md` -- Nx CLI capabilities for workspace exploration
 - `research/prompt-engineering/SYNTHESIS.md` -- prompt patterns for token efficiency
+- `research/task-spawning/` -- Claude Code Task tool nesting constraints, `Bash(claude -p)` workaround for recursive sub-LLM calls; relevant to future `llm_query()` implementation (AGNT-02)
 
 ### Plugin Architecture
 

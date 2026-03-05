@@ -51,7 +51,7 @@ Deferred to next milestone. Tracked but not in current roadmap.
 
 ### Agents
 
-- **AGNT-02**: `haiku-searcher` agent handles mechanical search tasks (file content extraction, pattern matching, classification) as a Haiku subagent, invoked via `llm_query()` through Claude Code's native Task tool (no direct Anthropic API calls)
+- **AGNT-02**: `haiku-searcher` agent handles mechanical search tasks (file content extraction, pattern matching, classification) as a Haiku subagent, invoked via `llm_query()` through Claude Code's native Task tool (no direct Anthropic API calls). _Implementation note: `Bash(claude -p)` provides unlimited nesting depth as an alternative to Task tool's single-level constraint -- see `research/task-spawning/NESTED-CONTEXT-RESEARCH.md`_
 
 ### Skills
 

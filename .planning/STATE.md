@@ -73,6 +73,7 @@ Recent decisions affecting current work:
 - [Phase quick]: Ship v0.0.1 without llm_query() -- deterministic REPL globals cover workspace navigation; haiku-searcher remains deferred
 - [Phase quick]: No transformers.js tasks for v0.0.1 -- zero-dependency goal and native module constraint take precedence; embeddings (semantic search) is a candidate for v0.0.2+
 - [Phase quick]: Local text generation cannot replace llm_query() -- quality gap vs. Haiku is categorical; onnxruntime-node is a native module conflicting with PROJECT.md constraint
+- [Research]: Task-spawning research added (`research/task-spawning/`) -- documents `Bash(claude -p)` as viable path for future `llm_query()` with unlimited nesting depth; relevant to AGNT-02 in later milestone
 - [Phase 01]: Exact prefix matching for allowlist instead of regex normalization -- simpler and correct
 - [Phase 01]: Split workspace-indexer tests into 3 files due to vi.mock hoisting -- pure function tests separated from I/O-mocked tests
 - [Phase 01]: vi.hoisted() + createRequire() as standard patterns for Vitest 4.x mock management in .mjs test files
