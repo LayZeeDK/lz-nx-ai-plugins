@@ -65,8 +65,13 @@ type CommandResult = { output: string; exitCode: number };
 type AnyIndex = any;
 
 describe('find-command > runFind', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let runFind: (pattern: any, index: AnyIndex, options?: { project?: string; context?: number }, workspaceRoot?: string) => CommandResult;
+  let runFind: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pattern: any,
+    index: AnyIndex,
+    options?: { project?: string; context?: number },
+    workspaceRoot?: string,
+  ) => CommandResult;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -82,12 +87,7 @@ describe('find-command > runFind', () => {
       stderr: '',
     });
 
-    const { exitCode } = runFind(
-      'something',
-      fixtureIndex,
-      {},
-      '/workspace',
-    );
+    const { exitCode } = runFind('something', fixtureIndex, {}, '/workspace');
 
     expect(exitCode).toBe(0);
     expect(mockSpawnSync).toHaveBeenCalledOnce();

@@ -7,8 +7,12 @@ const graphFixture = require('./fixtures/graph-output.json');
 
 // ─── workspace-indexer: transformGraphToIndex (pure function, no mocks needed) ───
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TransformFn = (graphOutput: any, pathAliases: Record<string, string[]>) => any;
+type TransformFn = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  graphOutput: any,
+  pathAliases: Record<string, string[]>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+) => any;
 
 describe('workspace-indexer > transformGraphToIndex', () => {
   let transformGraphToIndex: TransformFn;

@@ -163,7 +163,9 @@ describe('alias-command > runAlias', () => {
     const { output } = runAlias('common', bigIndex);
 
     // Should mention truncation
-    const arrowLines = output.split('\n').filter((l: string) => l.includes('->'));
+    const arrowLines = output
+      .split('\n')
+      .filter((l: string) => l.includes('->'));
 
     expect(arrowLines.length).toBeLessThanOrEqual(20);
     expect(output).toMatch(/20/);

@@ -14,8 +14,11 @@ interface ResolveResult {
 }
 
 describe('path-resolver > resolveAlias', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let resolveAlias: (input: any, pathAliases: Record<string, string[]>) => ResolveResult;
+  let resolveAlias: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input: any,
+    pathAliases: Record<string, string[]>,
+  ) => ResolveResult;
 
   beforeEach(async () => {
     const mod = await import('#rlm/path-resolver.mjs');
@@ -98,9 +101,11 @@ describe('path-resolver > resolveAlias', () => {
     );
 
     expect(aliasMatches.length).toBeGreaterThanOrEqual(1);
-    expect(aliasMatches.some((r: ResolveResult['results'][0]) => r.from === '@myorg/shared-utils')).toBe(
-      true,
-    );
+    expect(
+      aliasMatches.some(
+        (r: ResolveResult['results'][0]) => r.from === '@myorg/shared-utils',
+      ),
+    ).toBe(true);
     expect(result.partial).toBe(true);
   });
 
@@ -191,9 +196,11 @@ describe('path-resolver > resolveAlias', () => {
     const result = resolveAlias('libs/shared/utils.ts', overlappingAliases);
 
     expect(result.results).toHaveLength(2);
-    expect(result.results.every((r: ResolveResult['results'][0]) => r.direction === 'path->alias')).toBe(
-      true,
-    );
+    expect(
+      result.results.every(
+        (r: ResolveResult['results'][0]) => r.direction === 'path->alias',
+      ),
+    ).toBe(true);
     expect(result.partial).toBe(false);
   });
 });

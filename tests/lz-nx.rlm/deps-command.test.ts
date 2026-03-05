@@ -132,8 +132,12 @@ describe('project-filter > filterProjects', () => {
 // ─── deps-command tests ───
 
 describe('deps-command > renderDepsTree', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let renderDepsTree: (projectName: any, index: AnyIndex, options?: { reverse?: boolean; depth?: number }) => CommandResult;
+  let renderDepsTree: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    projectName: any,
+    index: AnyIndex,
+    options?: { reverse?: boolean; depth?: number },
+  ) => CommandResult;
 
   beforeEach(async () => {
     const mod = await import('#rlm/deps-command.mjs');

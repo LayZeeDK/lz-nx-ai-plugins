@@ -47,13 +47,7 @@ export default [
       'import-x/order': [
         'error',
         {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-          ],
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling'],
           'newlines-between': 'ignore',
         },
       ],

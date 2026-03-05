@@ -159,7 +159,10 @@ export function buildIndex(workspaceRoot) {
   }
 
   const pathAliases = readPathAliases(workspaceRoot);
-  const index = transformGraphToIndex(/** @type {GraphOutput} */ (graphData), pathAliases);
+  const index = transformGraphToIndex(
+    /** @type {GraphOutput} */ (graphData),
+    pathAliases,
+  );
 
   const indexDir = join(workspaceRoot, INDEX_DIR);
   const indexPath = join(indexDir, INDEX_FILE);

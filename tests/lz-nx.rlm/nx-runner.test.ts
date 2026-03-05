@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type MockInstance,
+} from 'vitest';
 
 interface ExecError extends Error {
   stdout?: string;
@@ -11,7 +19,7 @@ vi.mock('node:child_process', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { execSync } = await import('node:child_process') as any;
+const { execSync } = (await import('node:child_process')) as any;
 const { runNx, runNxGraph } = await import('#rlm/nx-runner.mjs');
 
 describe('nx-runner', () => {
