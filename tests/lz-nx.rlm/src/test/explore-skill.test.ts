@@ -141,4 +141,32 @@ describe('explore-skill > workflow content', () => {
     // Should mention deleting/removing session file after completion
     expect(body).toMatch(/delete|clean\s*up|remove.*session/i);
   });
+
+  it('does NOT use $() command substitution', () => {
+    const { body } = setup();
+
+    expect(body).not.toMatch(/\$\(/);
+  });
+
+  it('does NOT use && or || command separators in bash commands', () => {
+    const { body } = setup();
+    const bashBlocks: string[] = [];
+    const regex = /```bash\n([\s\S]*?)```/g;
+    let match;
+
+    while ((match = regex.exec(body)) !== null) {
+      bashBlocks.push(match[1]);
+    }
+
+    for (const block of bashBlocks) {
+      expect(block).not.toMatch(/&&/);
+      expect(block).not.toMatch(/\|\|/);
+    }
+  });
+
+  it('uses Read tool for file existence checking', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/Read tool/i);
+  });
 });

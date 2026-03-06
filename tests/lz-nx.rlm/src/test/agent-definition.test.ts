@@ -182,4 +182,24 @@ describe('agent-definition > repl-executor', () => {
     expect(lowerBody).not.toContain('sub-task');
     expect(lowerBody).not.toContain('agent tool');
   });
+
+  it('system prompt contains first-call FINAL guard', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(
+      /first.*sandbox.*call.*must not.*FINAL|first.*call.*MUST NOT.*FINAL|never.*call.*FINAL.*first/i
+    );
+  });
+
+  it('system prompt does NOT use heredoc+pipe pattern for sandbox invocation', () => {
+    const { body } = setup();
+
+    expect(body).not.toMatch(/cat\s+<<.*\|/);
+  });
+
+  it('system prompt uses temp file approach for sandbox invocation', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/< \/tmp\/repl-code/);
+  });
 });
