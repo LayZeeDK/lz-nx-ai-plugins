@@ -50,6 +50,12 @@
     "@nx/vitest:test": {
       "cache": true,
       "inputs": ["default", "^production"]
+    },
+    "typecheck": {
+      "syncGenerators": ["@nx/js:typescript-sync"]
+    },
+    "test": {
+      "syncGenerators": ["@nx/js:typescript-sync"]
     }
   }
 }
