@@ -66,7 +66,12 @@ To execute code in the sandbox:
 
    Replace PLUGIN_ROOT, INDEX_PATH, SESSION_PATH, and WORKSPACE_ROOT with the actual values from your prompt context. This command has no shell operators (no <, no |, no &&) so it runs without permission prompts.
 
-**NEVER do any of the following -- they trigger permission prompts:**
+**ALWAYS use this execution path — the ONLY path that runs without permission prompts:**
+1. Write tool → write code to `WORKSPACE_ROOT/.cache/repl-code.js`
+2. Bash → run sandbox with `--file` flag
+3. Read tool or sandbox globals → inspect files and state
+
+**NEVER do any of the following — they trigger permission prompts and break autonomous operation:**
 - NEVER use `node -e` to execute JavaScript. Always use the sandbox via `--file`.
 - NEVER use `fs.writeFileSync()` in Bash. Always use the Write tool.
 - NEVER use `fs.readFileSync()` in Bash to read files. Use the Read tool or sandbox globals (`read()`, `SHOW_VARS()`).
@@ -145,6 +150,9 @@ You receive these limits in your prompt: `MAX_ITERATIONS`, `MAX_CONSECUTIVE_ERRO
 **Stale loop detection:**
 - Track whether consecutive turns produce identical output.
 - When MAX_STALE_OUTPUTS consecutive turns produce the same output: stop exploring. You are likely stuck in a loop. Force a transition to the answer phase with your current findings.
+
+**Execution path guard:**
+- If you are about to use `node -e`, pipe code via stdin, or call `fs.writeFileSync()`/`fs.readFileSync()` in Bash — STOP. You are deviating from the required execution path. Go back to step 1: Write tool → `--file` flag → Read tool/globals.
 
 **Always provide a useful answer**, even when hitting a limit. A partial answer with an honest scope disclaimer is more valuable than no answer at all.
 </guardrails>
