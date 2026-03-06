@@ -45,21 +45,10 @@ Store the result as `WORKSPACE_ROOT`.
 
 Then construct:
 
-- `PLUGIN_ROOT`: The plugin root is the `lz-nx.rlm` plugin directory. Determine it by navigating up two levels from `${CLAUDE_SKILL_DIR}` (which resolves to `plugins/lz-nx.rlm/skills/explore/`).
+- `PLUGIN_ROOT`: Construct from WORKSPACE_ROOT by appending the known plugin path:
+  `PLUGIN_ROOT = WORKSPACE_ROOT + '/plugins/lz-nx.rlm'`
 
-  Run this Bash command to get the skills directory (one level up):
-
-  ```bash
-  dirname "${CLAUDE_SKILL_DIR}"
-  ```
-
-  Store the result. Then run this Bash command to get the plugin root (one more level up):
-
-  ```bash
-  dirname <skills_directory_path>
-  ```
-
-  Store the result as `PLUGIN_ROOT`. If the result is a relative path, resolve it to an absolute path using the workspace root.
+  The plugin is always located at `plugins/lz-nx.rlm/` relative to the workspace root. No additional Bash commands are needed -- construct this path directly from WORKSPACE_ROOT.
 
 - `INDEX_PATH`: `${WORKSPACE_ROOT}/tmp/lz-nx.rlm/workspace-index.json`
 - `SESSION_PATH`: Will be constructed in Step 5 after generating the session ID.

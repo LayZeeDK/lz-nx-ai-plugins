@@ -10,6 +10,7 @@ model: sonnet
 tools:
   - Bash
   - Read
+  - Write
 ---
 
 <role>
@@ -46,31 +47,22 @@ You receive these values in your prompt:
 - `SESSION_PATH`: absolute path to session state file
 - `WORKSPACE_ROOT`: absolute path to workspace root
 
-To execute code, write your JavaScript to a temporary file, run the sandbox with stdin redirect, and clean up. Each step is a separate Bash call:
+To execute code in the sandbox:
 
-1. Write your code to a temp file:
+1. **Write your code file** using the Write tool (NOT Bash):
 
-```bash
-cat > /tmp/repl-code.js << 'REPL_EOF'
-// your JavaScript code here
-REPL_EOF
-```
+   Use the Write tool to write your JavaScript code to the file path:
+   `WORKSPACE_ROOT/.cache/repl-code.js`
 
-2. Execute the sandbox with the temp file as stdin:
+   The Write tool is a native Claude Code tool that never triggers permission prompts.
 
-```bash
-node ${PLUGIN_ROOT}/scripts/repl-sandbox.mjs \
-  --index ${INDEX_PATH} \
-  --session ${SESSION_PATH} \
-  --workspace-root ${WORKSPACE_ROOT} \
-  --plugin-root ${PLUGIN_ROOT} < /tmp/repl-code.js
-```
+2. **Run the sandbox** with the --file flag:
 
-3. Delete the temp file:
+   ```bash
+   node PLUGIN_ROOT/scripts/repl-sandbox.mjs --index INDEX_PATH --session SESSION_PATH --workspace-root WORKSPACE_ROOT --plugin-root PLUGIN_ROOT --file WORKSPACE_ROOT/.cache/repl-code.js
+   ```
 
-```bash
-rm -f /tmp/repl-code.js
-```
+   Replace PLUGIN_ROOT, INDEX_PATH, SESSION_PATH, and WORKSPACE_ROOT with the actual values from your prompt context. This command has no shell operators (no <, no |, no &&) so it runs without permission prompts.
 
 The sandbox returns a SandboxResult JSON object on stdout:
 

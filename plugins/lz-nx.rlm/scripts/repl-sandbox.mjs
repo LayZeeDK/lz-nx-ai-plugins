@@ -2,8 +2,8 @@
  * REPL sandbox execution engine.
  *
  * Executes JavaScript code in an isolated VM context with 12 workspace-aware
- * globals. Reads code from stdin (CLI) or via the exported executeSandbox
- * function (tests/API).
+ * globals. Reads code from --file path or stdin (CLI) or via the exported
+ * executeSandbox function (tests/API).
  *
  * Output: SandboxResult JSON { output, variables, final, finalVar, error }
  *
@@ -208,9 +208,6 @@ const isCliInvocation =
     process.argv[1].endsWith('repl-sandbox'));
 
 if (isCliInvocation && process.argv.includes('--index')) {
-  // Read code from stdin (fd 0, cross-platform per CLAUDE.md)
-  const code = readFileSync(0, 'utf8');
-
   // Parse CLI arguments
   const args = process.argv.slice(2);
 
@@ -226,6 +223,16 @@ if (isCliInvocation && process.argv.includes('--index')) {
     }
 
     return undefined;
+  }
+
+  // Read code from --file path if provided, otherwise from stdin (fd 0)
+  const filePath = getArg('--file');
+  let code;
+
+  if (filePath) {
+    code = readFileSync(filePath, 'utf8');
+  } else {
+    code = readFileSync(0, 'utf8');
   }
 
   const sessionPath = getArg('--session');
