@@ -4,6 +4,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
+    "lint": "nx run-many --targets lint",
+    "typecheck": "nx run-many --targets typecheck",
     "test": "nx run-many --targets test",
     "format": "nx format --all",
     "format:check": "nx format:check --all"
