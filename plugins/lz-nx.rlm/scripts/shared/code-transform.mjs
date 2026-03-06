@@ -59,7 +59,6 @@ export function transformDeclarations(code) {
 function closeConstDeclarations(code, markers) {
   // We need to find each Object.defineProperty( marker in the transformed code
   // and locate the statement-ending semicolon to insert the closing properties
-  const PROP_PREFIX = 'Object.defineProperty(globalThis, "';
   const CLOSING = ', writable: false, enumerable: true, configurable: true })';
 
   let result = code;

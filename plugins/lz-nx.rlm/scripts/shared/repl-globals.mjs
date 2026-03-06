@@ -176,7 +176,7 @@ export function createReplGlobals(index, workspaceRoot, printCapture, finalHandl
       maxBuffer: 5 * 1024 * 1024,
     });
 
-    if (result.status > 1) {
+    if (result.status !== null && result.status > 1) {
       return '[ERROR] git grep failed: ' + (result.stderr || 'unknown error');
     }
 
@@ -230,6 +230,7 @@ export function createReplGlobals(index, workspaceRoot, printCapture, finalHandl
         continue;
       }
 
+      /** @type {string} */
       let typeStr = typeof value;
 
       if (Array.isArray(value)) {

@@ -86,8 +86,8 @@ export function executeSandbox(code, options = {}) {
     resolvedTimeout = options.timeout;
   } else {
     const config = loadConfig(
-      options.pluginRoot || null,
-      options.workspaceRoot || null,
+      options.pluginRoot || '',
+      options.workspaceRoot || '',
     );
     resolvedTimeout = config.maxTimeout * 1000;
   }
@@ -98,7 +98,8 @@ export function executeSandbox(code, options = {}) {
     : {};
 
   // 3. Load workspace index
-  let index = {};
+  /** @type {import('./shared/repl-globals.mjs').WorkspaceIndex} */
+  let index = /** @type {*} */ ({});
 
   if (options.indexPath) {
     try {
@@ -137,6 +138,7 @@ export function executeSandbox(code, options = {}) {
   );
 
   // 7-8. Build sandbox object with session state, globals, and SHOW_VARS closure
+  /** @type {Record<string, unknown>} */
   const sandbox = {
     ...sessionState,
     ...globals,
@@ -148,7 +150,7 @@ export function executeSandbox(code, options = {}) {
   };
 
   // Override SHOW_VARS to close over the sandbox reference
-  sandbox.SHOW_VARS = () => globals.SHOW_VARS(sandbox);
+  sandbox.SHOW_VARS = () => /** @type {Function} */ (globals.SHOW_VARS)(sandbox);
 
   // 9. Create VM context with code generation blocked
   const ctx = vm.createContext(sandbox, {
