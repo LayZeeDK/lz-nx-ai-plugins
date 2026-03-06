@@ -251,4 +251,50 @@ describe('agent-definition > repl-executor', () => {
 
     expect(roleSection).toMatch(/Write tool/i);
   });
+
+  it('<execution> NEVER block is preceded by positive ALWAYS execution path', () => {
+    const { body } = setup();
+    const executionMatch = body.match(/<execution>([\s\S]*?)<\/execution>/);
+
+    expect(executionMatch).not.toBeNull();
+
+    const executionSection = executionMatch![1];
+    const alwaysIndex = executionSection.indexOf('ALWAYS');
+    const neverIndex = executionSection.indexOf('NEVER');
+
+    expect(alwaysIndex).toBeGreaterThan(-1);
+    expect(neverIndex).toBeGreaterThan(-1);
+    expect(alwaysIndex).toBeLessThan(neverIndex);
+  });
+
+  it('<guardrails> section contains execution path guard as third reinforcement', () => {
+    const { body } = setup();
+    const guardrailsMatch = body.match(/<guardrails>([\s\S]*?)<\/guardrails>/);
+
+    expect(guardrailsMatch).not.toBeNull();
+
+    const guardrailsSection = guardrailsMatch![1];
+
+    expect(guardrailsSection).toMatch(/node -e/);
+    expect(guardrailsSection).toMatch(/Write tool.*--file/i);
+  });
+
+  it('prohibition against node -e appears in at least 3 sections', () => {
+    const { body } = setup();
+    const sections = ['<role>', '<execution>', '<guardrails>'];
+    let count = 0;
+
+    for (const tag of sections) {
+      const closeTag = tag.replace('<', '</');
+      const sectionMatch = body.match(
+        new RegExp(`${tag}([\\s\\S]*?)${closeTag}`)
+      );
+
+      if (sectionMatch && /node -e/i.test(sectionMatch[1])) {
+        count++;
+      }
+    }
+
+    expect(count).toBeGreaterThanOrEqual(3);
+  });
 });
