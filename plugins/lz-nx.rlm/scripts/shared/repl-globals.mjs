@@ -61,13 +61,29 @@ export const BUILTIN_GLOBAL_NAMES = new Set([
  */
 
 /**
+ * @typedef {object} ReplGlobals
+ * @property {WorkspaceIndex} workspace - Full workspace index
+ * @property {Record<string, object>} projects - Project entries keyed by name
+ * @property {(projectName: string) => string[] | string} deps - Get dependency targets
+ * @property {(projectName: string) => string[] | string} dependents - Get reverse dependencies
+ * @property {(filePath: string, startLine?: number, endLine?: number) => string} read - Read file contents
+ * @property {(globPattern: string) => string[]} files - List files matching glob
+ * @property {(pattern: string, paths?: string[]) => string} search - Search file contents via git grep
+ * @property {(command: string) => string | object | null} nx - Run an Nx CLI command
+ * @property {(...args: unknown[]) => void} print - Print to captured output
+ * @property {(sandbox: Record<string, unknown>) => string} SHOW_VARS - Show user variables
+ * @property {(answer: string) => void} FINAL - Set the final answer
+ * @property {(name: string) => void} FINAL_VAR - Set the final variable name
+ */
+
+/**
  * Create all 12 REPL globals for the sandbox VM context.
  *
  * @param {WorkspaceIndex} index - Workspace index object
  * @param {string} workspaceRoot - Absolute path to workspace root
  * @param {PrintCapture} printCapture - Print capture instance
  * @param {FinalHandlers} finalHandlers - FINAL/FINAL_VAR handlers
- * @returns {Record<string, unknown>} Object with all 12 globals
+ * @returns {ReplGlobals} Object with all 12 globals
  */
 export function createReplGlobals(index, workspaceRoot, printCapture, finalHandlers) {
   // Build reverse adjacency list once for dependents() lookups
