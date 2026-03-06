@@ -22,7 +22,7 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### Agents
 
-- [ ] **AGNT-01**: `repl-executor` agent drives the RLM execution loop as a Sonnet subagent with isolated context, receiving the workspace index and returning only the distilled `FINAL()` answer
+- [x] **AGNT-01**: `repl-executor` agent drives the RLM execution loop as a Sonnet subagent with isolated context, receiving the workspace index and returning only the distilled `FINAL()` answer
 
 ### Skills
 
@@ -105,7 +105,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REPL-02     | Phase 2   | Complete |
 | REPL-03     | Phase 2   | Complete |
 | REPL-04     | Phase 2   | Complete |
-| AGNT-01     | Phase 3   | Pending  |
+| AGNT-01     | Phase 3   | Complete |
 | SKIL-01     | Phase 3   | Pending  |
 | CMD-01      | Phase 1   | Complete |
 | CMD-02      | Phase 1   | Complete |
