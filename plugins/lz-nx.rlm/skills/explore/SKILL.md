@@ -45,34 +45,37 @@ Store the result as `WORKSPACE_ROOT`.
 
 Then construct:
 
-- `PLUGIN_ROOT`: The plugin root is the `lz-nx.rlm` plugin directory. Determine it by navigating up two levels from `${CLAUDE_SKILL_DIR}` (which resolves to `plugins/lz-nx.rlm/skills/explore/`). Use this Bash command:
+- `PLUGIN_ROOT`: The plugin root is the `lz-nx.rlm` plugin directory. Determine it by navigating up two levels from `${CLAUDE_SKILL_DIR}` (which resolves to `plugins/lz-nx.rlm/skills/explore/`).
+
+  Run this Bash command to get the skills directory (one level up):
 
   ```bash
-  dirname "$(dirname "${CLAUDE_SKILL_DIR}")"
+  dirname "${CLAUDE_SKILL_DIR}"
   ```
 
-  If the result is a relative path, resolve it to an absolute path using the workspace root.
+  Store the result. Then run this Bash command to get the plugin root (one more level up):
+
+  ```bash
+  dirname <skills_directory_path>
+  ```
+
+  Store the result as `PLUGIN_ROOT`. If the result is a relative path, resolve it to an absolute path using the workspace root.
 
 - `INDEX_PATH`: `${WORKSPACE_ROOT}/tmp/lz-nx.rlm/workspace-index.json`
 - `SESSION_PATH`: Will be constructed in Step 5 after generating the session ID.
 
 ## Step 3: Ensure workspace index exists
 
-Check if the workspace index file exists at `INDEX_PATH`:
+Use the Read tool to check if the workspace index file exists at `INDEX_PATH`.
 
-```bash
-[ -f "${INDEX_PATH}" ] && echo "exists" || echo "missing"
-```
-
-- If **missing**: Inform the user that the workspace index is being built, then run:
+- If the Read tool **succeeds** (file exists): Proceed to the next step.
+- If the Read tool **returns an error** (file does not exist): Inform the user that the workspace index is being built, then run:
 
   ```bash
   node "${PLUGIN_ROOT}/scripts/workspace-indexer.mjs"
   ```
 
   Wait for the indexer to complete before proceeding.
-
-- If **exists**: Proceed to the next step.
 
 ## Step 4: Load config
 
@@ -81,7 +84,7 @@ Read `maxIterations`, `maxConsecutiveErrors`, and `maxStaleOutputs` from the con
 1. User override: `${WORKSPACE_ROOT}/.claude/lz-nx.rlm.config.json`
 2. Plugin default: `${PLUGIN_ROOT}/lz-nx.rlm.config.json`
 
-Read whichever config file exists and extract the values. If neither file has a value, use these defaults:
+Use the Read tool on the user override path first. If the Read tool returns an error (file does not exist), use the Read tool on the plugin default path instead. Extract the values from whichever file exists. If neither file has a value, use these defaults:
 
 - `maxIterations`: 20
 - `maxConsecutiveErrors`: 3
