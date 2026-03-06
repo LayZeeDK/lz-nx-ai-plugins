@@ -26,7 +26,7 @@ Requirements for initial milestone. Each maps to roadmap phases.
 
 ### Skills
 
-- [ ] **SKIL-01**: `/lz-nx.rlm:explore` skill accepts a natural language question about the codebase, navigates via the REPL fill/solve loop, and returns only the distilled answer to the conversation
+- [x] **SKIL-01**: `/lz-nx.rlm:explore` skill accepts a natural language question about the codebase, navigates via the REPL fill/solve loop, and returns only the distilled answer to the conversation
 
 ### Commands
 
@@ -106,7 +106,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REPL-03     | Phase 2   | Complete |
 | REPL-04     | Phase 2   | Complete |
 | AGNT-01     | Phase 3   | Complete |
-| SKIL-01     | Phase 3   | Pending  |
+| SKIL-01     | Phase 3   | Complete |
 | CMD-01      | Phase 1   | Complete |
 | CMD-02      | Phase 1   | Complete |
 | CMD-03      | Phase 1   | Complete |
