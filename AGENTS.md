@@ -251,6 +251,23 @@ describe('my-module > myFunction', () => {
 - For mock-typed access, use `vi.mocked()` instead of `as any` casts
 - For tests passing deliberately-invalid arguments (e.g., `undefined` where `string` is expected), use `@ts-expect-error` — not `as unknown as string`
 
+## Nx Sync
+
+The `@nx/js:typescript-sync` generator keeps TypeScript `references` arrays aligned with the Nx dependency graph. A pre-commit hook runs `nx sync:check` and blocks the commit if references are stale or missing.
+
+**When a commit fails due to `sync:check`:**
+
+1. Run `npx nx sync` to apply the missing changes
+2. Identify which commit caused the drift — it is almost always the commit you just attempted
+3. Stage the sync-modified tsconfig files alongside your original changes and retry the commit
+4. If the drift was caused by an earlier commit (e.g., you made multiple commits before the hook caught it), amend that commit with the sync changes using `git commit --amend` or interactive rebase
+
+The goal is that sync changes live in the commit that caused them, not in a separate "apply sync" commit.
+
+**When `nx typecheck` or `nx test` fails due to sync drift:**
+
+These targets have `syncGenerators` configured in `nx.json`, so Nx checks sync state before execution. In non-interactive sessions (CI, headless Claude), the task fails instead of prompting. Run `npx nx sync` first, commit the changes (following the rule above), then retry the task.
+
 ## Testing Changes
 
 After modifying plugin files, verify:
