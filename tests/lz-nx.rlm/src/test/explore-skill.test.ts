@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 const SKILL_PATH = resolve(
   import.meta.dirname,
