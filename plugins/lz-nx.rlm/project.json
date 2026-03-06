@@ -4,10 +4,6 @@
   "sourceRoot": "plugins/lz-nx.rlm/scripts",
   "projectType": "library",
   "tags": ["type:plugin"],
-  "// targets": "typecheck uses tsc -p (not --build) because noEmit is incompatible with --build mode",
-  "targets": {
-    "typecheck": {
-      "command": "tsc -p {projectRoot}/tsconfig.json --noEmit"
-    }
-  }
+  "// targets": "to see all targets run: nx show project lz-nx-rlm --web",
+  "targets": {}
 }
