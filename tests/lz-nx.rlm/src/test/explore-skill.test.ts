@@ -169,4 +169,16 @@ describe('explore-skill > workflow content', () => {
 
     expect(body).toMatch(/Read tool/i);
   });
+
+  it('does NOT reference CLAUDE_SKILL_DIR in workflow body', () => {
+    const { body } = setup();
+
+    expect(body).not.toMatch(/CLAUDE_SKILL_DIR/);
+  });
+
+  it('derives PLUGIN_ROOT from WORKSPACE_ROOT and known plugin path', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/plugins\/lz-nx\.rlm/);
+  });
 });

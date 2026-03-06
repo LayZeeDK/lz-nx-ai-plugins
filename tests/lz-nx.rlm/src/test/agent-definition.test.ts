@@ -101,14 +101,15 @@ describe('agent-definition > repl-executor', () => {
     expect(frontmatter['model']).toBe('sonnet');
   });
 
-  it('frontmatter tools array includes exactly Bash and Read', () => {
+  it('frontmatter tools array includes exactly Bash, Read, and Write', () => {
     const { frontmatter } = setup();
     const tools = frontmatter['tools'];
 
     expect(Array.isArray(tools)).toBe(true);
     expect(tools).toContain('Bash');
     expect(tools).toContain('Read');
-    expect((tools as string[]).length).toBe(2);
+    expect(tools).toContain('Write');
+    expect((tools as string[]).length).toBe(3);
   });
 
   it('frontmatter contains a non-empty description', () => {
@@ -197,9 +198,22 @@ describe('agent-definition > repl-executor', () => {
     expect(body).not.toMatch(/cat\s+<<.*\|/);
   });
 
-  it('system prompt uses temp file approach for sandbox invocation', () => {
+  it('system prompt uses --file flag for sandbox invocation', () => {
     const { body } = setup();
 
-    expect(body).toMatch(/< \/tmp\/repl-code/);
+    expect(body).toMatch(/--file/);
+  });
+
+  it('system prompt instructs Write tool for code file creation', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/Write tool/i);
+  });
+
+  it('system prompt does NOT use stdin redirect for sandbox invocation', () => {
+    const { body } = setup();
+
+    expect(body).not.toMatch(/< \/tmp\//);
+    expect(body).not.toMatch(/< .*repl-code/);
   });
 });
