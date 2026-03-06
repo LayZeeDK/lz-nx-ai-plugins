@@ -525,7 +525,7 @@ describe('repl-globals > createReplGlobals > SHOW_VARS', () => {
       count: 42,
       name: 'test',
       items: [1, 2, 3],
-      helperFn: () => {},
+      helperFn: vi.fn(),
     };
 
     // SHOW_VARS needs to be given the sandbox reference

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { writeFileSync, mkdirSync, unlinkSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Hoist mock references for loadConfig
 const { mockLoadConfig } = vi.hoisted(() => ({
@@ -406,7 +406,7 @@ describe('repl-sandbox > executeSandbox > config-driven timeout', () => {
 
     expect(result.output).toBe('ok');
     expect(result.error).toBeNull();
-    expect(mockLoadConfig).toHaveBeenCalledWith(null, null);
+    expect(mockLoadConfig).toHaveBeenCalledWith('', '');
   });
 });
 

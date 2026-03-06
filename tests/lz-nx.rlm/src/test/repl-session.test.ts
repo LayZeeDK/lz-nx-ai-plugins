@@ -88,7 +88,7 @@ describe('repl-session > writeSession', () => {
 
   it('excludes builtin names from state', async () => {
     const { writeSession } = await setup();
-    const sandbox = { workspace: { projects: {} }, x: 1, print: () => {} };
+    const sandbox = { workspace: { projects: {} }, x: 1, print: vi.fn() };
     const builtins = new Set(['workspace', 'print']);
 
     writeSession('/fake/session.json', sandbox, builtins);
