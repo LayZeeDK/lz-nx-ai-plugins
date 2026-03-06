@@ -93,7 +93,7 @@ Plans:
 - [ ] 03-02-PLAN.md -- explore skill with Task tool orchestration, result relay, and end-to-end manual verification _(Tasks 1-2 complete; Task 3 checkpoint pending)_
 - [ ] 03-03-PLAN.md -- UAT gap closure: permission-prompt-free patterns and strengthened two-phase enforcement _(gap_closure)_
 - [ ] 03-04-PLAN.md -- UAT gap closure: --file flag for sandbox, Write tool invocation, WORKSPACE_ROOT path derivation _(gap_closure)_
-- [ ] 03-05-PLAN.md -- UAT gap closure: explicit NEVER prohibitions against node -e and inline fs calls in agent definition _(gap_closure)_
+- [x] 03-05-PLAN.md -- UAT gap closure: explicit NEVER prohibitions against node -e and inline fs calls in agent definition _(gap_closure)_
 
 ## Progress
 
