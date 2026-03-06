@@ -90,7 +90,7 @@ Plans:
 Plans:
 
 - [x] 03-01-PLAN.md -- repl-executor Sonnet subagent with XML two-phase system prompt and structural tests
-- [ ] 03-02-PLAN.md -- explore skill with Task tool orchestration, result relay, and end-to-end manual verification
+- [ ] 03-02-PLAN.md -- explore skill with Task tool orchestration, result relay, and end-to-end manual verification _(Tasks 1-2 complete; Task 3 checkpoint pending)_
 
 ## Progress
 
