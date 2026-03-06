@@ -216,4 +216,39 @@ describe('agent-definition > repl-executor', () => {
     expect(body).not.toMatch(/< \/tmp\//);
     expect(body).not.toMatch(/< .*repl-code/);
   });
+
+  it('system prompt contains NEVER prohibition against node -e', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/NEVER.*node -e/i);
+  });
+
+  it('system prompt contains NEVER prohibition against fs.writeFileSync', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/NEVER.*fs\.writeFileSync/i);
+  });
+
+  it('system prompt contains NEVER prohibition against fs.readFileSync', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/NEVER.*fs\.readFileSync/i);
+  });
+
+  it('system prompt contains NEVER prohibition against direct session file access', () => {
+    const { body } = setup();
+
+    expect(body).toMatch(/NEVER.*session file/i);
+  });
+
+  it('<role> section references Write tool for code execution, not just Bash', () => {
+    const { body } = setup();
+    const roleMatch = body.match(/<role>([\s\S]*?)<\/role>/);
+
+    expect(roleMatch).not.toBeNull();
+
+    const roleSection = roleMatch![1];
+
+    expect(roleSection).toMatch(/Write tool/i);
+  });
 });
