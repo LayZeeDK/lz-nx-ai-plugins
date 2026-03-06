@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
+const { filterProjects } = await import('#rlm/shared/project-filter.mjs');
+const { renderDepsTree } = await import('#rlm/deps-command.mjs');
+
 // ─── Fixture: workspace index matching graph-output.json structure ───
 // 4 projects: my-app, shared-utils, feature-auth, my-app-e2e
 const projectNames = ['my-app', 'shared-utils', 'feature-auth', 'my-app-e2e'];
@@ -88,42 +91,31 @@ const circularIndex = {
 // ─── project-filter tests ───
 
 describe('project-filter > filterProjects', () => {
-  async function setup() {
-    const { filterProjects } = await import('#rlm/shared/project-filter.mjs');
-
-    return { filterProjects };
-  }
-
-  it('exact match: filterProjects("my-app", projectNames) returns ["my-app"]', async () => {
-    const { filterProjects } = await setup();
+  it('exact match: filterProjects("my-app", projectNames) returns ["my-app"]', () => {
     const result = filterProjects('my-app', projectNames);
 
     expect(result).toEqual(['my-app']);
   });
 
-  it('glob with *: filterProjects("shared-*", projectNames) returns ["shared-utils"]', async () => {
-    const { filterProjects } = await setup();
+  it('glob with *: filterProjects("shared-*", projectNames) returns ["shared-utils"]', () => {
     const result = filterProjects('shared-*', projectNames);
 
     expect(result).toEqual(['shared-utils']);
   });
 
-  it('comma-separated: filterProjects("my-app,feature-auth", projectNames) returns ["my-app", "feature-auth"]', async () => {
-    const { filterProjects } = await setup();
+  it('comma-separated: filterProjects("my-app,feature-auth", projectNames) returns ["my-app", "feature-auth"]', () => {
     const result = filterProjects('my-app,feature-auth', projectNames);
 
     expect(result).toEqual(['my-app', 'feature-auth']);
   });
 
-  it('no match: filterProjects("nonexistent", projectNames) returns []', async () => {
-    const { filterProjects } = await setup();
+  it('no match: filterProjects("nonexistent", projectNames) returns []', () => {
     const result = filterProjects('nonexistent', projectNames);
 
     expect(result).toEqual([]);
   });
 
-  it('mixed glob+comma: filterProjects("*-auth,shared-*", projectNames) returns ["feature-auth", "shared-utils"]', async () => {
-    const { filterProjects } = await setup();
+  it('mixed glob+comma: filterProjects("*-auth,shared-*", projectNames) returns ["feature-auth", "shared-utils"]', () => {
     const result = filterProjects('*-auth,shared-*', projectNames);
 
     expect(result).toEqual(['feature-auth', 'shared-utils']);
@@ -133,14 +125,7 @@ describe('project-filter > filterProjects', () => {
 // ─── deps-command tests ───
 
 describe('deps-command > renderDepsTree', () => {
-  async function setup() {
-    const { renderDepsTree } = await import('#rlm/deps-command.mjs');
-
-    return { renderDepsTree };
-  }
-
-  it('renders markdown nested list for my-app with correct indentation', async () => {
-    const { renderDepsTree } = await setup();
+  it('renders markdown nested list for my-app with correct indentation', () => {
     const { output, exitCode } = renderDepsTree('my-app', fixtureIndex);
 
     expect(exitCode).toBe(0);
@@ -151,8 +136,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(output).toContain('  - feature-auth');
   });
 
-  it('root project has no "- " prefix, children indented with "  - " at each level', async () => {
-    const { renderDepsTree } = await setup();
+  it('root project has no "- " prefix, children indented with "  - " at each level', () => {
     const { output } = renderDepsTree('my-app', fixtureIndex);
     const lines = output.split('\n').filter(Boolean);
 
@@ -166,8 +150,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(directChildren.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('--reverse flag shows who depends on shared-utils', async () => {
-    const { renderDepsTree } = await setup();
+  it('--reverse flag shows who depends on shared-utils', () => {
     const { output, exitCode } = renderDepsTree('shared-utils', fixtureIndex, {
       reverse: true,
     });
@@ -179,8 +162,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(output).toContain('feature-auth');
   });
 
-  it('--depth 1 limits to direct dependencies only', async () => {
-    const { renderDepsTree } = await setup();
+  it('--depth 1 limits to direct dependencies only', () => {
     const { output, exitCode } = renderDepsTree('my-app', fixtureIndex, {
       depth: 1,
     });
@@ -193,8 +175,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(output).not.toContain('    - shared-utils');
   });
 
-  it('shared subtree marked with "^" on subsequent occurrences (dedup)', async () => {
-    const { renderDepsTree } = await setup();
+  it('shared subtree marked with "^" on subsequent occurrences (dedup)', () => {
     const { output } = renderDepsTree('my-app', fixtureIndex);
 
     // shared-utils appears first under my-app directly, then again under feature-auth
@@ -208,15 +189,13 @@ describe('deps-command > renderDepsTree', () => {
     expect(sharedLines.some((l) => !l.includes('^'))).toBe(true);
   });
 
-  it('legend line at bottom: "^ = deduped, ! = circular"', async () => {
-    const { renderDepsTree } = await setup();
+  it('legend line at bottom: "^ = deduped, ! = circular"', () => {
     const { output } = renderDepsTree('my-app', fixtureIndex);
 
     expect(output).toContain('^ = deduped, ! = circular');
   });
 
-  it('summary footer format: "N nodes (X direct, Y unique, Z deduped, W circular)"', async () => {
-    const { renderDepsTree } = await setup();
+  it('summary footer format: "N nodes (X direct, Y unique, Z deduped, W circular)"', () => {
     const { output } = renderDepsTree('my-app', fixtureIndex);
 
     // Expect pattern like "4 nodes (2 direct, 3 unique, 1 deduped, 0 circular)"
@@ -225,8 +204,7 @@ describe('deps-command > renderDepsTree', () => {
     );
   });
 
-  it('nonexistent project returns error message', async () => {
-    const { renderDepsTree } = await setup();
+  it('nonexistent project returns error message', () => {
     const { output, exitCode } = renderDepsTree('nonexistent', fixtureIndex);
 
     expect(exitCode).toBe(1);
@@ -234,8 +212,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(output).toContain('4 indexed');
   });
 
-  it('missing argument returns error message', async () => {
-    const { renderDepsTree } = await setup();
+  it('missing argument returns error message', () => {
     // @ts-expect-error -- testing missing argument handling
     const { output, exitCode } = renderDepsTree(undefined, fixtureIndex);
 
@@ -243,8 +220,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(output).toContain('[ERROR] Missing required argument: <project>');
   });
 
-  it('exit code 1 on error, 0 on success', async () => {
-    const { renderDepsTree } = await setup();
+  it('exit code 1 on error, 0 on success', () => {
     const successResult = renderDepsTree('my-app', fixtureIndex);
 
     expect(successResult.exitCode).toBe(0);
@@ -254,8 +230,7 @@ describe('deps-command > renderDepsTree', () => {
     expect(errorResult.exitCode).toBe(1);
   });
 
-  it('circular dependency detected and marked with "!"', async () => {
-    const { renderDepsTree } = await setup();
+  it('circular dependency detected and marked with "!"', () => {
     const { output } = renderDepsTree('my-app', circularIndex);
 
     // Circular dep between feature-auth and circular-lib should produce "!" marker

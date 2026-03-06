@@ -1,18 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
+const { createPrintCapture } = await import('#rlm/shared/print-capture.mjs');
+
 // ─── print-capture: createPrintCapture (pure function, no mocks needed) ───
 
 describe('print-capture > createPrintCapture', () => {
-  async function setup() {
-    const { createPrintCapture } = await import(
-      '#rlm/shared/print-capture.mjs'
-    );
-
-    return { createPrintCapture };
-  }
-
-  it('captures a simple string', async () => {
-    const { createPrintCapture } = await setup();
+  it('captures a simple string', () => {
     const { print, getOutput } = createPrintCapture();
 
     print('hello');
@@ -20,8 +13,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(getOutput()).toBe('hello');
   });
 
-  it('captures a number as string', async () => {
-    const { createPrintCapture } = await setup();
+  it('captures a number as string', () => {
     const { print, getOutput } = createPrintCapture();
 
     print(42);
@@ -29,8 +21,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(getOutput()).toBe('42');
   });
 
-  it('captures null as "null"', async () => {
-    const { createPrintCapture } = await setup();
+  it('captures null as "null"', () => {
     const { print, getOutput } = createPrintCapture();
 
     print(null);
@@ -38,8 +29,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(getOutput()).toBe('null');
   });
 
-  it('captures undefined as "undefined"', async () => {
-    const { createPrintCapture } = await setup();
+  it('captures undefined as "undefined"', () => {
     const { print, getOutput } = createPrintCapture();
 
     print(undefined);
@@ -47,8 +37,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(getOutput()).toBe('undefined');
   });
 
-  it('truncates arrays > 5 elements with Array(N) preview', async () => {
-    const { createPrintCapture } = await setup();
+  it('truncates arrays > 5 elements with Array(N) preview', () => {
     const { print, getOutput } = createPrintCapture();
 
     print([1, 2, 3, 4, 5, 6]);
@@ -56,8 +45,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(getOutput()).toBe('Array(6) [1, 2, ... +4 more]');
   });
 
-  it('shows full array when <= 5 elements', async () => {
-    const { createPrintCapture } = await setup();
+  it('shows full array when <= 5 elements', () => {
     const { print, getOutput } = createPrintCapture();
 
     print([1, 2, 3]);
@@ -71,8 +59,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(output).toContain('3');
   });
 
-  it('truncates objects > 500 chars with "... [N chars]" suffix', async () => {
-    const { createPrintCapture } = await setup();
+  it('truncates objects > 500 chars with "... [N chars]" suffix', () => {
     const { print, getOutput } = createPrintCapture();
 
     // Create an object that serializes to > 500 chars
@@ -91,8 +78,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(output).toContain(' chars]');
   });
 
-  it('truncates per-call output at 2000 chars', async () => {
-    const { createPrintCapture } = await setup();
+  it('truncates per-call output at 2000 chars', () => {
     const { print, getOutput } = createPrintCapture(2000, 20000);
 
     const longString = 'x'.repeat(3000);
@@ -105,8 +91,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(output).toContain(' chars]');
   });
 
-  it('silently stops capturing after maxTotal chars reached', async () => {
-    const { createPrintCapture } = await setup();
+  it('silently stops capturing after maxTotal chars reached', () => {
     const { print, getOutput } = createPrintCapture(2000, 50);
 
     print('x'.repeat(40)); // 40 chars, within limit
@@ -123,8 +108,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(output).not.toContain('z'.repeat(80));
   });
 
-  it('joins multiple captured lines with newline', async () => {
-    const { createPrintCapture } = await setup();
+  it('joins multiple captured lines with newline', () => {
     const { print, getOutput } = createPrintCapture();
 
     print('line1');
@@ -134,8 +118,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(getOutput()).toBe('line1\nline2\nline3');
   });
 
-  it('falls back to String(value) for circular references', async () => {
-    const { createPrintCapture } = await setup();
+  it('falls back to String(value) for circular references', () => {
     const { print, getOutput } = createPrintCapture();
 
     const circular: Record<string, unknown> = { name: 'test' };
@@ -150,8 +133,7 @@ describe('print-capture > createPrintCapture', () => {
     expect(output.length).toBeGreaterThan(0);
   });
 
-  it('handles multiple args: print("count:", 5) -> "count: 5"', async () => {
-    const { createPrintCapture } = await setup();
+  it('handles multiple args: print("count:", 5) -> "count: 5"', () => {
     const { print, getOutput } = createPrintCapture();
 
     print('count:', 5);
@@ -159,22 +141,19 @@ describe('print-capture > createPrintCapture', () => {
     expect(getOutput()).toBe('count: 5');
   });
 
-  it('returns 0 for getTotalChars when nothing printed', async () => {
-    const { createPrintCapture } = await setup();
+  it('returns 0 for getTotalChars when nothing printed', () => {
     const { getTotalChars } = createPrintCapture();
 
     expect(getTotalChars()).toBe(0);
   });
 
-  it('returns empty string for getOutput when nothing printed', async () => {
-    const { createPrintCapture } = await setup();
+  it('returns empty string for getOutput when nothing printed', () => {
     const { getOutput } = createPrintCapture();
 
     expect(getOutput()).toBe('');
   });
 
-  it('uses default maxPerCall=2000 and maxTotal=20000 when no args', async () => {
-    const { createPrintCapture } = await setup();
+  it('uses default maxPerCall=2000 and maxTotal=20000 when no args', () => {
     const { print, getOutput } = createPrintCapture();
 
     // Print within default limits

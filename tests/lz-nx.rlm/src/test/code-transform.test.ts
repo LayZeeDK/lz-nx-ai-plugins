@@ -1,18 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
+const { transformDeclarations } = await import('#rlm/shared/code-transform.mjs');
+
 // ─── code-transform: transformDeclarations (pure function, no mocks needed) ───
 
 describe('code-transform > transformDeclarations', () => {
-  async function setup() {
-    const { transformDeclarations } = await import(
-      '#rlm/shared/code-transform.mjs'
-    );
-
-    return { transformDeclarations };
-  }
-
-  it('transforms const to Object.defineProperty with writable:false', async () => {
-    const { transformDeclarations } = await setup();
+  it('transforms const to Object.defineProperty with writable:false', () => {
     const result = transformDeclarations('const x = 42;');
 
     expect(result).toContain('Object.defineProperty(globalThis, "x"');
@@ -21,24 +14,21 @@ describe('code-transform > transformDeclarations', () => {
     expect(result).toContain('configurable: true');
   });
 
-  it('transforms let to globalThis assignment', async () => {
-    const { transformDeclarations } = await setup();
+  it('transforms let to globalThis assignment', () => {
     const result = transformDeclarations("let y = 'hello';");
 
     expect(result).toContain("globalThis.y = 'hello';");
     expect(result).not.toContain('Object.defineProperty');
   });
 
-  it('transforms var to globalThis assignment', async () => {
-    const { transformDeclarations } = await setup();
+  it('transforms var to globalThis assignment', () => {
     const result = transformDeclarations('var z = [];');
 
     expect(result).toContain('globalThis.z = [];');
     expect(result).not.toContain('Object.defineProperty');
   });
 
-  it('does NOT transform indented declarations (inside blocks)', async () => {
-    const { transformDeclarations } = await setup();
+  it('does NOT transform indented declarations (inside blocks)', () => {
     const code = 'if (true) {\n  const x = 42;\n}';
     const result = transformDeclarations(code);
 
@@ -47,8 +37,7 @@ describe('code-transform > transformDeclarations', () => {
     expect(result).not.toContain('Object.defineProperty');
   });
 
-  it('transforms multiple declarations in same code block', async () => {
-    const { transformDeclarations } = await setup();
+  it('transforms multiple declarations in same code block', () => {
     const code = 'const a = 1;\nlet b = 2;\nvar c = 3;';
     const result = transformDeclarations(code);
 
@@ -57,8 +46,7 @@ describe('code-transform > transformDeclarations', () => {
     expect(result).toContain('globalThis.c = 3;');
   });
 
-  it('passes through code with no declarations unchanged', async () => {
-    const { transformDeclarations } = await setup();
+  it('passes through code with no declarations unchanged', () => {
     const code = 'console.log("hello");\nprint(42);';
     const result = transformDeclarations(code);
 
@@ -67,8 +55,7 @@ describe('code-transform > transformDeclarations', () => {
     expect(result).toContain('print(42);');
   });
 
-  it('transforms const with single-line arrow function', async () => {
-    const { transformDeclarations } = await setup();
+  it('transforms const with single-line arrow function', () => {
     const result = transformDeclarations('const fn = () => { return 42; };');
 
     expect(result).toContain('Object.defineProperty(globalThis, "fn"');
@@ -76,8 +63,7 @@ describe('code-transform > transformDeclarations', () => {
     expect(result).toContain('writable: false');
   });
 
-  it('transforms const with single-line object literal', async () => {
-    const { transformDeclarations } = await setup();
+  it('transforms const with single-line object literal', () => {
     const result = transformDeclarations('const obj = { a: 1, b: 2 };');
 
     expect(result).toContain('Object.defineProperty(globalThis, "obj"');
@@ -85,8 +71,7 @@ describe('code-transform > transformDeclarations', () => {
     expect(result).toContain('writable: false');
   });
 
-  it('handles const without trailing semicolon gracefully', async () => {
-    const { transformDeclarations } = await setup();
+  it('handles const without trailing semicolon gracefully', () => {
     const result = transformDeclarations('const x = 42');
 
     expect(result).toContain('Object.defineProperty(globalThis, "x"');
@@ -95,15 +80,13 @@ describe('code-transform > transformDeclarations', () => {
     expect(typeof result).toBe('string');
   });
 
-  it('prepends use strict to transformed code', async () => {
-    const { transformDeclarations } = await setup();
+  it('prepends use strict to transformed code', () => {
     const result = transformDeclarations('let x = 1;');
 
     expect(result).toMatch(/^'use strict';/);
   });
 
-  it('produces syntactically valid output for const x = 42;', async () => {
-    const { transformDeclarations } = await setup();
+  it('produces syntactically valid output for const x = 42;', () => {
     const result = transformDeclarations('const x = 42;');
 
     // The result should be valid JavaScript - verify by attempting to parse
@@ -117,8 +100,7 @@ describe('code-transform > transformDeclarations', () => {
     expect(openBraces).toBe(closeBraces);
   });
 
-  it('produces syntactically valid output for const with object literal', async () => {
-    const { transformDeclarations } = await setup();
+  it('produces syntactically valid output for const with object literal', () => {
     const result = transformDeclarations('const obj = { a: 1, b: 2 };');
 
     const openParens = (result.match(/\(/g) || []).length;
