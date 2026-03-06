@@ -5,5 +5,20 @@
   "projectType": "library",
   "tags": ["type:test"],
   "// targets": "to see all targets run: nx show project lz-nx-rlm-test --web",
-  "targets": {}
+  "targets": {
+    "typecheck": {
+      "command": "tsc --noEmit -p tsconfig.spec.json",
+      "options": {
+        "cwd": "tests/lz-nx.rlm"
+      },
+      "cache": true,
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "externalDependencies": ["typescript"]
+        }
+      ]
+    }
+  }
 }
