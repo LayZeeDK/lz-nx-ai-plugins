@@ -1,0 +1,8 @@
+#!/bin/sh
+# Verify TypeScript project references are in sync with the Nx dependency graph.
+npx nx sync:check || {
+  echo ""
+  echo "[ERROR] Workspace is out of sync."
+  echo "Run 'npx nx sync', then amend the commit that caused the drift."
+  exit 1
+}
