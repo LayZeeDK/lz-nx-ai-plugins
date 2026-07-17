@@ -331,3 +331,4 @@ __marimo__/
 .streamlit/secrets.toml
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+.gsd-opengsd/
